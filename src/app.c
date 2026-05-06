@@ -1,21 +1,33 @@
-#include <SDL3/SDL_thread.h>
+#include <core.h>
+
 #define SDL_MAIN_USE_CALLBACKS 1 /* use the callbacks instead of main() */
-#include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+
 #include "network-thread.c"
 
 #define EASY_MEMORY_IMPLEMENTATION
 #define EM_NO_MALLOC
 #include "easy_memory.h"
 
-/* We will use this renderer to draw into this window every frame. */
-static SDL_Window* window = NULL;
-static SDL_Renderer* renderer = NULL;
+#include "app.h"
+
+// 22 MB memory.
+constexpr auto MEM_SIZE = 22 * 1024 * 1024;
+Uint8 memory[MEM_SIZE];  
+
+AppState* NewAppState() {
+  EM* em = em_create_static(memory, MEM_SIZE);
+  auto state = new (AppState);
+  state->em = em;
+  return state;
+};
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
-  auto NetThread = SDL_CreateThread(NetworkThread, "net", NULL);
+  auto state = NewAppState();
+  *appstate = state;
 
+  InitNetworkThread(state->em);
   SDL_SetAppMetadata("Example Renderer Clear", "1.0",
                      "com.example.renderer-clear");
 

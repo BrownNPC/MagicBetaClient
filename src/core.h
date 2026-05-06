@@ -1,6 +1,7 @@
 // base features. Macros and types every file uses.
 #pragma once
-#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL.h>
+#include <assert.h>
 #include <stddef.h>
 #include "easy_memory.h"
 
@@ -62,37 +63,61 @@
 /* Accessors */
 
 // ----- STRING TYPE -----
+#include <assert.h>
+#include <string.h>
 
+#define ArrayDecl(T, name) \
+  typedef struct {         \
+    size_t len;            \
+    size_t cap;            \
+    T* items;              \
+  } name;
+
+// make an array xs using allocator em, with capacity.
+#define make(em, xs, capacity)                                 \
+  do {                                                         \
+    xs.len = 0;                                                \
+    xs.cap = (capacity);                                       \
+    xs.items = em_alloc((em), sizeof(*xs.items) * (capacity)); \
+    assert(xs.items);                                          \
+  } while (0)
+
+#define append(xs, x)                                                  \
+  do {                                                                 \
+    assert((xs).len < (xs).cap && "Tried appending to a full array."); \
+    (xs).items[(xs).len++] = (x);                                      \
+  } while (0)
+
+// append array xs2 into dst
+#define appendA(dst, xs2)                                                 \
+  do {                                                                    \
+    assert((dst).len + (xs2).len <= (dst).cap && "Not enough capacity."); \
+    memcpy(&(dst).items[(dst).len], (xs2).items,                          \
+           (xs2).len * sizeof(*(dst).items));                             \
+    (dst).len += (xs2).len;                                               \
+  } while (0)
 // String is a C-string compatible string.
 // The length does not include the null-terminator.
-typedef struct {
-  size_t len;
-  const char* cstr;
-} string;
+ArrayDecl(char, string);
 
-typedef string error;
-
-// str interprets a C-string as a String.
-static inline string str(const char* s) {
-  return (string){.cstr = s, .len = strlen(s)};
+// str interprets a C-string as a String. (string view)
+static inline string str(char* s) {
+  return (string){.items = s, .len = SDL_strlen(s)};
 }
 
 // strC concatenates two strings.
 // Implicitly passes bump allocator
-#define strCat(a, b) String_cat(scratch, a, b)
-
-static inline string String_cat(Bump* scratch, string a, string b) {
-  size_t total = a.len + b.len;
-  char* buf = em_bump_alloc(scratch, total + 1);
-  if (!buf)
-    return (string){};
-
-  memcpy(buf, a.cstr, a.len);
-  memcpy(buf + a.len, b.cstr, b.len);
-  buf[total] = '\0';
-
-  return (string){.cstr = buf, .len = total};
+static inline string strCat(EM* em, string a, string b) {
+  size_t total = a.len + b.len + 1;  // +1 for null terminator.
+  string s;
+  make(em, s, total);
+  appendA(s, a);
+  appendA(s, b);
+  append(s, 0);
+  s.len--;  // do not count null terminator.
+  return s;
 }
+typedef string error;
 
 // ----- TIME -----
 
@@ -102,3 +127,6 @@ constexpr Sint64 Time_Millisecond = 1000 * Time_Microsecond;
 constexpr Sint64 Time_Second = 1000 * Time_Millisecond;
 constexpr Sint64 Time_Minute = 60 * Time_Second;
 constexpr Sint64 Time_Hour = 60 * Time_Minute;
+
+// Sleeps the thread for the specified duration.
+auto Time_Sleep = SDL_DelayNS;

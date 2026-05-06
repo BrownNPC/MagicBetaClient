@@ -20,5 +20,14 @@ int CurlReadFromSocket(CURL* curl, void* buffer, size_t buflen);
 // Error means no more bytes can be read/written. and you should clean up.
 int CurlWriteToSocket(CURL* curl, const void* buffer, size_t buflen);
 
-ResultDef(ConnDial, SDL_IOStream*, error);
+// Conn implements SDL_IOStreamInterface.
+typedef struct {
+  CURL* sock;  // tcp socket created by curl.
+
+  // block makes the read/writes block
+  // until there is an error, or the entire passed buffer is used.
+  bool Blocking;
+  SDL_IOStream* stream; // self IO_Stream interface implementation.
+} Conn;
+ResultDef(ConnDial, Conn*, error);
 ConnDialResult ConnDial(EM* em, string hostname);

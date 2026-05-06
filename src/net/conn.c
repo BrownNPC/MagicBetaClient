@@ -1,63 +1,106 @@
-#include <SDL3/SDL_error.h>
-#include <SDL3/SDL_iostream.h>
-#include <SDL3/SDL_timer.h>
 #include <curl/curl.h>
-#include "core.h"
-#include "easy_memory.h"
-#include "net.h"
+#include <core.h>
+#include <net/net.h>
 
-typedef struct {
-  CURL* sock;  // tcp socket created by curl.
-} Conn;
+constexpr auto ConnPollRate = Time_Millisecond * 10;
 
-size_t ConnRead(void* userdata, void* ptr, size_t size, SDL_IOStatus* status) {
+static size_t ConnRead(void* userdata,
+                       void* ptr,
+                       size_t size,
+                       SDL_IOStatus* status) {
   Conn* conn = userdata;
-  size_t n = CurlReadFromSocket(conn->sock, ptr, size);
-  if (n == -1) {
-    *status = SDL_IO_STATUS_ERROR;
-    return 0;
+  Uint8* out = ptr;
+  size_t total = 0;
+
+  while (total < size) {
+    auto n = CurlReadFromSocket(conn->sock, out + total, size - total);
+
+    if (n < 0) {
+      *status = SDL_IO_STATUS_ERROR;
+      return total;
+    }
+
+    if (n == 0) {
+      if (conn->Blocking && total == 0) {
+        Time_Sleep(ConnPollRate);
+        continue;
+      }
+      *status = (total > 0) ? SDL_IO_STATUS_READY : SDL_IO_STATUS_NOT_READY;
+      return total;
+    }
+
+    total += n;
+
+    if (!conn->Blocking) {
+      *status = SDL_IO_STATUS_READY;
+      return total;
+    }
   }
-  if (n == 0) {
-    *status = SDL_IO_STATUS_NOT_READY;
-    return n;
-  }
+
   *status = SDL_IO_STATUS_READY;
-  return n;
+  return total;
 }
-size_t ConnWrite(void* userdata,
-                 const void* ptr,
-                 size_t size,
-                 SDL_IOStatus* status) {
+
+static size_t ConnWrite(void* userdata,
+                        const void* ptr,
+                        size_t size,
+                        SDL_IOStatus* status) {
   Conn* conn = userdata;
-  auto n = CurlWriteToSocket(conn->sock, ptr, size);
-  if (n == 0) {
-    *status = SDL_IO_STATUS_NOT_READY;
-    return 0;
+  const Uint8* in = ptr;
+  size_t total = 0;
+
+  while (total < size) {
+    auto n = CurlWriteToSocket(conn->sock, in + total, size - total);
+
+    if (n < 0) {
+      *status = SDL_IO_STATUS_ERROR;
+      return total;
+    }
+    SDL_IOStreamInterface a;
+    if (n == 0) {
+      if (conn->Blocking && total == 0) {
+        Time_Sleep(ConnPollRate);
+        continue;
+      }
+      if (total > 0) {
+        *status = SDL_IO_STATUS_READY;
+      } else {
+        *status = SDL_IO_STATUS_NOT_READY;
+      }
+      return total;
+    }
+
+    total += n;
+
+    if (!conn->Blocking) {
+      *status = SDL_IO_STATUS_READY;
+      return total;
+    }
   }
-  if (n == -1) {
-    *status = SDL_IO_STATUS_ERROR;
-    return 0;
-  }
-  return n;
-};
-bool ConnClose(void* userdata) {
-  Conn* conn = userdata;
+
+  *status = SDL_IO_STATUS_READY;
+  return total;
+}
+
+static bool ConnClose(void* userdata) {
+  Conn* conn = (Conn*)userdata;
   curl_easy_cleanup(conn->sock);
-  delete(conn);
+  delete (conn);
   return true;
 }
 ConnDialResult ConnDial(EM* em, string hostname) {
-  Bump* scratch = em_bump_create(em, 2048);
+  EM* scratch = em_create_nested(em, 2048);
   defer {
-    em_bump_destroy(scratch);
+    em_destroy(scratch);
   }
   // Allocate interface
   SDL_IOStreamInterface i;
+  SDL_INIT_INTERFACE(&i);
   i.read = ConnRead;
   i.write = ConnWrite;
   i.close = ConnClose;
   // Open TCP socket using curl.
-  hostname = strCat(str("http://"), hostname);
+  hostname = strCat(scratch, str("http://"), hostname);
   auto curl = CurlCreateSocket(hostname);
   if (!curl.ok) {
     return Err(ConnDial, curl.err);
@@ -65,5 +108,6 @@ ConnDialResult ConnDial(EM* em, string hostname) {
   // return the Conn.
   auto conn = new (Conn);
   conn->sock = curl.result;
-  return Ok(ConnDial, SDL_OpenIO(&i, conn));
+  conn->stream = SDL_OpenIO(&i, conn);
+  return Ok(ConnDial, conn);
 };
