@@ -1,5 +1,5 @@
-#include <curl/curl.h>
 #include <core.h>
+#include <curl/curl.h>
 #include <net/net.h>
 
 constexpr auto ConnPollRate = Time_Millisecond * 10;
@@ -11,6 +11,8 @@ static size_t ConnRead(void* userdata,
   Conn* conn = userdata;
   Uint8* out = ptr;
   size_t total = 0;
+
+  *status = SDL_IO_STATUS_READY;
 
   while (total < size) {
     auto n = CurlReadFromSocket(conn->sock, out + total, size - total);
@@ -25,19 +27,18 @@ static size_t ConnRead(void* userdata,
         Time_Sleep(ConnPollRate);
         continue;
       }
-      *status = (total > 0) ? SDL_IO_STATUS_READY : SDL_IO_STATUS_NOT_READY;
+
+      if (total == 0)
+        *status = SDL_IO_STATUS_NOT_READY;
       return total;
     }
 
     total += n;
 
-    if (!conn->Blocking) {
-      *status = SDL_IO_STATUS_READY;
+    if (!conn->Blocking)
       return total;
-    }
   }
 
-  *status = SDL_IO_STATUS_READY;
   return total;
 }
 
@@ -49,6 +50,8 @@ static size_t ConnWrite(void* userdata,
   const Uint8* in = ptr;
   size_t total = 0;
 
+  *status = SDL_IO_STATUS_READY;
+
   while (total < size) {
     auto n = CurlWriteToSocket(conn->sock, in + total, size - total);
 
@@ -56,34 +59,29 @@ static size_t ConnWrite(void* userdata,
       *status = SDL_IO_STATUS_ERROR;
       return total;
     }
-    SDL_IOStreamInterface a;
+
     if (n == 0) {
       if (conn->Blocking && total == 0) {
         Time_Sleep(ConnPollRate);
         continue;
       }
-      if (total > 0) {
-        *status = SDL_IO_STATUS_READY;
-      } else {
+
+      if (total == 0)
         *status = SDL_IO_STATUS_NOT_READY;
-      }
       return total;
     }
 
     total += n;
 
-    if (!conn->Blocking) {
-      *status = SDL_IO_STATUS_READY;
+    if (!conn->Blocking)
       return total;
-    }
   }
 
-  *status = SDL_IO_STATUS_READY;
   return total;
 }
 
 static bool ConnClose(void* userdata) {
-  Conn* conn = (Conn*)userdata;
+  Conn* conn = userdata;
   curl_easy_cleanup(conn->sock);
   delete (conn);
   return true;

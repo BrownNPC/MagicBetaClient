@@ -1,4 +1,5 @@
 #include <core.h>
+#include "mc/packet.h"
 
 #define SDL_MAIN_USE_CALLBACKS 1 /* use the callbacks instead of main() */
 #include <SDL3/SDL_main.h>
@@ -9,7 +10,9 @@
 #define EM_NO_MALLOC
 #include "easy_memory.h"
 
-#include "app.h"
+typedef struct{
+  EM* em;
+}AppState;
 
 // 22 MB memory.
 constexpr auto MEM_SIZE = 22 * 1024 * 1024;
@@ -26,6 +29,7 @@ AppState* NewAppState() {
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
   auto state = NewAppState();
   *appstate = state;
+  InitPacketDecoders();
 
   InitNetworkThread(state->em);
   SDL_SetAppMetadata("Example Renderer Clear", "1.0",

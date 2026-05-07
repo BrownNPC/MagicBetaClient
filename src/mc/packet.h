@@ -1,5 +1,9 @@
 #pragma once
+#include <SDL3/SDL_assert.h>
+#include <SDL3/SDL_iostream.h>
+#include <assert.h>
 #include <core.h>
+#include <net/net.h>
 
 typedef enum : Uint8 {
   PKT_KeepAlive = 0x00,
@@ -23,21 +27,21 @@ typedef struct {
   string16 username;
   Sint64 seed;
   Sint8 dimension;
-} PacketLoginRequest_t;
+} LoginPacket;  // 0x01
 
 // https://pixelbrush.dev/beta-wiki/networking/packets/002-pre-login
 typedef struct {
   union {
     string16 username, connectionHash;
   };
-} PacketPreLogin_t;
+} PreLoginPacket;  // 0x02
 
 typedef struct {
   PacketID id;
   union {
-    PacketLoginRequest_t loginRequest;
-    PacketPreLogin_t preLogin;
-  };
+    LoginPacket loginRequest;
+    PreLoginPacket preLogin;
+  } payload;
 } Packet;
 
 // write string8
@@ -115,4 +119,29 @@ static inline bool ReadString16(EM* em, SDL_IOStream* src, string16* dst) {
   }
   *dst = out;
   return true;
+}
+
+typedef bool (*ReadPacketPayloadFunc)(Conn* conn, EM* em, void* payload);
+
+// Sets up function pointer table.
+void InitPacketDecoders();
+ReadPacketPayloadFunc PacketDecoders[0x100];
+
+// a function that panics when used.
+bool read_invalid(Conn* conn, EM* em, void* payload);
+
+bool ReadPacket(Conn* conn, EM* em, Packet* p) {
+  auto s = conn->stream;
+  if (!SDL_ReadU8(s, &p->id))
+    return false;
+  conn->Blocking = true;
+  defer {
+    conn->Blocking = false;
+  }
+  auto decoderFunc = PacketDecoders[p->id];
+  if (decoderFunc == read_invalid) {
+    SDL_assert_release("INVALID Packet ID");
+    return false;
+  }
+  return decoderFunc(conn, em, &p->payload);
 }

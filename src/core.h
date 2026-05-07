@@ -52,7 +52,7 @@
   ((FunctionName##Result){.ok = false, .err = (e), .result = (v)})
 
 // allocate on arena
-#define new(T) ((T*)em_alloc(em, sizeof(T)))
+#define new(T) ((T*)em_calloc(em, 1, sizeof(T)))
 // delete from arena.
 #define delete(v) em_free(v);
 
@@ -120,13 +120,18 @@ static inline string strCat(EM* em, string a, string b) {
 typedef string error;
 
 // ----- TIME -----
-
-constexpr Sint64 Time_Nanosecond = 1;
-constexpr Sint64 Time_Microsecond = 1000 * Time_Nanosecond;
-constexpr Sint64 Time_Millisecond = 1000 * Time_Microsecond;
-constexpr Sint64 Time_Second = 1000 * Time_Millisecond;
-constexpr Sint64 Time_Minute = 60 * Time_Second;
-constexpr Sint64 Time_Hour = 60 * Time_Minute;
+typedef Sint64 Time_Duration;
+constexpr Time_Duration Time_Nanosecond = 1;
+constexpr Time_Duration Time_Microsecond = 1000 * Time_Nanosecond;
+constexpr Time_Duration Time_Millisecond = 1000 * Time_Microsecond;
+constexpr Time_Duration Time_Second = 1000 * Time_Millisecond;
+constexpr Time_Duration Time_Minute = 60 * Time_Second;
+constexpr Time_Duration Time_Hour = 60 * Time_Minute;
 
 // Sleeps the thread for the specified duration.
 auto Time_Sleep = SDL_DelayNS;
+
+static inline Time_Duration Time_DurationToMS(Time_Duration d) {
+  return d / 1000000;
+}
+

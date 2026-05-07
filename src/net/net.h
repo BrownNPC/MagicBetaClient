@@ -1,3 +1,4 @@
+#pragma once
 #include <SDL3/SDL_iostream.h>
 #include <curl/curl.h>
 #include "core.h"
@@ -24,7 +25,7 @@ int CurlWriteToSocket(CURL* curl, const void* buffer, size_t buflen);
 typedef struct {
   CURL* sock;  // tcp socket created by curl.
 
-  // block makes the read/writes block
+  // block makes the read/writes block on the SDL_IOStream
   // until there is an error, or the entire passed buffer is used.
   bool Blocking;
   SDL_IOStream* stream; // self IO_Stream interface implementation.
