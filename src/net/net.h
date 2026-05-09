@@ -28,7 +28,11 @@ typedef struct {
   // block makes the read/writes block on the SDL_IOStream
   // until there is an error, or the entire passed buffer is used.
   bool Blocking;
-  SDL_IOStream* stream; // self IO_Stream interface implementation.
+  SDL_IOStream* stream;  // self IO_Stream interface implementation.
 } Conn;
 ResultDef(ConnDial, Conn*, error);
 ConnDialResult ConnDial(EM* em, string hostname);
+// Returns true if the connection has closed.
+static inline bool IsConnDisconnected(Conn* conn) {
+  return SDL_GetIOStatus(conn->stream) == SDL_IO_STATUS_ERROR;
+}

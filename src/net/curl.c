@@ -1,4 +1,6 @@
+#include <SDL3/SDL_gpu.h>
 #include <curl/curl.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "net.h"
@@ -21,7 +23,7 @@ CurlCreateSocketResult CurlCreateSocket(string hostname) {
   if (!curl) {
     return Err(CurlCreateSocket, str("failed to init curl"));
   }
-  curl_easy_setopt(curl, CURLOPT_URL, hostname);
+  curl_easy_setopt(curl, CURLOPT_URL, hostname.items);
   // raw TCP connection only
   curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
 

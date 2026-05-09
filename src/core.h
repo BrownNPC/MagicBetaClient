@@ -1,6 +1,7 @@
 // base features. Macros and types every file uses.
 #pragma once
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_timer.h>
 #include <assert.h>
 #include <stddef.h>
 #include "easy_memory.h"
@@ -129,7 +130,9 @@ constexpr Time_Duration Time_Minute = 60 * Time_Second;
 constexpr Time_Duration Time_Hour = 60 * Time_Minute;
 
 // Sleeps the thread for the specified duration.
-auto Time_Sleep = SDL_DelayNS;
+static inline void Time_Sleep (Time_Duration d){
+  SDL_DelayNS(d);
+}
 
 static inline Time_Duration Time_DurationToMS(Time_Duration d) {
   return d / 1000000;

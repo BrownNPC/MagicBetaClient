@@ -1,22 +1,20 @@
 #include <core.h>
+#include <mc/mc.h>
 #include "mc/packet.h"
+#include "net/net.h"
 
 #define SDL_MAIN_USE_CALLBACKS 1 /* use the callbacks instead of main() */
 #include <SDL3/SDL_main.h>
 
-#include "network-thread.c"
-
-#define EASY_MEMORY_IMPLEMENTATION
-#define EM_NO_MALLOC
-#include "easy_memory.h"
-
-typedef struct{
+typedef struct {
   EM* em;
-}AppState;
+  SDL_Window* window;
+  SDL_Renderer* renderer;
+} AppState;
 
 // 22 MB memory.
 constexpr auto MEM_SIZE = 22 * 1024 * 1024;
-Uint8 memory[MEM_SIZE];  
+Uint8 memory[MEM_SIZE];
 
 AppState* NewAppState() {
   EM* em = em_create_static(memory, MEM_SIZE);
@@ -29,23 +27,25 @@ AppState* NewAppState() {
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
   auto state = NewAppState();
   *appstate = state;
-  InitPacketDecoders();
-
-  InitNetworkThread(state->em);
-  SDL_SetAppMetadata("Example Renderer Clear", "1.0",
-                     "com.example.renderer-clear");
-
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
     return SDL_APP_FAILURE;
   }
+  InitPacketHandlers();
+  initNetworkThreadEvents();
+  CurlInit();
+
+  InitNetworkThread(str("localhost:25565"));
+  SDL_SetAppMetadata("Example Renderer Clear", "1.0",
+                     "com.example.renderer-clear");
 
   if (!SDL_CreateWindowAndRenderer("examples/renderer/clear", 640, 480,
-                                   SDL_WINDOW_RESIZABLE, &window, &renderer)) {
+                                   SDL_WINDOW_RESIZABLE, &state->window,
+                                   &state->renderer)) {
     SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
     return SDL_APP_FAILURE;
   }
-  SDL_SetRenderLogicalPresentation(renderer, 640, 480,
+  SDL_SetRenderLogicalPresentation(state->renderer, 640, 480,
                                    SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
   return SDL_APP_CONTINUE; /* carry on with the program! */
@@ -56,11 +56,15 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS; /* end the program, reporting success to the OS. */
   }
+  if (event->type == NETWORK_EVENT) {
+    printf("NETWORK_EVENT_CODE=%d",event->user.code);
+  }
   return SDL_APP_CONTINUE; /* carry on with the program! */
 }
 
 /* This function runs once per frame, and is the heart of the program. */
 SDL_AppResult SDL_AppIterate(void* appstate) {
+  AppState* s = appstate;
   const double now = ((double)SDL_GetTicks()) /
                      1000.0; /* convert from milliseconds to seconds. */
   /* choose the color for the frame we will draw. The sine wave trick makes it
@@ -69,14 +73,14 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
   const float green = (float)(0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 2 / 3));
   const float blue = (float)(0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 4 / 3));
   SDL_SetRenderDrawColorFloat(
-      renderer, red, green, blue,
+      s->renderer, red, green, blue,
       SDL_ALPHA_OPAQUE_FLOAT); /* new color, full alpha. */
 
   /* clear the window to the draw color. */
-  SDL_RenderClear(renderer);
+  SDL_RenderClear(s->renderer);
 
   /* put the newly-cleared rendering on the screen. */
-  SDL_RenderPresent(renderer);
+  SDL_RenderPresent(s->renderer);
 
   return SDL_APP_CONTINUE; /* carry on with the program! */
 }

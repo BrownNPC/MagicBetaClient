@@ -1,9 +1,12 @@
 #include <core.h>
 #include <curl/curl.h>
 #include <net/net.h>
+#include <stdio.h>
 
 constexpr auto ConnPollRate = Time_Millisecond * 10;
 
+// Blocking mode:
+//  Retry until output buffer is filled or there is an error.
 static size_t ConnRead(void* userdata,
                        void* ptr,
                        size_t size,
@@ -23,12 +26,12 @@ static size_t ConnRead(void* userdata,
     }
 
     if (n == 0) {
-      if (conn->Blocking && total == 0) {
+      if (conn->Blocking) {
         Time_Sleep(ConnPollRate);
-        continue;
+        continue;  // retry
       }
 
-      if (total == 0)
+      if (total == 0)  // there is no data.
         *status = SDL_IO_STATUS_NOT_READY;
       return total;
     }
@@ -41,7 +44,8 @@ static size_t ConnRead(void* userdata,
 
   return total;
 }
-
+// Blocking mode:
+//  Block untill all bytes are written or there is an error.
 static size_t ConnWrite(void* userdata,
                         const void* ptr,
                         size_t size,
@@ -61,13 +65,12 @@ static size_t ConnWrite(void* userdata,
     }
 
     if (n == 0) {
-      if (conn->Blocking && total == 0) {
+      if (conn->Blocking) {
         Time_Sleep(ConnPollRate);
         continue;
       }
 
-      if (total == 0)
-        *status = SDL_IO_STATUS_NOT_READY;
+      *status = SDL_IO_STATUS_NOT_READY;
       return total;
     }
 
@@ -81,6 +84,7 @@ static size_t ConnWrite(void* userdata,
 }
 
 static bool ConnClose(void* userdata) {
+  Time_Sleep(Time_Second); // wait for all data to be sent.
   Conn* conn = userdata;
   curl_easy_cleanup(conn->sock);
   delete (conn);

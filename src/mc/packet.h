@@ -1,7 +1,4 @@
 #pragma once
-#include <SDL3/SDL_assert.h>
-#include <SDL3/SDL_iostream.h>
-#include <assert.h>
 #include <core.h>
 #include <net/net.h>
 
@@ -104,8 +101,8 @@ static inline bool WriteString16(SDL_IOStream* dst, string16 s) {
 
 // dst should be un-initialized.
 static inline bool ReadString16(EM* em, SDL_IOStream* src, string16* dst) {
-  Uint8 size;
-  if (!SDL_ReadU8(src, &size))
+  Uint32 size;
+  if (!SDL_ReadU32BE(src, &size))
     return false;
 
   string16 out;
@@ -121,27 +118,25 @@ static inline bool ReadString16(EM* em, SDL_IOStream* src, string16* dst) {
   return true;
 }
 
-typedef bool (*ReadPacketPayloadFunc)(Conn* conn, EM* em, void* payload);
+typedef bool (*ReadPacketPayloadFunc)(SDL_IOStream* s, EM* em, void* payload);
+typedef bool (*WritePacketPayloadFunc)(SDL_IOStream* s, void* payload);
 
 // Sets up function pointer table.
-void InitPacketDecoders();
-ReadPacketPayloadFunc PacketDecoders[0x100];
+void InitPacketHandlers();
+extern ReadPacketPayloadFunc PacketDecoders[0x100];
+extern WritePacketPayloadFunc PacketEncoders[0x100];
 
 // a function that panics when used.
-bool read_invalid(Conn* conn, EM* em, void* payload);
+bool read_invalid(SDL_IOStream* s, EM* em, void* payload);
+// a function that panics when used.
+bool write_invalid(SDL_IOStream* s, void* payload);
 
-bool ReadPacket(Conn* conn, EM* em, Packet* p) {
-  auto s = conn->stream;
-  if (!SDL_ReadU8(s, &p->id))
-    return false;
-  conn->Blocking = true;
-  defer {
-    conn->Blocking = false;
-  }
-  auto decoderFunc = PacketDecoders[p->id];
-  if (decoderFunc == read_invalid) {
-    SDL_assert_release("INVALID Packet ID");
-    return false;
-  }
-  return decoderFunc(conn, em, &p->payload);
-}
+// Read the packet if there is a packet.
+// If false is returned, there is either no packet, or there's an error.
+// use IsConnDisconnected from net/net.h to check.
+bool ReadPacket(Conn* conn, EM* em, Packet* p);
+
+// Write the packet if there is a packet.
+// If false is returned, there is an error. and the connection has disconnected.
+bool WritePacket(Conn* conn, Packet* p);
+
