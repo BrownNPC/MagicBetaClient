@@ -24,25 +24,25 @@ typedef struct {
   string16 username;
   Sint64 seed;
   Sint8 dimension;
-} LoginPacket;  // 0x01
+} MC_LoginPacket;  // 0x01
 
 // https://pixelbrush.dev/beta-wiki/networking/packets/002-pre-login
 typedef struct {
   union {
     string16 username, connectionHash;
   };
-} PreLoginPacket;  // 0x02
+} MC_PreLoginPacket;  // 0x02
 
 typedef struct {
   PacketID id;
   union {
-    LoginPacket loginRequest;
-    PreLoginPacket preLogin;
+    MC_LoginPacket loginRequest;
+    MC_PreLoginPacket preLogin;
   } payload;
-} Packet;
+} MC_Packet;
 
 // write string8
-static inline bool WriteString(SDL_IOStream* dst, string s) {
+static inline bool MC_WriteString(SDL_IOStream* dst, string s) {
   if (!SDL_WriteU16BE(dst, s.len))
     return false;
   for (auto i = 0; i < s.len; i++) {
@@ -53,7 +53,7 @@ static inline bool WriteString(SDL_IOStream* dst, string s) {
 };
 // ToString16 creates a string16 from a string.
 // The string 16 is not null terminated.
-static inline string16 ToString16(EM* em, string s) {
+static inline string16 MC_ToString16(EM* em, string s) {
   auto len = SDL_utf8strnlen(s.items, s.len);
 
   string16 out;
@@ -71,7 +71,7 @@ static inline string16 ToString16(EM* em, string s) {
   return out;
 };
 // create a null terminated string from string16
-static inline string FromString16(EM* em, string16 s) {
+static inline string MC_FromString16(EM* em, string16 s) {
   auto v = SDL_iconv_string("UTF-8", "UCS-2", (char*)s.items,
                             SDL_strlen((char*)s.items));
   defer {
@@ -122,7 +122,7 @@ typedef bool (*ReadPacketPayloadFunc)(SDL_IOStream* s, EM* em, void* payload);
 typedef bool (*WritePacketPayloadFunc)(SDL_IOStream* s, void* payload);
 
 // Sets up function pointer table.
-void InitPacketHandlers();
+void _createPacketHandlerFunctionTable();
 extern ReadPacketPayloadFunc PacketDecoders[0x100];
 extern WritePacketPayloadFunc PacketEncoders[0x100];
 
@@ -134,9 +134,9 @@ bool write_invalid(SDL_IOStream* s, void* payload);
 // Read the packet if there is a packet.
 // If false is returned, there is either no packet, or there's an error.
 // use IsConnDisconnected from net/net.h to check.
-bool ReadPacket(Conn* conn, EM* em, Packet* p);
+bool MC_ReadPacket(Conn* conn, EM* em, MC_Packet* p);
 
 // Write the packet if there is a packet.
 // If false is returned, there is an error. and the connection has disconnected.
-bool WritePacket(Conn* conn, Packet* p);
+bool MC_WritePacket(Conn* conn, MC_Packet* p);
 

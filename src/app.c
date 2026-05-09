@@ -27,15 +27,15 @@ AppState* NewAppState() {
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
   auto state = NewAppState();
   *appstate = state;
+  // initialize SDL before anything.
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
     return SDL_APP_FAILURE;
   }
-  InitPacketHandlers();
-  initNetworkThreadEvents();
-  CurlInit();
+  MC_init();
+  NET_init();
 
-  InitNetworkThread(str("localhost:25565"));
+  MC_StartNetworkThread(str("localhost:25565"));
   SDL_SetAppMetadata("Example Renderer Clear", "1.0",
                      "com.example.renderer-clear");
 
@@ -56,7 +56,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS; /* end the program, reporting success to the OS. */
   }
-  if (event->type == NETWORK_EVENT) {
+  if (event->type == MC_NETWORK_EVENT) {
     printf("NETWORK_EVENT_CODE=%d",event->user.code);
   }
   return SDL_APP_CONTINUE; /* carry on with the program! */

@@ -12,7 +12,7 @@ typedef enum {
                     // is packet, data2 is packet memory.
   NET_PACKET_RECV,  // new packet arrived: data 1 is packet, data 2 is packet
                     // memory.
-} NetworkEventCode;
+} MC_NetworkEventCode;
 
 constexpr auto NETWORK_PACKET_QUEUE_CAPACITY = 10;
 // Network thread uses this much memory.
@@ -21,7 +21,7 @@ constexpr auto NETWORK_THREAD_MEM = 1024 * 300;
 typedef struct {
   SDL_Mutex* mutex;
 
-  Packet* packets[NETWORK_PACKET_QUEUE_CAPACITY];
+  MC_Packet* packets[NETWORK_PACKET_QUEUE_CAPACITY];
   EM* packetArenas[NETWORK_PACKET_QUEUE_CAPACITY];
   // should the network thread free this packet or send it?
   bool toSend[NETWORK_PACKET_QUEUE_CAPACITY];
@@ -29,33 +29,33 @@ typedef struct {
   size_t tail;
   size_t count;
   bool closed;
-} NetworkPacketQueue;
+} MC_NetworkPacketQueue;
 
 typedef struct {
   EM* em;  // memory arena.
-  NetworkPacketQueue* q;
+  MC_NetworkPacketQueue* q;
   SDL_Thread* thread;
   string hostname;    // hostname to connect to.
 } NetworkThreadData;  // Userdata passed to NetworkThread.
 
-extern Uint32 NETWORK_EVENT;  // sdl event type. Set by app init.
+extern Uint32 MC_NETWORK_EVENT;  // sdl event type. Set by app init.
 
-// must be called when doing app init.
-static inline void initNetworkThreadEvents() {
-  NETWORK_EVENT = SDL_RegisterEvents(1);
+// must be called when doing app init. AFTER SDL has been initialized.
+static inline void _registerNetworkThreadEvent() {
+  MC_NETWORK_EVENT = SDL_RegisterEvents(1);
 }
 
 // network thread function pointer.
-extern int NetworkThread(void* userdata);
+extern int MC_NetworkThread(void* userdata);
 
 // Start the network thread.
 // connects to the hostname.
 // An event is sent if successfully connected to socket, or disconnected.
-NetworkThreadData* InitNetworkThread(string hostname);
+NetworkThreadData* MC_StartNetworkThread(string hostname);
 
 // Push a packet to the network thread.
 // This can be used to send packets, and free packets that are read.
-bool NetworkThreadPushPacket(NetworkThreadData* d,
-                             Packet* packet,
+bool MC_NetworkThreadPushPacket(NetworkThreadData* d,
+                             MC_Packet* packet,
                              EM* packetMemory,
                              bool toSend);

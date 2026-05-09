@@ -13,7 +13,7 @@ bool read_keep_alive(SDL_IOStream* s, EM* em, void* payload) {
 }
 // https://pixelbrush.dev/beta-wiki/networking/packets/001-login#clientbound
 bool read_login(SDL_IOStream* s, EM* em, void* payload) {
-  LoginPacket* p = payload;
+  MC_LoginPacket* p = payload;
   if (!SDL_ReadS32BE(s, &p->entityID))
     return false;
   if (!ReadString16(em, s, &p->username)) // unused.
@@ -28,7 +28,7 @@ bool read_login(SDL_IOStream* s, EM* em, void* payload) {
 
 // https://pixelbrush.dev/beta-wiki/networking/packets/002-pre-login#clientbound
 bool read_pre_login(SDL_IOStream* s, EM* em, void* payload) {
-  PreLoginPacket* p = payload;
+  MC_PreLoginPacket* p = payload;
   if (!ReadString16(em, s, &p->connectionHash))
     return false;
 

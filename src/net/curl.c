@@ -5,20 +5,15 @@
 
 #include "net.h"
 
-bool CurlInit() {
+bool __curl_init() {
   CURLcode res = curl_global_init(CURL_GLOBAL_DEFAULT);
   return res == CURLE_OK;
 }
-void CurlDeInit() {
+void __curl_deinit() {
   curl_global_cleanup();
 }
-// Closes the socket. Does not wait for all data to be sent.
-void CurlCloseSocket(CURL* curl) {
-  curl_easy_cleanup(curl);
-}
-
 // NOTE: hostname must be prefixed with "http://"
-CurlCreateSocketResult CurlCreateSocket(string hostname) {
+CurlCreateSocketResult NET_CurlCreateSocket(string hostname) {
   CURL* curl = curl_easy_init();
   if (!curl) {
     return Err(CurlCreateSocket, str("failed to init curl"));
@@ -36,7 +31,7 @@ CurlCreateSocketResult CurlCreateSocket(string hostname) {
 }
 // Returns the number of bytes read. Can be 0. -1 means error.
 // This is non-blocking. It will not fill the buffer if there is no data.
-int CurlReadFromSocket(CURL* curl, void* buffer, size_t buflen) {
+int NET_CurlReadFromSocket(CURL* curl, void* buffer, size_t buflen) {
   size_t n;
   CURLcode res = curl_easy_recv(curl, buffer, buflen, &n);
   if (res == CURLE_AGAIN)
@@ -49,7 +44,7 @@ int CurlReadFromSocket(CURL* curl, void* buffer, size_t buflen) {
 
 // This is non-blocking.
 // Returns the number of bytes written. Can be 0. -1 means error.
-int CurlWriteToSocket(CURL* curl, const void* buffer, size_t buflen) {
+int NET_CurlWriteToSocket(CURL* curl, const void* buffer, size_t buflen) {
   size_t n;
   CURLcode res = curl_easy_send(curl, buffer, buflen, &n);
   if (res == CURLE_AGAIN)

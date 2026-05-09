@@ -10,7 +10,7 @@ bool write_invalid(SDL_IOStream* s, void* payload) {
 
 // https://pixelbrush.dev/beta-wiki/networking/packets/001-login#serverbound
 bool write_login(SDL_IOStream* s, void* payload) {
-  LoginPacket* p = payload;
+  MC_LoginPacket* p = payload;
 
   if (!SDL_WriteS32BE(s, p->protocolVersion))
     return false;
@@ -25,7 +25,7 @@ bool write_login(SDL_IOStream* s, void* payload) {
 }
 // https://pixelbrush.dev/beta-wiki/networking/packets/002-pre-login#serverbound
 bool write_pre_login(SDL_IOStream* s, void* payload) {
-  PreLoginPacket* p = payload;
+  MC_PreLoginPacket* p = payload;
   if (!WriteString16(s, p->username))
     return false;
 

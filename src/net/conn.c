@@ -7,7 +7,7 @@ constexpr auto ConnPollRate = Time_Millisecond * 10;
 
 // Blocking mode:
 //  Retry until output buffer is filled or there is an error.
-static size_t ConnRead(void* userdata,
+static size_t NET_ConnRead(void* userdata,
                        void* ptr,
                        size_t size,
                        SDL_IOStatus* status) {
@@ -18,7 +18,7 @@ static size_t ConnRead(void* userdata,
   *status = SDL_IO_STATUS_READY;
 
   while (total < size) {
-    auto n = CurlReadFromSocket(conn->sock, out + total, size - total);
+    auto n = NET_CurlReadFromSocket(conn->sock, out + total, size - total);
 
     if (n < 0) {
       *status = SDL_IO_STATUS_ERROR;
@@ -46,7 +46,7 @@ static size_t ConnRead(void* userdata,
 }
 // Blocking mode:
 //  Block untill all bytes are written or there is an error.
-static size_t ConnWrite(void* userdata,
+static size_t NET_ConnWrite(void* userdata,
                         const void* ptr,
                         size_t size,
                         SDL_IOStatus* status) {
@@ -57,7 +57,7 @@ static size_t ConnWrite(void* userdata,
   *status = SDL_IO_STATUS_READY;
 
   while (total < size) {
-    auto n = CurlWriteToSocket(conn->sock, in + total, size - total);
+    auto n = NET_CurlWriteToSocket(conn->sock, in + total, size - total);
 
     if (n < 0) {
       *status = SDL_IO_STATUS_ERROR;
@@ -83,14 +83,15 @@ static size_t ConnWrite(void* userdata,
   return total;
 }
 
-static bool ConnClose(void* userdata) {
+static bool NET_ConnClose(void* userdata) {
   Time_Sleep(Time_Second); // wait for all data to be sent.
   Conn* conn = userdata;
   curl_easy_cleanup(conn->sock);
   delete (conn);
   return true;
 }
-ConnDialResult ConnDial(EM* em, string hostname) {
+
+ConnDialResult NET_ConnDial(EM* em, string hostname) {
   EM* scratch = em_create_nested(em, 2048);
   defer {
     em_destroy(scratch);
@@ -98,12 +99,12 @@ ConnDialResult ConnDial(EM* em, string hostname) {
   // Allocate interface
   SDL_IOStreamInterface i;
   SDL_INIT_INTERFACE(&i);
-  i.read = ConnRead;
-  i.write = ConnWrite;
-  i.close = ConnClose;
+  i.read = NET_ConnRead;
+  i.write = NET_ConnWrite;
+  i.close = NET_ConnClose;
   // Open TCP socket using curl.
   hostname = strCat(scratch, str("http://"), hostname);
-  auto curl = CurlCreateSocket(hostname);
+  auto curl = NET_CurlCreateSocket(hostname);
   if (!curl.ok) {
     return Err(ConnDial, curl.err);
   }

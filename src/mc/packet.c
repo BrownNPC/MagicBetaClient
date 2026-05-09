@@ -5,7 +5,7 @@
 void setPacketEncoders();
 void setPacketDecoders();
 // Sets up function pointer table for reading packets.
-void InitPacketHandlers() {
+void _createPacketHandlerFunctionTable() {
   for (auto i = 0; i < 0x100; i++) {
     PacketDecoders[i] = read_invalid;
     PacketEncoders[i] = write_invalid;
@@ -13,7 +13,7 @@ void InitPacketHandlers() {
   setPacketDecoders();
   setPacketEncoders();
 }
-bool ReadPacket(Conn* conn, EM* em, Packet* p) {
+bool MC_ReadPacket(Conn* conn, EM* em, MC_Packet* p) {
   auto s = conn->stream;
   if (!SDL_ReadU8(s, &p->id))
     return false;
@@ -30,7 +30,7 @@ bool ReadPacket(Conn* conn, EM* em, Packet* p) {
   return decoderFunc(conn->stream, em, &p->payload);
 }
 
-bool WritePacket(Conn* conn, Packet* p) {
+bool MC_WritePacket(Conn* conn, MC_Packet* p) {
   auto s = conn->stream;
   conn->Blocking = true;
   defer {
