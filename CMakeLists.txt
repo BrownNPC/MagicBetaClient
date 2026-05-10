@@ -16,10 +16,10 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 
 set(CMAKE_BUILD_TYPE Debug)
-# Link with SDL3
-find_package(SDL3 REQUIRED)
 # Link with CURL
 find_package(CURL REQUIRED)
+# Link with SDL3
+find_package(SDL3 REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3

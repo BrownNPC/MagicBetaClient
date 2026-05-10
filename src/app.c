@@ -1,6 +1,5 @@
 #include <core.h>
 #include <mc/mc.h>
-#include "mc/packet.h"
 #include "net/net.h"
 
 #define SDL_MAIN_USE_CALLBACKS 1 /* use the callbacks instead of main() */
@@ -87,5 +86,6 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
 
 /* This function runs once at shutdown. */
 void SDL_AppQuit(void* appstate, SDL_AppResult result) {
+  // NET_deinit();
   /* SDL will clean up the window/renderer for us. */
 }
