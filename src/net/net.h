@@ -7,10 +7,8 @@ bool __curl_init();
 void __curl_deinit();
 
 // Initialize everything in the net package.
-static inline void NET_init() {
-  if (!__curl_init()){
-    SDL_assert(false);
-  }
+static inline bool NET_init() {
+  return __curl_init();
 }
 static inline void NET_deinit() {
   __curl_deinit();

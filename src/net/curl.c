@@ -21,6 +21,7 @@ CurlCreateSocketResult NET_CurlCreateSocket(string hostname) {
   curl_easy_setopt(curl, CURLOPT_URL, hostname.items);
   // raw TCP connection only
   curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
+  curl_easy_setopt(curl, CURLOPT_TCP_NODELAY, 1L); // disable Nagle algorithm
 
   // connect to the server.
   CURLcode result = curl_easy_perform(curl);

@@ -1,53 +1,36 @@
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_video.h>
 #include <core.h>
+#include <game/game.h>
+#include <gfx/gfx.h>
 #include <mc/mc.h>
+#include "easy_memory.h"
+#include "game/state.h"
+#include "gfx/render.h"
+#include "gfx/rlgl.h"
 #include "net/net.h"
 
 #define SDL_MAIN_USE_CALLBACKS 1 /* use the callbacks instead of main() */
 #include <SDL3/SDL_main.h>
 
-typedef struct {
-  EM* em;
-  SDL_Window* window;
-  SDL_Renderer* renderer;
-} AppState;
-
-// 22 MB memory.
-constexpr auto MEM_SIZE = 22 * 1024 * 1024;
+// 20 MB memory.
+constexpr auto MEM_SIZE = 20 * 1024 * 1024;
 Uint8 memory[MEM_SIZE];
-
-AppState* NewAppState() {
-  EM* em = em_create_static(memory, MEM_SIZE);
-  auto state = new (AppState);
-  state->em = em;
-  return state;
-};
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
-  auto state = NewAppState();
-  *appstate = state;
-  // initialize SDL before anything.
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
     return SDL_APP_FAILURE;
   }
-  MC_init();
-  NET_init();
 
-  MC_StartNetworkThread(str("localhost:25565"));
-  SDL_SetAppMetadata("Example Renderer Clear", "1.0",
-                     "com.example.renderer-clear");
+  auto window = SDL_CreateWindow("MagicBetaClient", 640, 480,
+                                 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
-  if (!SDL_CreateWindowAndRenderer("examples/renderer/clear", 640, 480,
-                                   SDL_WINDOW_RESIZABLE, &state->window,
-                                   &state->renderer)) {
-    SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
-    return SDL_APP_FAILURE;
-  }
-  SDL_SetRenderLogicalPresentation(state->renderer, 640, 480,
-                                   SDL_LOGICAL_PRESENTATION_LETTERBOX);
+  GFX_init(window);
+  *appstate = GAME_Init(em_create_static(memory, MEM_SIZE), window);
 
-  return SDL_APP_CONTINUE; /* carry on with the program! */
+  return SDL_APP_CONTINUE;
 }
 
 /* This function runs when a new event (mouse input, keypresses, etc) occurs. */
@@ -56,36 +39,26 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
     return SDL_APP_SUCCESS; /* end the program, reporting success to the OS. */
   }
   if (event->type == MC_NETWORK_EVENT) {
-    printf("NETWORK_EVENT_CODE=%d",event->user.code);
+    printf("NETWORK_EVENT_CODE=%d", event->user.code);
   }
   return SDL_APP_CONTINUE; /* carry on with the program! */
 }
 
 /* This function runs once per frame, and is the heart of the program. */
 SDL_AppResult SDL_AppIterate(void* appstate) {
-  AppState* s = appstate;
-  const double now = ((double)SDL_GetTicks()) /
-                     1000.0; /* convert from milliseconds to seconds. */
-  /* choose the color for the frame we will draw. The sine wave trick makes it
-   * fade between colors smoothly. */
-  const float red = (float)(0.5 + 0.5 * SDL_sin(now));
-  const float green = (float)(0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 2 / 3));
-  const float blue = (float)(0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 4 / 3));
-  SDL_SetRenderDrawColorFloat(
-      s->renderer, red, green, blue,
-      SDL_ALPHA_OPAQUE_FLOAT); /* new color, full alpha. */
+  GAME_State* s = appstate;
 
-  /* clear the window to the draw color. */
-  SDL_RenderClear(s->renderer);
+  GFX_BeginDrawing();
+  GFX_DrawRectanglePro((Rectangle){0, 0, 480, 272}, (Vector2){}, 0,
+                       (Color){.r = 255, .a = 255});
+  GFX_EndDrawing();
 
-  /* put the newly-cleared rendering on the screen. */
-  SDL_RenderPresent(s->renderer);
-
-  return SDL_APP_CONTINUE; /* carry on with the program! */
+  return SDL_APP_CONTINUE;
 }
 
 /* This function runs once at shutdown. */
 void SDL_AppQuit(void* appstate, SDL_AppResult result) {
-  // NET_deinit();
+  NET_deinit();
+  rlglClose();
   /* SDL will clean up the window/renderer for us. */
 }

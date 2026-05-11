@@ -20,10 +20,12 @@ set(CMAKE_BUILD_TYPE Debug)
 find_package(CURL REQUIRED)
 # Link with SDL3
 find_package(SDL3 REQUIRED)
+find_package(OpenGL REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     CURL::libcurl
+    OpenGL::GL
     m
 )
 

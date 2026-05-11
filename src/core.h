@@ -66,7 +66,7 @@
 // ----- STRING TYPE -----
 #include <assert.h>
 #include <string.h>
-
+// Arrays are fixed size!
 #define ArrayDecl(T, name) \
   typedef struct {         \
     size_t len;            \
