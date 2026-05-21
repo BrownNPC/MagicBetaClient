@@ -1,4 +1,3 @@
-// FROM: https://github.com/raylib4Consoles/raylib/blob/raylib4Consoles_6.0/src/rlgl.h
 /**********************************************************************************************
 *
 *   rlgl v6.0 - A multi-OpenGL abstraction layer with an immediate-mode style API
@@ -109,7 +108,8 @@
 #define RLGL_H
 
 #define RLGL_VERSION  "6.0"
-
+#define RLGL_IMPLEMENTATION
+#define GRAPHICS_API_OPENGL_11
 // Function specifiers in case library is build/used as a shared library
 // NOTE: Microsoft specifiers to tell compiler that symbols are imported/exported from a .dll
 // NOTE: visibility(default) attribute makes symbols "visible" when compiled with -fvisibility=hidden
