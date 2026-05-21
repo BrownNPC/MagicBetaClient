@@ -224,3 +224,10 @@ const (
 	APP_SUCCESS                   /**< Value that requests termination with success from the main callbacks. */
 	APP_FAILURE                   /**< Value that requests termination with error from the main callbacks. */
 )
+
+type PixelFormat int
+
+const (
+	//so:extern SDL_PIXELFORMAT_RGBA32
+	PIXELFORMAT_RGBA32 PixelFormat = iota
+)

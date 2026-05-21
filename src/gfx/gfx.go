@@ -16,7 +16,7 @@ const (
 
 // Set viewport for a provided width and height
 func SetupViewport(width, height int) {
-	gl.Viewport(0, 0, width, height)
+	gl.Viewport(0, 0, int32(width), int32(height))
 
 	gl.MatrixMode(gl.PROJECTION)
 	gl.LoadIdentity()
@@ -61,5 +61,33 @@ func BeginMode3D(cam Camera) {
 
 	matView := MatrixLookAt(cam.Position, cam.Target, cam.Up)
 	// modelview * projection
-	gl.MultMatrixf(matView.ToFloat())
+	mv := matView.ToFloat()
+	gl.MultMatrixf(&mv.V[0])
+	gl.Enable(gl.DEPTH_TEST)
 }
+
+func LoadTexture(path string) (Texture, error) {
+	src := sdl.LoadSurface(path)
+	if src == nil {
+		return Texture{}, sdl.GetError()
+	}
+	defer sdl.DestroySurface(src)
+
+	converted := sdl.ConvertSurface(src, sdl.PIXELFORMAT_RGBA32)
+	defer sdl.DestroySurface(converted)
+
+	t := Texture{
+		Width:  converted.Width(),
+		Height: converted.Height(),
+	}
+
+	gl.GenTextures(1, &t.ID)
+	gl.BindTexture(gl.TEXTURE_2D, t.ID)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+
+	gl.TexImage2D(t.ID, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, converted.Pixels())
+
+	return t, nil
+}
+

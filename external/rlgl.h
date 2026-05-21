@@ -2313,7 +2313,7 @@ static void GLAPIENTRY rlDebugMessageCallback(GLenum source, GLenum type, GLuint
 //----------------------------------------------------------------------------------
 
 // Initialize rlgl: OpenGL extensions, default buffers/shaders/textures, OpenGL states
-void rlglInit(int width, int height)
+inline void rlglInit(int width, int height)
 {
     isGpuReady = true;
 

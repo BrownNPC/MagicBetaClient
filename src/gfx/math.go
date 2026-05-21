@@ -1340,34 +1340,32 @@ func MatrixLookAt(eye, target, up Vector3) Matrix {
 	return result
 }
 
-// MatrixToFloatV - Get float array of matrix data
-func MatrixToFloatV(mat Matrix) [16]float32 {
-	var result [16]float32
-
-	result[0] = mat.M0
-	result[1] = mat.M1
-	result[2] = mat.M2
-	result[3] = mat.M3
-	result[4] = mat.M4
-	result[5] = mat.M5
-	result[6] = mat.M6
-	result[7] = mat.M7
-	result[8] = mat.M8
-	result[9] = mat.M9
-	result[10] = mat.M10
-	result[11] = mat.M11
-	result[12] = mat.M12
-	result[13] = mat.M13
-	result[14] = mat.M14
-	result[15] = mat.M15
-
-	return result
+type Float16 struct {
+	V [16]float32
 }
 
-// MatrixToFloat - Converts Matrix to float32 slice
-func MatrixToFloat(mat Matrix) []float32 {
-	data := MatrixToFloatV(mat)
-	return data[:]
+// MatrixToFloat - Get float array of matrix data
+func MatrixToFloat(mat Matrix) Float16 {
+	var result Float16
+
+	result.V[0] = mat.M0
+	result.V[1] = mat.M1
+	result.V[2] = mat.M2
+	result.V[3] = mat.M3
+	result.V[4] = mat.M4
+	result.V[5] = mat.M5
+	result.V[6] = mat.M6
+	result.V[7] = mat.M7
+	result.V[8] = mat.M8
+	result.V[9] = mat.M9
+	result.V[10] = mat.M10
+	result.V[11] = mat.M11
+	result.V[12] = mat.M12
+	result.V[13] = mat.M13
+	result.V[14] = mat.M14
+	result.V[15] = mat.M15
+
+	return result
 }
 
 // QuaternionAdd - Add two quaternions

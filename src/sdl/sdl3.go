@@ -44,7 +44,27 @@ func GetError() error { return sdlError{str: getError()} }
 
 //so:extern SDL_GL_CreateContext
 func GLCreateContext(*Window)
+
 //so:extern SDL_GetWindowSizeInPixels
-func GetWindowSizeInPixels(win *Window,w,h *int)
+func GetWindowSizeInPixels(win *Window, w, h *int)
+
 //so:extern SDL_GL_SwapWindow
 func GLSwapWindow(*Window)
+
+type Surface struct {
+	w, h   int
+	pixels any
+}
+
+func (s Surface) Width() int  { return s.w }
+func (s Surface) Height() int { return s.h }
+func (s Surface) Pixels() any { return s.pixels }
+
+//so:extern SDL_LoadSurface
+func LoadSurface(path string) *Surface
+
+//so:extern SDL_DestroySurface
+func DestroySurface(*Surface)
+
+//so:extern SDL_ConvertSurface
+func ConvertSurface(src *Surface, format PixelFormat) *Surface

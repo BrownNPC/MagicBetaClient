@@ -1,8 +1,8 @@
 package SDL
 
 import (
-	"betamine/net/curl"
-	"betamine/sdl"
+	"mbc/net/curl"
+	"mbc/sdl"
 
 	"solod.dev/so/c"
 	"solod.dev/so/mem"

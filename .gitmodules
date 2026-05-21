@@ -1,0 +1,3 @@
+[submodule "cmd/sobind"]
+	path = cmd/sobind
+	url = https://github.com/solod-dev/sobind.git

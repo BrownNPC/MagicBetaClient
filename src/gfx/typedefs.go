@@ -154,3 +154,8 @@ type Camera2D struct {
 	// Camera zoom (scaling around target), must not be set to 0, set to 1.0f for no scale
 	Zoom float32
 }
+
+type Texture struct{
+	Width,Height int
+	ID uint32
+}

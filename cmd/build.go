@@ -31,7 +31,9 @@ func main() {
 		Command("rm", "-fr", TranspileDir)
 		Command("mkdir", "-p", TranspileDir)
 	}
-	Command("so", "translate", "-o", TranspileDir, "src")
+	if !Command("so", "translate", "-o", TranspileDir, "src") {
+		return
+	}
 	RunCmakeForTarget(*Bootstrap)
 	Command("cmake", "--build", BuildDir, "--parallel")
 }

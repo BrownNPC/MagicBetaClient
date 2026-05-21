@@ -45,14 +45,10 @@ func (m Matrix) Subtract(right Matrix) Matrix {
 	return MatrixSubtract(m, right)
 }
 
-// ToFloat - Converts Matrix to float32 slice
-func (m Matrix) ToFloat() []float32 {
-	return MatrixToFloat(m)
-}
 
 // ToFloatV - Get float array of matrix data
-func (m Matrix) ToFloatV() [16]float32 {
-	return MatrixToFloatV(m)
+func (m Matrix) ToFloat() Float16{
+	return MatrixToFloat(m)
 }
 
 // Trace - Returns the trace of the matrix (sum of the values along the diagonal)

@@ -1,16 +1,15 @@
 package net
 
 import (
-	"betamine/net/curl"
-	"betamine/sdl"
+	"mbc/net/curl"
+	"mbc/sdl"
 
 	"solod.dev/so/errors"
 	"solod.dev/so/time"
 )
 
-var ErrResolveFailed = errors.New("Could not resolve hostname.")
-var ErrConnectionFailed = errors.New("TCP connection failed.")
 var ErrConnectionClosed = errors.New("Connection closed.")
+var PollDelay = time.Millisecond * 25
 
 // Read blocks until bytes are read or there is an error.
 // It does not guarantee that the full buffer is used.
@@ -25,13 +24,13 @@ func (conn *Conn) Read(b []byte) (int, error) {
 	for {
 		n, err := curl.ReadFromSocket(conn.sock, &b[0], len(b))
 		if err != nil {
-			// conn.Close()
+			conn.Close()
 			return 0, err
 		}
 		if n != 0 {
 			return n, nil
 		}
-		sdl.Delay(time.Millisecond * 50)
+		sdl.Delay(PollDelay)
 	}
 }
 
@@ -51,7 +50,7 @@ func (conn *Conn) Write(b []byte) (int, error) {
 
 		if n == 0 {
 			// avoid tight spin
-			sdl.Delay(time.Millisecond * 50)
+			sdl.Delay(PollDelay)
 			continue
 		}
 
