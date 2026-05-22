@@ -86,7 +86,6 @@ func ConvertSurface(src *Surface, format PixelFormat) *Surface
 //
 //so:extern SDL_IOStream
 type IOStream struct {
-	io.ReadWriteCloser
 }
 
 func (ctx *IOStream) Read(b []byte) (int, error) {

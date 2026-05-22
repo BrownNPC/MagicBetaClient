@@ -27,17 +27,19 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 	gfx.Init(state.window)
 	icon, err := gfx.LoadTexture("assets/icons/icon_16x16.png")
 	if err != nil {
+
 		f := sdl.IOFromFile("error.log", "w")
 		if f == nil {
 			panic(sdl.GetError())
 		}
-		defer f.Close()
 
 		_, err := f.Write([]byte(err.Error()))
 		if err != nil {
 			panic(err)
 		}
+		f.Close()
 		return sdl.APP_FAILURE
+
 	}
 	state.Tex = icon
 	return sdl.APP_CONTINUE
