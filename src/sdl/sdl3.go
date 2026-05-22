@@ -3,6 +3,7 @@ package sdl
 
 import (
 	"solod.dev/so/c"
+	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
 
@@ -11,6 +12,9 @@ type Window struct{}
 
 //so:extern SDL_Renderer
 type Renderer struct{}
+
+//so:extern int
+type Cint int
 
 //so:extern SDL_SetAppMetadata
 func SetAppMetadata(appname, appversion, appidentifier string)
@@ -23,6 +27,9 @@ func Quit()
 
 //so:extern SDL_CreateWindowAndRenderer
 func CreateWindowAndRenderer(title string, width, height int, windowFlags WindowFlags, window **Window, renderer **Renderer) bool
+
+//so:extern SDL_CreateWindow
+func CreateWindow(title string, width, height int, windowFlags WindowFlags) *Window
 
 //so:extern SDL_Log
 func Log(string, ...any)
@@ -38,19 +45,24 @@ func getError() *c.ConstChar
 
 type sdlError struct{ str *c.ConstChar }
 
-func (e sdlError) Error() string { return c.String(e.str) }
+func (e *sdlError) Error() string { return c.String(e.str) }
 
-func GetError() error { return sdlError{str: getError()} }
+func GetError() error {
+	e := mem.Alloc[sdlError](mem.System)
+	e.str = getError()
+	return e
+}
 
 //so:extern SDL_GL_CreateContext
 func GLCreateContext(*Window)
 
 //so:extern SDL_GetWindowSizeInPixels
-func GetWindowSizeInPixels(win *Window, w, h *int)
+func GetWindowSizeInPixels(win *Window, w, h *Cint)
 
 //so:extern SDL_GL_SwapWindow
 func GLSwapWindow(*Window)
 
+//so:extern SDL_Surface
 type Surface struct {
 	w, h   int
 	pixels any

@@ -13,7 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS build/transpiled/*.c)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC build/transpiled)
+target_include_directories(${PROJECT_NAME} PUBLIC build/transpiled external/)
 
 set(CMAKE_BUILD_TYPE Debug)
 # Link with CURL

@@ -7,6 +7,8 @@ import (
 const epsilon = 1e-6
 
 // Clamp - Clamp float value
+//
+//so:include "math_include.h"
 func Clamp(value, min, max float32) float32 {
 	var res float32
 	if value < min {
@@ -181,7 +183,7 @@ func Vector2Reflect(v Vector2, normal Vector2) Vector2 {
 func Vector2Rotate(v Vector2, angle float32) Vector2 {
 	var result = Vector2{}
 
-	sinres, cosres := sincos(angle)
+	sinres, cosres := Sincos(angle)
 
 	result.X = v.X*cosres - v.Y*sinres
 	result.Y = v.X*sinres + v.Y*cosres
@@ -708,19 +710,18 @@ func Vector3Unproject(source Vector3, projection Matrix, view Matrix) Vector3 {
 	return result
 }
 
-// Vector3ToFloat - Converts Vector3 to float32 slice
-func Vector3ToFloat(vec Vector3) []float32 {
-	data := Vector3ToFloatV(vec)
-	return data[:]
+type Float3 struct {
+	V [3]float32
 }
 
-// Vector3ToFloatV - Get Vector3 as float array
-func Vector3ToFloatV(v Vector3) [3]float32 {
-	var result [3]float32
 
-	result[0] = v.X
-	result[1] = v.Y
-	result[2] = v.Z
+// Vector3ToFloatV - Get Vector3 as float array
+func Vector3ToFloat(v Vector3) Float3 {
+	var result Float3
+
+	result.V[0] = v.X
+	result.V[1] = v.Y
+	result.V[2] = v.Z
 
 	return result
 }
@@ -797,14 +798,14 @@ func Vector3Refract(v Vector3, n Vector3, r float32) Vector3 {
 
 // Mat2Radians - Creates a matrix 2x2 from a given radians value
 func Mat2Radians(radians float32) Mat2 {
-	s, c := sincos(radians)
+	s, c := Sincos(radians)
 
 	return NewMat2(c, -s, s, c)
 }
 
 // Mat2Set - Set values from radians to a created matrix 2x2
 func Mat2Set(matrix *Mat2, radians float32) {
-	sin, cos := sincos(radians)
+	sin, cos := Sincos(radians)
 
 	matrix.M00 = cos
 	matrix.M01 = -sin
@@ -1068,7 +1069,7 @@ func MatrixRotate(axis Vector3, angle float32) Matrix {
 		z *= length
 	}
 
-	sinres, cosres := sincos(angle)
+	sinres, cosres := Sincos(angle)
 	t := 1.0 - cosres
 
 	// Cache some matrix values (speed optimization)
@@ -1121,7 +1122,7 @@ func MatrixRotate(axis Vector3, angle float32) Matrix {
 func MatrixRotateX(angle float32) Matrix {
 	result := MatrixIdentity()
 
-	sinres, cosres := sincos(angle)
+	sinres, cosres := Sincos(angle)
 
 	result.M5 = cosres
 	result.M6 = sinres
@@ -1135,7 +1136,7 @@ func MatrixRotateX(angle float32) Matrix {
 func MatrixRotateY(angle float32) Matrix {
 	result := MatrixIdentity()
 
-	sinres, cosres := sincos(angle)
+	sinres, cosres := Sincos(angle)
 
 	result.M0 = cosres
 	result.M2 = -sinres
@@ -1149,7 +1150,7 @@ func MatrixRotateY(angle float32) Matrix {
 func MatrixRotateZ(angle float32) Matrix {
 	result := MatrixIdentity()
 
-	sinres, cosres := sincos(angle)
+	sinres, cosres := Sincos(angle)
 
 	result.M0 = cosres
 	result.M1 = sinres
@@ -1163,9 +1164,9 @@ func MatrixRotateZ(angle float32) Matrix {
 func MatrixRotateXYZ(angle Vector3) Matrix {
 	result := MatrixIdentity()
 
-	sinz, cosz := sincos(-angle.Z)
-	siny, cosy := sincos(-angle.Y)
-	sinx, cosx := sincos(-angle.X)
+	sinz, cosz := Sincos(-angle.Z)
+	siny, cosy := Sincos(-angle.Y)
+	sinx, cosx := Sincos(-angle.X)
 
 	result.M0 = cosz * cosy
 	result.M1 = (cosz * siny * sinx) - (sinz * cosx)
@@ -1187,9 +1188,9 @@ func MatrixRotateXYZ(angle Vector3) Matrix {
 func MatrixRotateZYX(angle Vector3) Matrix {
 	var result = Matrix{}
 
-	sz, cz := sincos(angle.Z)
-	sy, cy := sincos(angle.Y)
-	sx, cx := sincos(angle.X)
+	sz, cz := Sincos(angle.Z)
+	sy, cy := Sincos(angle.Y)
+	sx, cx := Sincos(angle.X)
 
 	result.M0 = cz * cy
 	result.M4 = cz*sy*sx - cx*sz
@@ -1685,7 +1686,7 @@ func QuaternionFromAxisAngle(axis Vector3, angle float32) Quaternion {
 
 	axis = Vector3Normalize(axis)
 
-	sinres, cosres := sincos(angle)
+	sinres, cosres := Sincos(angle)
 
 	result.X = axis.X * sinres
 	result.Y = axis.Y * sinres
@@ -1727,9 +1728,9 @@ func QuaternionToAxisAngle(q Quaternion, outAxis *Vector3, outAngle *float32) {
 func QuaternionFromEuler(pitch, yaw, roll float32) Quaternion {
 	var result Quaternion
 
-	x1, x0 := sincos(pitch * 0.5)
-	y1, y0 := sincos(yaw * 0.5)
-	z1, z0 := sincos(roll * 0.5)
+	x1, x0 := Sincos(pitch * 0.5)
+	y1, y0 := Sincos(yaw * 0.5)
+	z1, z0 := Sincos(roll * 0.5)
 
 	result.X = x1*y0*z0 - x0*y1*z1
 	result.Y = x0*y1*z0 + x1*y0*z1
@@ -1844,7 +1845,7 @@ func MatrixDecompose(mat Matrix, translation *Vector3, rotation *Quaternion, sca
 	}
 }
 
-func sincos(angle float32) (sin, cos float32) {
+func Sincos(angle float32) (float32, float32) {
 	sind := math.Sin(float64(angle))
 	cosd := math.Cos(float64(angle))
 	return float32(sind), float32(cosd)

@@ -227,7 +227,5 @@ const (
 
 type PixelFormat int
 
-const (
-	//so:extern SDL_PIXELFORMAT_RGBA32
-	PIXELFORMAT_RGBA32 PixelFormat = iota
-)
+//so:extern SDL_PIXELFORMAT_RGBA32
+const PIXELFORMAT_RGBA32 PixelFormat = iota

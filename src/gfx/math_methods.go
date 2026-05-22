@@ -445,13 +445,8 @@ func (v Vector3) SubtractValue(sub float32) Vector3 {
 }
 
 // ToFloat - Converts Vector3 to float32 slice
-func (v Vector3) ToFloat() []float32 {
+func (v Vector3) ToFloat() Float3{
 	return Vector3ToFloat(v)
-}
-
-// ToFloatV - Get Vector3 as float array
-func (v Vector3) ToFloatV() [3]float32 {
-	return Vector3ToFloatV(v)
 }
 
 // Transform - Transforms a Vector3 by a given Matrix

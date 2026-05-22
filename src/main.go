@@ -1,6 +1,7 @@
 package SDL
 
 import (
+	"mbc/gfx"
 	"mbc/net/curl"
 	"mbc/sdl"
 
@@ -12,24 +13,38 @@ import (
 var _ string
 
 type AppState struct {
-	window   *sdl.Window
-	renderer *sdl.Renderer
+	window *sdl.Window
+	Tex    gfx.Texture
 }
-//so:extern int
-type CINT int
-func AppInit(appState *any, argc CINT, argv **c.Char) sdl.AppResult {
-	if !curl.Init() {
-		panic("failed to init curl.")
+
+func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
+	var state = mem.Alloc[AppState](nil)
+	*appState = state
+
+	sdl.Init(sdl.INIT_VIDEO)
+	state.window = sdl.CreateWindow("MagicBetaClient", 640, 480, sdl.WINDOW_OPENGL|sdl.WINDOW_RESIZABLE)
+
+	gfx.Init(state.window)
+	icon, err := gfx.LoadTexture("./assets/icon.png")
+	if err != nil {
+		panic(err)
 	}
-
-	var s = mem.Alloc[AppState](nil)
-
-	*appState = s
-
+	state.Tex = icon
 	return sdl.APP_CONTINUE
 }
 
 func AppIterate(appState any) sdl.AppResult {
+	state := appState.(*AppState)
+	_=state
+	gfx.BeginDrawing()
+	gfx.DrawTexturePro(
+		state.Tex,
+		gfx.NewRectangle(0, 0, float32(state.Tex.Width), float32(state.Tex.Height)),
+		gfx.NewRectangle(0, 0, float32(state.Tex.Width), float32(state.Tex.Height)),
+		gfx.Vector2{},
+		0, gfx.White,
+	)
+	gfx.EndDrawing()
 	return sdl.APP_CONTINUE
 }
 

@@ -72,11 +72,13 @@ func NewQuaternion(x, y, z, w float32) Quaternion {
 
 // Color type, RGBA (32bit)
 // TODO remove later, keep type for now to not break code
-type Color = color.RGBA
+type Color struct{
+	R,G,B,A uint8
+}
 
 // NewColor - Returns new Color
-func NewColor(r, g, b, a uint8) color.RGBA {
-	return color.RGBA{r, g, b, a}
+func NewColor(r, g, b, a uint8) Color{
+	return Color{r, g, b, a}
 }
 
 // Rectangle type
@@ -122,8 +124,8 @@ func (r *RectangleInt32) ToFloat32() Rectangle {
 	return rect
 }
 
-// Camera3D type, defines a camera position/orientation in 3d space
-type Camera3D struct {
+// Camera type, defines a camera position/orientation in 3d space
+type Camera struct {
 	// Camera position
 	Position Vector3
 	// Camera target it looks-at
@@ -132,15 +134,12 @@ type Camera3D struct {
 	Up Vector3
 	// Camera field-of-view aperture in Y (degrees) in perspective, used as near plane height in world units in orthographic
 	Fovy float32
-	// Camera type, controlling projection type, either CameraPerspective or CameraOrthographic.
 }
 
-// Camera type fallback, defaults to Camera3D
-type Camera = Camera3D
 
 // NewCamera3D - Returns new Camera3D
-func NewCamera3D(pos, target, up Vector3, fovy float32) Camera3D {
-	return Camera3D{pos, target, up, fovy}
+func NewCamera3D(pos, target, up Vector3, fovy float32) Camera {
+	return Camera{pos, target, up, fovy}
 }
 
 // Camera2D type, defines position/orientation in 2d space

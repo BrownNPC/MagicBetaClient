@@ -37,7 +37,11 @@ func ReadFromSocket(curl *CURL, buffer any, size int) (int, error)
 func WriteToSocket(curl *CURL, buffer any, size int) (int, error)
 
 //so:extern CurlInit
-func Init() bool
+func curlGlobalInit() bool
+
+func init() {
+	curlGlobalInit()
+}
 
 //so:extern CurlDeInit
 func DeInit()

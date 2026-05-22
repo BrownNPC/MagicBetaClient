@@ -6,7 +6,7 @@ package gl
 
 import "solod.dev/so/c"
 
-var _ c.Char
+var _ uint8
 
 //so:extern GL_ACCUM
 const ACCUM = 256
@@ -2306,7 +2306,7 @@ func IndexMask(mask uint32) {
 }
 
 //so:extern glColorMask
-func ColorMask(red c.Char, green c.Char, blue c.Char, alpha c.Char) {
+func ColorMask(red uint8, green uint8, blue uint8, alpha uint8) {
 	_, _, _, _ = red, green, blue, alpha
 }
 
@@ -2366,12 +2366,12 @@ func PolygonStipple(mask string) {
 }
 
 //so:extern glGetPolygonStipple
-func GetPolygonStipple(mask *c.Char) {
+func GetPolygonStipple(mask *uint8) {
 	_ = mask
 }
 
 //so:extern glEdgeFlag
-func EdgeFlag(flag c.Char) {
+func EdgeFlag(flag uint8) {
 	_ = flag
 }
 
@@ -2416,7 +2416,7 @@ func Disable(cap uint32) {
 }
 
 //so:extern glIsEnabled
-func IsEnabled(cap uint32) c.Char {
+func IsEnabled(cap uint32) uint8 {
 	_ = cap
 	return 0
 }
@@ -2432,7 +2432,7 @@ func DisableClientState(cap uint32) {
 }
 
 //so:extern glGetBooleanv
-func GetBooleanv(pname uint32, params *c.Char) {
+func GetBooleanv(pname uint32, params *uint8) {
 	_, _ = pname, params
 }
 
@@ -2510,7 +2510,7 @@ func DepthFunc(func_ uint32) {
 }
 
 //so:extern glDepthMask
-func DepthMask(flag c.Char) {
+func DepthMask(flag uint8) {
 	_ = flag
 }
 
@@ -2612,7 +2612,7 @@ func Translatef(x float32, y float32, z float32) {
 }
 
 //so:extern glIsList
-func IsList(list uint32) c.Char {
+func IsList(list uint32) uint8 {
 	_ = list
 	return 0
 }
@@ -2782,7 +2782,7 @@ func Vertex4sv(v *int16) {
 }
 
 //so:extern glNormal3b
-func Normal3b(nx c.Char, ny c.Char, nz c.Char) {
+func Normal3b(nx uint8, ny uint8, nz uint8) {
 	_, _, _ = nx, ny, nz
 }
 
@@ -2852,7 +2852,7 @@ func Indexs(c int16) {
 }
 
 //so:extern glIndexub
-func Indexub(c c.Char) {
+func Indexub(c uint8) {
 	_ = c
 }
 
@@ -2882,7 +2882,7 @@ func Indexubv(c string) {
 }
 
 //so:extern glColor3b
-func Color3b(red c.Char, green c.Char, blue c.Char) {
+func Color3b(red uint8, green uint8, blue uint8) {
 	_, _, _ = red, green, blue
 }
 
@@ -2907,7 +2907,7 @@ func Color3s(red int16, green int16, blue int16) {
 }
 
 //so:extern glColor3ub
-func Color3ub(red c.Char, green c.Char, blue c.Char) {
+func Color3ub(red uint8, green uint8, blue uint8) {
 	_, _, _ = red, green, blue
 }
 
@@ -2922,7 +2922,7 @@ func Color3us(red uint16, green uint16, blue uint16) {
 }
 
 //so:extern glColor4b
-func Color4b(red c.Char, green c.Char, blue c.Char, alpha c.Char) {
+func Color4b(red uint8, green uint8, blue uint8, alpha uint8) {
 	_, _, _, _ = red, green, blue, alpha
 }
 
@@ -2947,7 +2947,7 @@ func Color4s(red int16, green int16, blue int16, alpha int16) {
 }
 
 //so:extern glColor4ub
-func Color4ub(red c.Char, green c.Char, blue c.Char, alpha c.Char) {
+func Color4ub(red uint8, green uint8, blue uint8, alpha uint8) {
 	_, _, _, _ = red, green, blue, alpha
 }
 
@@ -3752,13 +3752,13 @@ func PrioritizeTextures(n int32, textures *uint32, priorities *float32) {
 }
 
 //so:extern glAreTexturesResident
-func AreTexturesResident(n int32, textures *uint32, residences *c.Char) c.Char {
+func AreTexturesResident(n int32, textures *uint32, residences *uint8) uint8 {
 	_, _, _ = n, textures, residences
 	return 0
 }
 
 //so:extern glIsTexture
-func IsTexture(texture uint32) c.Char {
+func IsTexture(texture uint32) uint8 {
 	_ = texture
 	return 0
 }
@@ -4037,7 +4037,7 @@ func BlendColor(red float32, green float32, blue float32, alpha float32) {
 }
 
 //so:extern glHistogram
-func Histogram(target uint32, width int32, internalformat uint32, sink c.Char) {
+func Histogram(target uint32, width int32, internalformat uint32, sink uint8) {
 	_, _, _, _ = target, width, internalformat, sink
 }
 
@@ -4047,7 +4047,7 @@ func ResetHistogram(target uint32) {
 }
 
 //so:extern glGetHistogram
-func GetHistogram(target uint32, reset c.Char, format uint32, type_ uint32, values any) {
+func GetHistogram(target uint32, reset uint8, format uint32, type_ uint32, values any) {
 	_, _, _, _, _ = target, reset, format, type_, values
 }
 
@@ -4062,7 +4062,7 @@ func GetHistogramParameteriv(target uint32, pname uint32, params *int32) {
 }
 
 //so:extern glMinmax
-func Minmax(target uint32, internalformat uint32, sink c.Char) {
+func Minmax(target uint32, internalformat uint32, sink uint8) {
 	_, _, _ = target, internalformat, sink
 }
 
@@ -4072,7 +4072,7 @@ func ResetMinmax(target uint32) {
 }
 
 //so:extern glGetMinmax
-func GetMinmax(target uint32, reset c.Char, format uint32, types uint32, values any) {
+func GetMinmax(target uint32, reset uint8, format uint32, types uint32, values any) {
 	_, _, _, _, _ = target, reset, format, types, values
 }
 
@@ -4377,7 +4377,7 @@ func MultTransposeMatrixf(m *float32) {
 }
 
 //so:extern glSampleCoverage
-func SampleCoverage(value float32, invert c.Char) {
+func SampleCoverage(value float32, invert uint8) {
 	_, _ = value, invert
 }
 
