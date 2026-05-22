@@ -8,6 +8,9 @@ import "solod.dev/so/c"
 
 var _ uint8
 
+//so:extern GLuint
+type GLuint uint32
+
 //so:extern GL_ACCUM
 const ACCUM = 256
 
@@ -2296,12 +2299,12 @@ func ClearColor(red float32, green float32, blue float32, alpha float32) {
 }
 
 //so:extern glClear
-func Clear(mask uint32) {
+func Clear(mask GLuint) {
 	_ = mask
 }
 
 //so:extern glIndexMask
-func IndexMask(mask uint32) {
+func IndexMask(mask GLuint) {
 	_ = mask
 }
 
@@ -2311,27 +2314,27 @@ func ColorMask(red uint8, green uint8, blue uint8, alpha uint8) {
 }
 
 //so:extern glAlphaFunc
-func AlphaFunc(func_ uint32, ref float32) {
+func AlphaFunc(func_ GLuint, ref float32) {
 	_, _ = func_, ref
 }
 
 //so:extern glBlendFunc
-func BlendFunc(sfactor uint32, dfactor uint32) {
+func BlendFunc(sfactor GLuint, dfactor GLuint) {
 	_, _ = sfactor, dfactor
 }
 
 //so:extern glLogicOp
-func LogicOp(opcode uint32) {
+func LogicOp(opcode GLuint) {
 	_ = opcode
 }
 
 //so:extern glCullFace
-func CullFace(mode uint32) {
+func CullFace(mode GLuint) {
 	_ = mode
 }
 
 //so:extern glFrontFace
-func FrontFace(mode uint32) {
+func FrontFace(mode GLuint) {
 	_ = mode
 }
 
@@ -2351,7 +2354,7 @@ func LineStipple(factor int32, pattern uint16) {
 }
 
 //so:extern glPolygonMode
-func PolygonMode(face uint32, mode uint32) {
+func PolygonMode(face GLuint, mode GLuint) {
 	_, _ = face, mode
 }
 
@@ -2386,73 +2389,73 @@ func Scissor(x int32, y int32, width int32, height int32) {
 }
 
 //so:extern glClipPlane
-func ClipPlane(plane uint32, equation *float64) {
+func ClipPlane(plane GLuint, equation *float64) {
 	_, _ = plane, equation
 }
 
 //so:extern glGetClipPlane
-func GetClipPlane(plane uint32, equation *float64) {
+func GetClipPlane(plane GLuint, equation *float64) {
 	_, _ = plane, equation
 }
 
 //so:extern glDrawBuffer
-func DrawBuffer(mode uint32) {
+func DrawBuffer(mode GLuint) {
 	_ = mode
 }
 
 //so:extern glReadBuffer
-func ReadBuffer(mode uint32) {
+func ReadBuffer(mode GLuint) {
 	_ = mode
 }
 
 //so:extern glEnable
-func Enable(cap uint32) {
+func Enable(cap GLuint) {
 	_ = cap
 }
 
 //so:extern glDisable
-func Disable(cap uint32) {
+func Disable(cap GLuint) {
 	_ = cap
 }
 
 //so:extern glIsEnabled
-func IsEnabled(cap uint32) uint8 {
+func IsEnabled(cap GLuint) uint8 {
 	_ = cap
 	return 0
 }
 
 //so:extern glEnableClientState
-func EnableClientState(cap uint32) {
+func EnableClientState(cap GLuint) {
 	_ = cap
 }
 
 //so:extern glDisableClientState
-func DisableClientState(cap uint32) {
+func DisableClientState(cap GLuint) {
 	_ = cap
 }
 
 //so:extern glGetBooleanv
-func GetBooleanv(pname uint32, params *uint8) {
+func GetBooleanv(pname GLuint, params *uint8) {
 	_, _ = pname, params
 }
 
 //so:extern glGetDoublev
-func GetDoublev(pname uint32, params *float64) {
+func GetDoublev(pname GLuint, params *float64) {
 	_, _ = pname, params
 }
 
 //so:extern glGetFloatv
-func GetFloatv(pname uint32, params *float32) {
+func GetFloatv(pname GLuint, params *float32) {
 	_, _ = pname, params
 }
 
 //so:extern glGetIntegerv
-func GetIntegerv(pname uint32, params *int32) {
+func GetIntegerv(pname GLuint, params *int32) {
 	_, _ = pname, params
 }
 
 //so:extern glPushAttrib
-func PushAttrib(mask uint32) {
+func PushAttrib(mask GLuint) {
 	_ = mask
 }
 
@@ -2461,7 +2464,7 @@ func PopAttrib() {
 }
 
 //so:extern glPushClientAttrib
-func PushClientAttrib(mask uint32) {
+func PushClientAttrib(mask GLuint) {
 	_ = mask
 }
 
@@ -2470,18 +2473,18 @@ func PopClientAttrib() {
 }
 
 //so:extern glRenderMode
-func RenderMode(mode uint32) int32 {
+func RenderMode(mode GLuint) int32 {
 	_ = mode
 	return 0
 }
 
 //so:extern glGetError
-func GetError() uint32 {
+func GetError() GLuint {
 	return 0
 }
 
 //so:extern glGetString
-func GetString(name uint32) *c.ConstChar {
+func GetString(name GLuint) *c.ConstChar {
 	_ = name
 	return nil
 }
@@ -2495,7 +2498,7 @@ func Flush() {
 }
 
 //so:extern glHint
-func Hint(target uint32, mode uint32) {
+func Hint(target GLuint, mode GLuint) {
 	_, _ = target, mode
 }
 
@@ -2505,7 +2508,7 @@ func ClearDepth(depth float64) {
 }
 
 //so:extern glDepthFunc
-func DepthFunc(func_ uint32) {
+func DepthFunc(func_ GLuint) {
 	_ = func_
 }
 
@@ -2525,12 +2528,12 @@ func ClearAccum(red float32, green float32, blue float32, alpha float32) {
 }
 
 //so:extern glAccum
-func Accum(op uint32, value float32) {
+func Accum(op GLuint, value float32) {
 	_, _ = op, value
 }
 
 //so:extern glMatrixMode
-func MatrixMode(mode uint32) {
+func MatrixMode(mode GLuint) {
 	_ = mode
 }
 
@@ -2612,24 +2615,24 @@ func Translatef(x float32, y float32, z float32) {
 }
 
 //so:extern glIsList
-func IsList(list uint32) uint8 {
+func IsList(list GLuint) uint8 {
 	_ = list
 	return 0
 }
 
 //so:extern glDeleteLists
-func DeleteLists(list uint32, range_ int32) {
+func DeleteLists(list GLuint, range_ int32) {
 	_, _ = list, range_
 }
 
 //so:extern glGenLists
-func GenLists(range_ int32) uint32 {
+func GenLists(range_ int32) GLuint {
 	_ = range_
 	return 0
 }
 
 //so:extern glNewList
-func NewList(list uint32, mode uint32) {
+func NewList(list GLuint, mode GLuint) {
 	_, _ = list, mode
 }
 
@@ -2638,22 +2641,22 @@ func EndList() {
 }
 
 //so:extern glCallList
-func CallList(list uint32) {
+func CallList(list GLuint) {
 	_ = list
 }
 
 //so:extern glCallLists
-func CallLists(n int32, type_ uint32, lists any) {
+func CallLists(n int32, type_ GLuint, lists any) {
 	_, _, _ = n, type_, lists
 }
 
 //so:extern glListBase
-func ListBase(base uint32) {
+func ListBase(base GLuint) {
 	_ = base
 }
 
 //so:extern glBegin
-func Begin(mode uint32) {
+func Begin(mode GLuint) {
 	_ = mode
 }
 
@@ -2912,7 +2915,7 @@ func Color3ub(red uint8, green uint8, blue uint8) {
 }
 
 //so:extern glColor3ui
-func Color3ui(red uint32, green uint32, blue uint32) {
+func Color3ui(red GLuint, green GLuint, blue GLuint) {
 	_, _, _ = red, green, blue
 }
 
@@ -2952,7 +2955,7 @@ func Color4ub(red uint8, green uint8, blue uint8, alpha uint8) {
 }
 
 //so:extern glColor4ui
-func Color4ui(red uint32, green uint32, blue uint32, alpha uint32) {
+func Color4ui(red GLuint, green GLuint, blue GLuint, alpha GLuint) {
 	_, _, _, _ = red, green, blue, alpha
 }
 
@@ -2992,7 +2995,7 @@ func Color3ubv(v string) {
 }
 
 //so:extern glColor3uiv
-func Color3uiv(v *uint32) {
+func Color3uiv(v *GLuint) {
 	_ = v
 }
 
@@ -3032,7 +3035,7 @@ func Color4ubv(v string) {
 }
 
 //so:extern glColor4uiv
-func Color4uiv(v *uint32) {
+func Color4uiv(v *GLuint) {
 	_ = v
 }
 
@@ -3362,27 +3365,27 @@ func Rectsv(v1 *int16, v2 *int16) {
 }
 
 //so:extern glVertexPointer
-func VertexPointer(size int32, type_ uint32, stride int32, ptr any) {
+func VertexPointer(size int32, type_ GLuint, stride int32, ptr any) {
 	_, _, _, _ = size, type_, stride, ptr
 }
 
 //so:extern glNormalPointer
-func NormalPointer(type_ uint32, stride int32, ptr any) {
+func NormalPointer(type_ GLuint, stride int32, ptr any) {
 	_, _, _ = type_, stride, ptr
 }
 
 //so:extern glColorPointer
-func ColorPointer(size int32, type_ uint32, stride int32, ptr any) {
+func ColorPointer(size int32, type_ GLuint, stride int32, ptr any) {
 	_, _, _, _ = size, type_, stride, ptr
 }
 
 //so:extern glIndexPointer
-func IndexPointer(type_ uint32, stride int32, ptr any) {
+func IndexPointer(type_ GLuint, stride int32, ptr any) {
 	_, _, _ = type_, stride, ptr
 }
 
 //so:extern glTexCoordPointer
-func TexCoordPointer(size int32, type_ uint32, stride int32, ptr any) {
+func TexCoordPointer(size int32, type_ GLuint, stride int32, ptr any) {
 	_, _, _, _ = size, type_, stride, ptr
 }
 
@@ -3392,7 +3395,7 @@ func EdgeFlagPointer(stride int32, ptr any) {
 }
 
 //so:extern glGetPointerv
-func GetPointerv(pname uint32, params *any) {
+func GetPointerv(pname GLuint, params *any) {
 	_, _ = pname, params
 }
 
@@ -3402,107 +3405,107 @@ func ArrayElement(i int32) {
 }
 
 //so:extern glDrawArrays
-func DrawArrays(mode uint32, first int32, count int32) {
+func DrawArrays(mode GLuint, first int32, count int32) {
 	_, _, _ = mode, first, count
 }
 
 //so:extern glDrawElements
-func DrawElements(mode uint32, count int32, type_ uint32, indices any) {
+func DrawElements(mode GLuint, count int32, type_ GLuint, indices any) {
 	_, _, _, _ = mode, count, type_, indices
 }
 
 //so:extern glInterleavedArrays
-func InterleavedArrays(format uint32, stride int32, pointer any) {
+func InterleavedArrays(format GLuint, stride int32, pointer any) {
 	_, _, _ = format, stride, pointer
 }
 
 //so:extern glShadeModel
-func ShadeModel(mode uint32) {
+func ShadeModel(mode GLuint) {
 	_ = mode
 }
 
 //so:extern glLightf
-func Lightf(light uint32, pname uint32, param float32) {
+func Lightf(light GLuint, pname GLuint, param float32) {
 	_, _, _ = light, pname, param
 }
 
 //so:extern glLighti
-func Lighti(light uint32, pname uint32, param int32) {
+func Lighti(light GLuint, pname GLuint, param int32) {
 	_, _, _ = light, pname, param
 }
 
 //so:extern glLightfv
-func Lightfv(light uint32, pname uint32, params *float32) {
+func Lightfv(light GLuint, pname GLuint, params *float32) {
 	_, _, _ = light, pname, params
 }
 
 //so:extern glLightiv
-func Lightiv(light uint32, pname uint32, params *int32) {
+func Lightiv(light GLuint, pname GLuint, params *int32) {
 	_, _, _ = light, pname, params
 }
 
 //so:extern glGetLightfv
-func GetLightfv(light uint32, pname uint32, params *float32) {
+func GetLightfv(light GLuint, pname GLuint, params *float32) {
 	_, _, _ = light, pname, params
 }
 
 //so:extern glGetLightiv
-func GetLightiv(light uint32, pname uint32, params *int32) {
+func GetLightiv(light GLuint, pname GLuint, params *int32) {
 	_, _, _ = light, pname, params
 }
 
 //so:extern glLightModelf
-func LightModelf(pname uint32, param float32) {
+func LightModelf(pname GLuint, param float32) {
 	_, _ = pname, param
 }
 
 //so:extern glLightModeli
-func LightModeli(pname uint32, param int32) {
+func LightModeli(pname GLuint, param int32) {
 	_, _ = pname, param
 }
 
 //so:extern glLightModelfv
-func LightModelfv(pname uint32, params *float32) {
+func LightModelfv(pname GLuint, params *float32) {
 	_, _ = pname, params
 }
 
 //so:extern glLightModeliv
-func LightModeliv(pname uint32, params *int32) {
+func LightModeliv(pname GLuint, params *int32) {
 	_, _ = pname, params
 }
 
 //so:extern glMaterialf
-func Materialf(face uint32, pname uint32, param float32) {
+func Materialf(face GLuint, pname GLuint, param float32) {
 	_, _, _ = face, pname, param
 }
 
 //so:extern glMateriali
-func Materiali(face uint32, pname uint32, param int32) {
+func Materiali(face GLuint, pname GLuint, param int32) {
 	_, _, _ = face, pname, param
 }
 
 //so:extern glMaterialfv
-func Materialfv(face uint32, pname uint32, params *float32) {
+func Materialfv(face GLuint, pname GLuint, params *float32) {
 	_, _, _ = face, pname, params
 }
 
 //so:extern glMaterialiv
-func Materialiv(face uint32, pname uint32, params *int32) {
+func Materialiv(face GLuint, pname GLuint, params *int32) {
 	_, _, _ = face, pname, params
 }
 
 //so:extern glGetMaterialfv
-func GetMaterialfv(face uint32, pname uint32, params *float32) {
+func GetMaterialfv(face GLuint, pname GLuint, params *float32) {
 	_, _, _ = face, pname, params
 }
 
 //so:extern glGetMaterialiv
-func GetMaterialiv(face uint32, pname uint32, params *int32) {
+func GetMaterialiv(face GLuint, pname GLuint, params *int32) {
 	_, _, _ = face, pname, params
 }
 
 //so:extern glColorMaterial
-func ColorMaterial(face uint32, mode uint32) {
+func ColorMaterial(face GLuint, mode GLuint) {
 	_, _ = face, mode
 }
 
@@ -3512,52 +3515,52 @@ func PixelZoom(xfactor float32, yfactor float32) {
 }
 
 //so:extern glPixelStoref
-func PixelStoref(pname uint32, param float32) {
+func PixelStoref(pname GLuint, param float32) {
 	_, _ = pname, param
 }
 
 //so:extern glPixelStorei
-func PixelStorei(pname uint32, param int32) {
+func PixelStorei(pname GLuint, param int32) {
 	_, _ = pname, param
 }
 
 //so:extern glPixelTransferf
-func PixelTransferf(pname uint32, param float32) {
+func PixelTransferf(pname GLuint, param float32) {
 	_, _ = pname, param
 }
 
 //so:extern glPixelTransferi
-func PixelTransferi(pname uint32, param int32) {
+func PixelTransferi(pname GLuint, param int32) {
 	_, _ = pname, param
 }
 
 //so:extern glPixelMapfv
-func PixelMapfv(map_ uint32, mapsize int32, values *float32) {
+func PixelMapfv(map_ GLuint, mapsize int32, values *float32) {
 	_, _, _ = map_, mapsize, values
 }
 
 //so:extern glPixelMapuiv
-func PixelMapuiv(map_ uint32, mapsize int32, values *uint32) {
+func PixelMapuiv(map_ GLuint, mapsize int32, values *GLuint) {
 	_, _, _ = map_, mapsize, values
 }
 
 //so:extern glPixelMapusv
-func PixelMapusv(map_ uint32, mapsize int32, values *uint16) {
+func PixelMapusv(map_ GLuint, mapsize int32, values *uint16) {
 	_, _, _ = map_, mapsize, values
 }
 
 //so:extern glGetPixelMapfv
-func GetPixelMapfv(map_ uint32, values *float32) {
+func GetPixelMapfv(map_ GLuint, values *float32) {
 	_, _ = map_, values
 }
 
 //so:extern glGetPixelMapuiv
-func GetPixelMapuiv(map_ uint32, values *uint32) {
+func GetPixelMapuiv(map_ GLuint, values *GLuint) {
 	_, _ = map_, values
 }
 
 //so:extern glGetPixelMapusv
-func GetPixelMapusv(map_ uint32, values *uint16) {
+func GetPixelMapusv(map_ GLuint, values *uint16) {
 	_, _ = map_, values
 }
 
@@ -3567,32 +3570,32 @@ func Bitmap(width int32, height int32, xorig float32, yorig float32, xmove float
 }
 
 //so:extern glReadPixels
-func ReadPixels(x int32, y int32, width int32, height int32, format uint32, type_ uint32, pixels any) {
+func ReadPixels(x int32, y int32, width int32, height int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _, _, _ = x, y, width, height, format, type_, pixels
 }
 
 //so:extern glDrawPixels
-func DrawPixels(width int32, height int32, format uint32, type_ uint32, pixels any) {
+func DrawPixels(width int32, height int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _ = width, height, format, type_, pixels
 }
 
 //so:extern glCopyPixels
-func CopyPixels(x int32, y int32, width int32, height int32, type_ uint32) {
+func CopyPixels(x int32, y int32, width int32, height int32, type_ GLuint) {
 	_, _, _, _, _ = x, y, width, height, type_
 }
 
 //so:extern glStencilFunc
-func StencilFunc(func_ uint32, ref int32, mask uint32) {
+func StencilFunc(func_ GLuint, ref int32, mask GLuint) {
 	_, _, _ = func_, ref, mask
 }
 
 //so:extern glStencilMask
-func StencilMask(mask uint32) {
+func StencilMask(mask GLuint) {
 	_ = mask
 }
 
 //so:extern glStencilOp
-func StencilOp(fail uint32, zfail uint32, zpass uint32) {
+func StencilOp(fail GLuint, zfail GLuint, zpass GLuint) {
 	_, _, _ = fail, zfail, zpass
 }
 
@@ -3602,229 +3605,229 @@ func ClearStencil(s int32) {
 }
 
 //so:extern glTexGend
-func TexGend(coord uint32, pname uint32, param float64) {
+func TexGend(coord GLuint, pname GLuint, param float64) {
 	_, _, _ = coord, pname, param
 }
 
 //so:extern glTexGenf
-func TexGenf(coord uint32, pname uint32, param float32) {
+func TexGenf(coord GLuint, pname GLuint, param float32) {
 	_, _, _ = coord, pname, param
 }
 
 //so:extern glTexGeni
-func TexGeni(coord uint32, pname uint32, param int32) {
+func TexGeni(coord GLuint, pname GLuint, param int32) {
 	_, _, _ = coord, pname, param
 }
 
 //so:extern glTexGendv
-func TexGendv(coord uint32, pname uint32, params *float64) {
+func TexGendv(coord GLuint, pname GLuint, params *float64) {
 	_, _, _ = coord, pname, params
 }
 
 //so:extern glTexGenfv
-func TexGenfv(coord uint32, pname uint32, params *float32) {
+func TexGenfv(coord GLuint, pname GLuint, params *float32) {
 	_, _, _ = coord, pname, params
 }
 
 //so:extern glTexGeniv
-func TexGeniv(coord uint32, pname uint32, params *int32) {
+func TexGeniv(coord GLuint, pname GLuint, params *int32) {
 	_, _, _ = coord, pname, params
 }
 
 //so:extern glGetTexGendv
-func GetTexGendv(coord uint32, pname uint32, params *float64) {
+func GetTexGendv(coord GLuint, pname GLuint, params *float64) {
 	_, _, _ = coord, pname, params
 }
 
 //so:extern glGetTexGenfv
-func GetTexGenfv(coord uint32, pname uint32, params *float32) {
+func GetTexGenfv(coord GLuint, pname GLuint, params *float32) {
 	_, _, _ = coord, pname, params
 }
 
 //so:extern glGetTexGeniv
-func GetTexGeniv(coord uint32, pname uint32, params *int32) {
+func GetTexGeniv(coord GLuint, pname GLuint, params *int32) {
 	_, _, _ = coord, pname, params
 }
 
 //so:extern glTexEnvf
-func TexEnvf(target uint32, pname uint32, param float32) {
+func TexEnvf(target GLuint, pname GLuint, param float32) {
 	_, _, _ = target, pname, param
 }
 
 //so:extern glTexEnvi
-func TexEnvi(target uint32, pname uint32, param int32) {
+func TexEnvi(target GLuint, pname GLuint, param int32) {
 	_, _, _ = target, pname, param
 }
 
 //so:extern glTexEnvfv
-func TexEnvfv(target uint32, pname uint32, params *float32) {
+func TexEnvfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glTexEnviv
-func TexEnviv(target uint32, pname uint32, params *int32) {
+func TexEnviv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetTexEnvfv
-func GetTexEnvfv(target uint32, pname uint32, params *float32) {
+func GetTexEnvfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetTexEnviv
-func GetTexEnviv(target uint32, pname uint32, params *int32) {
+func GetTexEnviv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glTexParameterf
-func TexParameterf(target uint32, pname uint32, param float32) {
+func TexParameterf(target GLuint, pname GLuint, param float32) {
 	_, _, _ = target, pname, param
 }
 
 //so:extern glTexParameteri
-func TexParameteri(target uint32, pname uint32, param int32) {
+func TexParameteri(target GLuint, pname GLuint, param int32) {
 	_, _, _ = target, pname, param
 }
 
 //so:extern glTexParameterfv
-func TexParameterfv(target uint32, pname uint32, params *float32) {
+func TexParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glTexParameteriv
-func TexParameteriv(target uint32, pname uint32, params *int32) {
+func TexParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetTexParameterfv
-func GetTexParameterfv(target uint32, pname uint32, params *float32) {
+func GetTexParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetTexParameteriv
-func GetTexParameteriv(target uint32, pname uint32, params *int32) {
+func GetTexParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetTexLevelParameterfv
-func GetTexLevelParameterfv(target uint32, level int32, pname uint32, params *float32) {
+func GetTexLevelParameterfv(target GLuint, level int32, pname GLuint, params *float32) {
 	_, _, _, _ = target, level, pname, params
 }
 
 //so:extern glGetTexLevelParameteriv
-func GetTexLevelParameteriv(target uint32, level int32, pname uint32, params *int32) {
+func GetTexLevelParameteriv(target GLuint, level int32, pname GLuint, params *int32) {
 	_, _, _, _ = target, level, pname, params
 }
 
 //so:extern glTexImage1D
-func TexImage1D(target uint32, level int32, internalFormat int32, width int32, border int32, format uint32, type_ uint32, pixels any) {
+func TexImage1D(target GLuint, level int32, internalFormat int32, width int32, border int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _, _, _, _ = target, level, internalFormat, width, border, format, type_, pixels
 }
 
 //so:extern glTexImage2D
-func TexImage2D(target uint32, level int32, internalFormat int32, width int32, height int32, border int32, format uint32, type_ uint32, pixels any) {
+func TexImage2D(target GLuint, level int32, internalFormat int32, width int32, height int32, border int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _, _, _, _, _ = target, level, internalFormat, width, height, border, format, type_, pixels
 }
 
 //so:extern glGetTexImage
-func GetTexImage(target uint32, level int32, format uint32, type_ uint32, pixels any) {
+func GetTexImage(target GLuint, level int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _ = target, level, format, type_, pixels
 }
 
 //so:extern glGenTextures
-func GenTextures(n int32, textures *uint32) {
+func GenTextures(n int32, textures *GLuint) {
 	_, _ = n, textures
 }
 
 //so:extern glDeleteTextures
-func DeleteTextures(n int32, textures *uint32) {
+func DeleteTextures(n int32, textures *GLuint) {
 	_, _ = n, textures
 }
 
 //so:extern glBindTexture
-func BindTexture(target uint32, texture uint32) {
+func BindTexture(target GLuint, texture GLuint) {
 	_, _ = target, texture
 }
 
 //so:extern glPrioritizeTextures
-func PrioritizeTextures(n int32, textures *uint32, priorities *float32) {
+func PrioritizeTextures(n int32, textures *GLuint, priorities *float32) {
 	_, _, _ = n, textures, priorities
 }
 
 //so:extern glAreTexturesResident
-func AreTexturesResident(n int32, textures *uint32, residences *uint8) uint8 {
+func AreTexturesResident(n int32, textures *GLuint, residences *uint8) uint8 {
 	_, _, _ = n, textures, residences
 	return 0
 }
 
 //so:extern glIsTexture
-func IsTexture(texture uint32) uint8 {
+func IsTexture(texture GLuint) uint8 {
 	_ = texture
 	return 0
 }
 
 //so:extern glTexSubImage1D
-func TexSubImage1D(target uint32, level int32, xoffset int32, width int32, format uint32, type_ uint32, pixels any) {
+func TexSubImage1D(target GLuint, level int32, xoffset int32, width int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _, _, _ = target, level, xoffset, width, format, type_, pixels
 }
 
 //so:extern glTexSubImage2D
-func TexSubImage2D(target uint32, level int32, xoffset int32, yoffset int32, width int32, height int32, format uint32, type_ uint32, pixels any) {
+func TexSubImage2D(target GLuint, level int32, xoffset int32, yoffset int32, width int32, height int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _, _, _, _, _ = target, level, xoffset, yoffset, width, height, format, type_, pixels
 }
 
 //so:extern glCopyTexImage1D
-func CopyTexImage1D(target uint32, level int32, internalformat uint32, x int32, y int32, width int32, border int32) {
+func CopyTexImage1D(target GLuint, level int32, internalformat GLuint, x int32, y int32, width int32, border int32) {
 	_, _, _, _, _, _, _ = target, level, internalformat, x, y, width, border
 }
 
 //so:extern glCopyTexImage2D
-func CopyTexImage2D(target uint32, level int32, internalformat uint32, x int32, y int32, width int32, height int32, border int32) {
+func CopyTexImage2D(target GLuint, level int32, internalformat GLuint, x int32, y int32, width int32, height int32, border int32) {
 	_, _, _, _, _, _, _, _ = target, level, internalformat, x, y, width, height, border
 }
 
 //so:extern glCopyTexSubImage1D
-func CopyTexSubImage1D(target uint32, level int32, xoffset int32, x int32, y int32, width int32) {
+func CopyTexSubImage1D(target GLuint, level int32, xoffset int32, x int32, y int32, width int32) {
 	_, _, _, _, _, _ = target, level, xoffset, x, y, width
 }
 
 //so:extern glCopyTexSubImage2D
-func CopyTexSubImage2D(target uint32, level int32, xoffset int32, yoffset int32, x int32, y int32, width int32, height int32) {
+func CopyTexSubImage2D(target GLuint, level int32, xoffset int32, yoffset int32, x int32, y int32, width int32, height int32) {
 	_, _, _, _, _, _, _, _ = target, level, xoffset, yoffset, x, y, width, height
 }
 
 //so:extern glMap1d
-func Map1d(target uint32, u1 float64, u2 float64, stride int32, order int32, points *float64) {
+func Map1d(target GLuint, u1 float64, u2 float64, stride int32, order int32, points *float64) {
 	_, _, _, _, _, _ = target, u1, u2, stride, order, points
 }
 
 //so:extern glMap1f
-func Map1f(target uint32, u1 float32, u2 float32, stride int32, order int32, points *float32) {
+func Map1f(target GLuint, u1 float32, u2 float32, stride int32, order int32, points *float32) {
 	_, _, _, _, _, _ = target, u1, u2, stride, order, points
 }
 
 //so:extern glMap2d
-func Map2d(target uint32, u1 float64, u2 float64, ustride int32, uorder int32, v1 float64, v2 float64, vstride int32, vorder int32, points *float64) {
+func Map2d(target GLuint, u1 float64, u2 float64, ustride int32, uorder int32, v1 float64, v2 float64, vstride int32, vorder int32, points *float64) {
 	_, _, _, _, _, _, _, _, _, _ = target, u1, u2, ustride, uorder, v1, v2, vstride, vorder, points
 }
 
 //so:extern glMap2f
-func Map2f(target uint32, u1 float32, u2 float32, ustride int32, uorder int32, v1 float32, v2 float32, vstride int32, vorder int32, points *float32) {
+func Map2f(target GLuint, u1 float32, u2 float32, ustride int32, uorder int32, v1 float32, v2 float32, vstride int32, vorder int32, points *float32) {
 	_, _, _, _, _, _, _, _, _, _ = target, u1, u2, ustride, uorder, v1, v2, vstride, vorder, points
 }
 
 //so:extern glGetMapdv
-func GetMapdv(target uint32, query uint32, v *float64) {
+func GetMapdv(target GLuint, query GLuint, v *float64) {
 	_, _, _ = target, query, v
 }
 
 //so:extern glGetMapfv
-func GetMapfv(target uint32, query uint32, v *float32) {
+func GetMapfv(target GLuint, query GLuint, v *float32) {
 	_, _, _ = target, query, v
 }
 
 //so:extern glGetMapiv
-func GetMapiv(target uint32, query uint32, v *int32) {
+func GetMapiv(target GLuint, query GLuint, v *int32) {
 	_, _, _ = target, query, v
 }
 
@@ -3899,37 +3902,37 @@ func EvalPoint2(i int32, j int32) {
 }
 
 //so:extern glEvalMesh1
-func EvalMesh1(mode uint32, i1 int32, i2 int32) {
+func EvalMesh1(mode GLuint, i1 int32, i2 int32) {
 	_, _, _ = mode, i1, i2
 }
 
 //so:extern glEvalMesh2
-func EvalMesh2(mode uint32, i1 int32, i2 int32, j1 int32, j2 int32) {
+func EvalMesh2(mode GLuint, i1 int32, i2 int32, j1 int32, j2 int32) {
 	_, _, _, _, _ = mode, i1, i2, j1, j2
 }
 
 //so:extern glFogf
-func Fogf(pname uint32, param float32) {
+func Fogf(pname GLuint, param float32) {
 	_, _ = pname, param
 }
 
 //so:extern glFogi
-func Fogi(pname uint32, param int32) {
+func Fogi(pname GLuint, param int32) {
 	_, _ = pname, param
 }
 
 //so:extern glFogfv
-func Fogfv(pname uint32, params *float32) {
+func Fogfv(pname GLuint, params *float32) {
 	_, _ = pname, params
 }
 
 //so:extern glFogiv
-func Fogiv(pname uint32, params *int32) {
+func Fogiv(pname GLuint, params *int32) {
 	_, _ = pname, params
 }
 
 //so:extern glFeedbackBuffer
-func FeedbackBuffer(size int32, type_ uint32, buffer *float32) {
+func FeedbackBuffer(size int32, type_ GLuint, buffer *float32) {
 	_, _, _ = size, type_, buffer
 }
 
@@ -3939,7 +3942,7 @@ func PassThrough(token float32) {
 }
 
 //so:extern glSelectBuffer
-func SelectBuffer(size int32, buffer *uint32) {
+func SelectBuffer(size int32, buffer *GLuint) {
 	_, _ = size, buffer
 }
 
@@ -3948,12 +3951,12 @@ func InitNames() {
 }
 
 //so:extern glLoadName
-func LoadName(name uint32) {
+func LoadName(name GLuint) {
 	_ = name
 }
 
 //so:extern glPushName
-func PushName(name uint32) {
+func PushName(name GLuint) {
 	_ = name
 }
 
@@ -3962,72 +3965,72 @@ func PopName() {
 }
 
 //so:extern glDrawRangeElements
-func DrawRangeElements(mode uint32, start uint32, end uint32, count int32, type_ uint32, indices any) {
+func DrawRangeElements(mode GLuint, start GLuint, end GLuint, count int32, type_ GLuint, indices any) {
 	_, _, _, _, _, _ = mode, start, end, count, type_, indices
 }
 
 //so:extern glTexImage3D
-func TexImage3D(target uint32, level int32, internalFormat int32, width int32, height int32, depth int32, border int32, format uint32, type_ uint32, pixels any) {
+func TexImage3D(target GLuint, level int32, internalFormat int32, width int32, height int32, depth int32, border int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _, _, _, _, _, _ = target, level, internalFormat, width, height, depth, border, format, type_, pixels
 }
 
 //so:extern glTexSubImage3D
-func TexSubImage3D(target uint32, level int32, xoffset int32, yoffset int32, zoffset int32, width int32, height int32, depth int32, format uint32, type_ uint32, pixels any) {
+func TexSubImage3D(target GLuint, level int32, xoffset int32, yoffset int32, zoffset int32, width int32, height int32, depth int32, format GLuint, type_ GLuint, pixels any) {
 	_, _, _, _, _, _, _, _, _, _, _ = target, level, xoffset, yoffset, zoffset, width, height, depth, format, type_, pixels
 }
 
 //so:extern glCopyTexSubImage3D
-func CopyTexSubImage3D(target uint32, level int32, xoffset int32, yoffset int32, zoffset int32, x int32, y int32, width int32, height int32) {
+func CopyTexSubImage3D(target GLuint, level int32, xoffset int32, yoffset int32, zoffset int32, x int32, y int32, width int32, height int32) {
 	_, _, _, _, _, _, _, _, _ = target, level, xoffset, yoffset, zoffset, x, y, width, height
 }
 
 //so:extern glColorTable
-func ColorTable(target uint32, internalformat uint32, width int32, format uint32, type_ uint32, table any) {
+func ColorTable(target GLuint, internalformat GLuint, width int32, format GLuint, type_ GLuint, table any) {
 	_, _, _, _, _, _ = target, internalformat, width, format, type_, table
 }
 
 //so:extern glColorSubTable
-func ColorSubTable(target uint32, start int32, count int32, format uint32, type_ uint32, data any) {
+func ColorSubTable(target GLuint, start int32, count int32, format GLuint, type_ GLuint, data any) {
 	_, _, _, _, _, _ = target, start, count, format, type_, data
 }
 
 //so:extern glColorTableParameteriv
-func ColorTableParameteriv(target uint32, pname uint32, params *int32) {
+func ColorTableParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glColorTableParameterfv
-func ColorTableParameterfv(target uint32, pname uint32, params *float32) {
+func ColorTableParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glCopyColorSubTable
-func CopyColorSubTable(target uint32, start int32, x int32, y int32, width int32) {
+func CopyColorSubTable(target GLuint, start int32, x int32, y int32, width int32) {
 	_, _, _, _, _ = target, start, x, y, width
 }
 
 //so:extern glCopyColorTable
-func CopyColorTable(target uint32, internalformat uint32, x int32, y int32, width int32) {
+func CopyColorTable(target GLuint, internalformat GLuint, x int32, y int32, width int32) {
 	_, _, _, _, _ = target, internalformat, x, y, width
 }
 
 //so:extern glGetColorTable
-func GetColorTable(target uint32, format uint32, type_ uint32, table any) {
+func GetColorTable(target GLuint, format GLuint, type_ GLuint, table any) {
 	_, _, _, _ = target, format, type_, table
 }
 
 //so:extern glGetColorTableParameterfv
-func GetColorTableParameterfv(target uint32, pname uint32, params *float32) {
+func GetColorTableParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetColorTableParameteriv
-func GetColorTableParameteriv(target uint32, pname uint32, params *int32) {
+func GetColorTableParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glBlendEquation
-func BlendEquation(mode uint32) {
+func BlendEquation(mode GLuint) {
 	_ = mode
 }
 
@@ -4037,322 +4040,322 @@ func BlendColor(red float32, green float32, blue float32, alpha float32) {
 }
 
 //so:extern glHistogram
-func Histogram(target uint32, width int32, internalformat uint32, sink uint8) {
+func Histogram(target GLuint, width int32, internalformat GLuint, sink uint8) {
 	_, _, _, _ = target, width, internalformat, sink
 }
 
 //so:extern glResetHistogram
-func ResetHistogram(target uint32) {
+func ResetHistogram(target GLuint) {
 	_ = target
 }
 
 //so:extern glGetHistogram
-func GetHistogram(target uint32, reset uint8, format uint32, type_ uint32, values any) {
+func GetHistogram(target GLuint, reset uint8, format GLuint, type_ GLuint, values any) {
 	_, _, _, _, _ = target, reset, format, type_, values
 }
 
 //so:extern glGetHistogramParameterfv
-func GetHistogramParameterfv(target uint32, pname uint32, params *float32) {
+func GetHistogramParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetHistogramParameteriv
-func GetHistogramParameteriv(target uint32, pname uint32, params *int32) {
+func GetHistogramParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glMinmax
-func Minmax(target uint32, internalformat uint32, sink uint8) {
+func Minmax(target GLuint, internalformat GLuint, sink uint8) {
 	_, _, _ = target, internalformat, sink
 }
 
 //so:extern glResetMinmax
-func ResetMinmax(target uint32) {
+func ResetMinmax(target GLuint) {
 	_ = target
 }
 
 //so:extern glGetMinmax
-func GetMinmax(target uint32, reset uint8, format uint32, types uint32, values any) {
+func GetMinmax(target GLuint, reset uint8, format GLuint, types GLuint, values any) {
 	_, _, _, _, _ = target, reset, format, types, values
 }
 
 //so:extern glGetMinmaxParameterfv
-func GetMinmaxParameterfv(target uint32, pname uint32, params *float32) {
+func GetMinmaxParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetMinmaxParameteriv
-func GetMinmaxParameteriv(target uint32, pname uint32, params *int32) {
+func GetMinmaxParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glConvolutionFilter1D
-func ConvolutionFilter1D(target uint32, internalformat uint32, width int32, format uint32, type_ uint32, image any) {
+func ConvolutionFilter1D(target GLuint, internalformat GLuint, width int32, format GLuint, type_ GLuint, image any) {
 	_, _, _, _, _, _ = target, internalformat, width, format, type_, image
 }
 
 //so:extern glConvolutionFilter2D
-func ConvolutionFilter2D(target uint32, internalformat uint32, width int32, height int32, format uint32, type_ uint32, image any) {
+func ConvolutionFilter2D(target GLuint, internalformat GLuint, width int32, height int32, format GLuint, type_ GLuint, image any) {
 	_, _, _, _, _, _, _ = target, internalformat, width, height, format, type_, image
 }
 
 //so:extern glConvolutionParameterf
-func ConvolutionParameterf(target uint32, pname uint32, params float32) {
+func ConvolutionParameterf(target GLuint, pname GLuint, params float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glConvolutionParameterfv
-func ConvolutionParameterfv(target uint32, pname uint32, params *float32) {
+func ConvolutionParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glConvolutionParameteri
-func ConvolutionParameteri(target uint32, pname uint32, params int32) {
+func ConvolutionParameteri(target GLuint, pname GLuint, params int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glConvolutionParameteriv
-func ConvolutionParameteriv(target uint32, pname uint32, params *int32) {
+func ConvolutionParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glCopyConvolutionFilter1D
-func CopyConvolutionFilter1D(target uint32, internalformat uint32, x int32, y int32, width int32) {
+func CopyConvolutionFilter1D(target GLuint, internalformat GLuint, x int32, y int32, width int32) {
 	_, _, _, _, _ = target, internalformat, x, y, width
 }
 
 //so:extern glCopyConvolutionFilter2D
-func CopyConvolutionFilter2D(target uint32, internalformat uint32, x int32, y int32, width int32, height int32) {
+func CopyConvolutionFilter2D(target GLuint, internalformat GLuint, x int32, y int32, width int32, height int32) {
 	_, _, _, _, _, _ = target, internalformat, x, y, width, height
 }
 
 //so:extern glGetConvolutionFilter
-func GetConvolutionFilter(target uint32, format uint32, type_ uint32, image any) {
+func GetConvolutionFilter(target GLuint, format GLuint, type_ GLuint, image any) {
 	_, _, _, _ = target, format, type_, image
 }
 
 //so:extern glGetConvolutionParameterfv
-func GetConvolutionParameterfv(target uint32, pname uint32, params *float32) {
+func GetConvolutionParameterfv(target GLuint, pname GLuint, params *float32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glGetConvolutionParameteriv
-func GetConvolutionParameteriv(target uint32, pname uint32, params *int32) {
+func GetConvolutionParameteriv(target GLuint, pname GLuint, params *int32) {
 	_, _, _ = target, pname, params
 }
 
 //so:extern glSeparableFilter2D
-func SeparableFilter2D(target uint32, internalformat uint32, width int32, height int32, format uint32, type_ uint32, row any, column any) {
+func SeparableFilter2D(target GLuint, internalformat GLuint, width int32, height int32, format GLuint, type_ GLuint, row any, column any) {
 	_, _, _, _, _, _, _, _ = target, internalformat, width, height, format, type_, row, column
 }
 
 //so:extern glGetSeparableFilter
-func GetSeparableFilter(target uint32, format uint32, type_ uint32, row any, column any, span any) {
+func GetSeparableFilter(target GLuint, format GLuint, type_ GLuint, row any, column any, span any) {
 	_, _, _, _, _, _ = target, format, type_, row, column, span
 }
 
 //so:extern glActiveTexture
-func ActiveTexture(texture uint32) {
+func ActiveTexture(texture GLuint) {
 	_ = texture
 }
 
 //so:extern glClientActiveTexture
-func ClientActiveTexture(texture uint32) {
+func ClientActiveTexture(texture GLuint) {
 	_ = texture
 }
 
 //so:extern glCompressedTexImage1D
-func CompressedTexImage1D(target uint32, level int32, internalformat uint32, width int32, border int32, imageSize int32, data any) {
+func CompressedTexImage1D(target GLuint, level int32, internalformat GLuint, width int32, border int32, imageSize int32, data any) {
 	_, _, _, _, _, _, _ = target, level, internalformat, width, border, imageSize, data
 }
 
 //so:extern glCompressedTexImage2D
-func CompressedTexImage2D(target uint32, level int32, internalformat uint32, width int32, height int32, border int32, imageSize int32, data any) {
+func CompressedTexImage2D(target GLuint, level int32, internalformat GLuint, width int32, height int32, border int32, imageSize int32, data any) {
 	_, _, _, _, _, _, _, _ = target, level, internalformat, width, height, border, imageSize, data
 }
 
 //so:extern glCompressedTexImage3D
-func CompressedTexImage3D(target uint32, level int32, internalformat uint32, width int32, height int32, depth int32, border int32, imageSize int32, data any) {
+func CompressedTexImage3D(target GLuint, level int32, internalformat GLuint, width int32, height int32, depth int32, border int32, imageSize int32, data any) {
 	_, _, _, _, _, _, _, _, _ = target, level, internalformat, width, height, depth, border, imageSize, data
 }
 
 //so:extern glCompressedTexSubImage1D
-func CompressedTexSubImage1D(target uint32, level int32, xoffset int32, width int32, format uint32, imageSize int32, data any) {
+func CompressedTexSubImage1D(target GLuint, level int32, xoffset int32, width int32, format GLuint, imageSize int32, data any) {
 	_, _, _, _, _, _, _ = target, level, xoffset, width, format, imageSize, data
 }
 
 //so:extern glCompressedTexSubImage2D
-func CompressedTexSubImage2D(target uint32, level int32, xoffset int32, yoffset int32, width int32, height int32, format uint32, imageSize int32, data any) {
+func CompressedTexSubImage2D(target GLuint, level int32, xoffset int32, yoffset int32, width int32, height int32, format GLuint, imageSize int32, data any) {
 	_, _, _, _, _, _, _, _, _ = target, level, xoffset, yoffset, width, height, format, imageSize, data
 }
 
 //so:extern glCompressedTexSubImage3D
-func CompressedTexSubImage3D(target uint32, level int32, xoffset int32, yoffset int32, zoffset int32, width int32, height int32, depth int32, format uint32, imageSize int32, data any) {
+func CompressedTexSubImage3D(target GLuint, level int32, xoffset int32, yoffset int32, zoffset int32, width int32, height int32, depth int32, format GLuint, imageSize int32, data any) {
 	_, _, _, _, _, _, _, _, _, _, _ = target, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data
 }
 
 //so:extern glGetCompressedTexImage
-func GetCompressedTexImage(target uint32, lod int32, img any) {
+func GetCompressedTexImage(target GLuint, lod int32, img any) {
 	_, _, _ = target, lod, img
 }
 
 //so:extern glMultiTexCoord1d
-func MultiTexCoord1d(target uint32, s float64) {
+func MultiTexCoord1d(target GLuint, s float64) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1dv
-func MultiTexCoord1dv(target uint32, v *float64) {
+func MultiTexCoord1dv(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord1f
-func MultiTexCoord1f(target uint32, s float32) {
+func MultiTexCoord1f(target GLuint, s float32) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1fv
-func MultiTexCoord1fv(target uint32, v *float32) {
+func MultiTexCoord1fv(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord1i
-func MultiTexCoord1i(target uint32, s int32) {
+func MultiTexCoord1i(target GLuint, s int32) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1iv
-func MultiTexCoord1iv(target uint32, v *int32) {
+func MultiTexCoord1iv(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord1s
-func MultiTexCoord1s(target uint32, s int16) {
+func MultiTexCoord1s(target GLuint, s int16) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1sv
-func MultiTexCoord1sv(target uint32, v *int16) {
+func MultiTexCoord1sv(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2d
-func MultiTexCoord2d(target uint32, s float64, t float64) {
+func MultiTexCoord2d(target GLuint, s float64, t float64) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2dv
-func MultiTexCoord2dv(target uint32, v *float64) {
+func MultiTexCoord2dv(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2f
-func MultiTexCoord2f(target uint32, s float32, t float32) {
+func MultiTexCoord2f(target GLuint, s float32, t float32) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2fv
-func MultiTexCoord2fv(target uint32, v *float32) {
+func MultiTexCoord2fv(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2i
-func MultiTexCoord2i(target uint32, s int32, t int32) {
+func MultiTexCoord2i(target GLuint, s int32, t int32) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2iv
-func MultiTexCoord2iv(target uint32, v *int32) {
+func MultiTexCoord2iv(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2s
-func MultiTexCoord2s(target uint32, s int16, t int16) {
+func MultiTexCoord2s(target GLuint, s int16, t int16) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2sv
-func MultiTexCoord2sv(target uint32, v *int16) {
+func MultiTexCoord2sv(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3d
-func MultiTexCoord3d(target uint32, s float64, t float64, r float64) {
+func MultiTexCoord3d(target GLuint, s float64, t float64, r float64) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3dv
-func MultiTexCoord3dv(target uint32, v *float64) {
+func MultiTexCoord3dv(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3f
-func MultiTexCoord3f(target uint32, s float32, t float32, r float32) {
+func MultiTexCoord3f(target GLuint, s float32, t float32, r float32) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3fv
-func MultiTexCoord3fv(target uint32, v *float32) {
+func MultiTexCoord3fv(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3i
-func MultiTexCoord3i(target uint32, s int32, t int32, r int32) {
+func MultiTexCoord3i(target GLuint, s int32, t int32, r int32) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3iv
-func MultiTexCoord3iv(target uint32, v *int32) {
+func MultiTexCoord3iv(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3s
-func MultiTexCoord3s(target uint32, s int16, t int16, r int16) {
+func MultiTexCoord3s(target GLuint, s int16, t int16, r int16) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3sv
-func MultiTexCoord3sv(target uint32, v *int16) {
+func MultiTexCoord3sv(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4d
-func MultiTexCoord4d(target uint32, s float64, t float64, r float64, q float64) {
+func MultiTexCoord4d(target GLuint, s float64, t float64, r float64, q float64) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4dv
-func MultiTexCoord4dv(target uint32, v *float64) {
+func MultiTexCoord4dv(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4f
-func MultiTexCoord4f(target uint32, s float32, t float32, r float32, q float32) {
+func MultiTexCoord4f(target GLuint, s float32, t float32, r float32, q float32) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4fv
-func MultiTexCoord4fv(target uint32, v *float32) {
+func MultiTexCoord4fv(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4i
-func MultiTexCoord4i(target uint32, s int32, t int32, r int32, q int32) {
+func MultiTexCoord4i(target GLuint, s int32, t int32, r int32, q int32) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4iv
-func MultiTexCoord4iv(target uint32, v *int32) {
+func MultiTexCoord4iv(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4s
-func MultiTexCoord4s(target uint32, s int16, t int16, r int16, q int16) {
+func MultiTexCoord4s(target GLuint, s int16, t int16, r int16, q int16) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4sv
-func MultiTexCoord4sv(target uint32, v *int16) {
+func MultiTexCoord4sv(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
@@ -4382,176 +4385,176 @@ func SampleCoverage(value float32, invert uint8) {
 }
 
 //so:extern glActiveTextureARB
-func ActiveTextureARB(texture uint32) {
+func ActiveTextureARB(texture GLuint) {
 	_ = texture
 }
 
 //so:extern glClientActiveTextureARB
-func ClientActiveTextureARB(texture uint32) {
+func ClientActiveTextureARB(texture GLuint) {
 	_ = texture
 }
 
 //so:extern glMultiTexCoord1dARB
-func MultiTexCoord1dARB(target uint32, s float64) {
+func MultiTexCoord1dARB(target GLuint, s float64) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1dvARB
-func MultiTexCoord1dvARB(target uint32, v *float64) {
+func MultiTexCoord1dvARB(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord1fARB
-func MultiTexCoord1fARB(target uint32, s float32) {
+func MultiTexCoord1fARB(target GLuint, s float32) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1fvARB
-func MultiTexCoord1fvARB(target uint32, v *float32) {
+func MultiTexCoord1fvARB(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord1iARB
-func MultiTexCoord1iARB(target uint32, s int32) {
+func MultiTexCoord1iARB(target GLuint, s int32) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1ivARB
-func MultiTexCoord1ivARB(target uint32, v *int32) {
+func MultiTexCoord1ivARB(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord1sARB
-func MultiTexCoord1sARB(target uint32, s int16) {
+func MultiTexCoord1sARB(target GLuint, s int16) {
 	_, _ = target, s
 }
 
 //so:extern glMultiTexCoord1svARB
-func MultiTexCoord1svARB(target uint32, v *int16) {
+func MultiTexCoord1svARB(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2dARB
-func MultiTexCoord2dARB(target uint32, s float64, t float64) {
+func MultiTexCoord2dARB(target GLuint, s float64, t float64) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2dvARB
-func MultiTexCoord2dvARB(target uint32, v *float64) {
+func MultiTexCoord2dvARB(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2fARB
-func MultiTexCoord2fARB(target uint32, s float32, t float32) {
+func MultiTexCoord2fARB(target GLuint, s float32, t float32) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2fvARB
-func MultiTexCoord2fvARB(target uint32, v *float32) {
+func MultiTexCoord2fvARB(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2iARB
-func MultiTexCoord2iARB(target uint32, s int32, t int32) {
+func MultiTexCoord2iARB(target GLuint, s int32, t int32) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2ivARB
-func MultiTexCoord2ivARB(target uint32, v *int32) {
+func MultiTexCoord2ivARB(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord2sARB
-func MultiTexCoord2sARB(target uint32, s int16, t int16) {
+func MultiTexCoord2sARB(target GLuint, s int16, t int16) {
 	_, _, _ = target, s, t
 }
 
 //so:extern glMultiTexCoord2svARB
-func MultiTexCoord2svARB(target uint32, v *int16) {
+func MultiTexCoord2svARB(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3dARB
-func MultiTexCoord3dARB(target uint32, s float64, t float64, r float64) {
+func MultiTexCoord3dARB(target GLuint, s float64, t float64, r float64) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3dvARB
-func MultiTexCoord3dvARB(target uint32, v *float64) {
+func MultiTexCoord3dvARB(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3fARB
-func MultiTexCoord3fARB(target uint32, s float32, t float32, r float32) {
+func MultiTexCoord3fARB(target GLuint, s float32, t float32, r float32) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3fvARB
-func MultiTexCoord3fvARB(target uint32, v *float32) {
+func MultiTexCoord3fvARB(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3iARB
-func MultiTexCoord3iARB(target uint32, s int32, t int32, r int32) {
+func MultiTexCoord3iARB(target GLuint, s int32, t int32, r int32) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3ivARB
-func MultiTexCoord3ivARB(target uint32, v *int32) {
+func MultiTexCoord3ivARB(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord3sARB
-func MultiTexCoord3sARB(target uint32, s int16, t int16, r int16) {
+func MultiTexCoord3sARB(target GLuint, s int16, t int16, r int16) {
 	_, _, _, _ = target, s, t, r
 }
 
 //so:extern glMultiTexCoord3svARB
-func MultiTexCoord3svARB(target uint32, v *int16) {
+func MultiTexCoord3svARB(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4dARB
-func MultiTexCoord4dARB(target uint32, s float64, t float64, r float64, q float64) {
+func MultiTexCoord4dARB(target GLuint, s float64, t float64, r float64, q float64) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4dvARB
-func MultiTexCoord4dvARB(target uint32, v *float64) {
+func MultiTexCoord4dvARB(target GLuint, v *float64) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4fARB
-func MultiTexCoord4fARB(target uint32, s float32, t float32, r float32, q float32) {
+func MultiTexCoord4fARB(target GLuint, s float32, t float32, r float32, q float32) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4fvARB
-func MultiTexCoord4fvARB(target uint32, v *float32) {
+func MultiTexCoord4fvARB(target GLuint, v *float32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4iARB
-func MultiTexCoord4iARB(target uint32, s int32, t int32, r int32, q int32) {
+func MultiTexCoord4iARB(target GLuint, s int32, t int32, r int32, q int32) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4ivARB
-func MultiTexCoord4ivARB(target uint32, v *int32) {
+func MultiTexCoord4ivARB(target GLuint, v *int32) {
 	_, _ = target, v
 }
 
 //so:extern glMultiTexCoord4sARB
-func MultiTexCoord4sARB(target uint32, s int16, t int16, r int16, q int16) {
+func MultiTexCoord4sARB(target GLuint, s int16, t int16, r int16, q int16) {
 	_, _, _, _, _ = target, s, t, r, q
 }
 
 //so:extern glMultiTexCoord4svARB
-func MultiTexCoord4svARB(target uint32, v *int16) {
+func MultiTexCoord4svARB(target GLuint, v *int16) {
 	_, _ = target, v
 }
 
 //so:extern glBlendEquationSeparateATI
-func BlendEquationSeparateATI(modeRGB uint32, modeA uint32) {
+func BlendEquationSeparateATI(modeRGB GLuint, modeA GLuint) {
 	_, _ = modeRGB, modeA
 }

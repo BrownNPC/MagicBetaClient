@@ -31,7 +31,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if (PSP)
-  # PSP SDK
+  target_compile_definitions(${PROJECT_NAME} PRIVATE int32_t=int)  
+  target_compile_definitions(${PROJECT_NAME} PRIVATE _INT32_T_DECLARED)  
+
   set(PSPDEV $ENV{PSPDEV})
   # make clangd happy
   file(GLOB GCC_INCLUDE_DIR "${PSPDEV}/lib/gcc/psp/*/include")

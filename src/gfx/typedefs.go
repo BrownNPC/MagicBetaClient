@@ -1,5 +1,7 @@
 package gfx
 
+import "mbc/gfx/gl"
+
 // Vector2 type
 type Vector2 struct {
 	X float32
@@ -156,5 +158,5 @@ type Camera2D struct {
 
 type Texture struct{
 	Width,Height int
-	ID uint32
+	ID gl.GLuint
 }
