@@ -3,6 +3,7 @@ package sdl
 
 import (
 	"solod.dev/so/c"
+	"solod.dev/so/io"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
@@ -81,8 +82,39 @@ func DestroySurface(*Surface)
 //so:extern SDL_ConvertSurface
 func ConvertSurface(src *Surface, format PixelFormat) *Surface
 
+// IOStream implements io.ReadWriteCloser
+//
 //so:extern SDL_IOStream
-type IOStream struct{}
+type IOStream struct {
+	io.ReadWriteCloser
+}
+
+func (ctx *IOStream) Read(b []byte) (int, error) {
+	if len(b) == 0 {
+		return 0, nil
+	}
+	n := ReadIO(ctx, &b[0], len(b))
+	if n == 0 {
+		return 0, io.EOF
+	}
+	return n, nil
+}
+func (ctx *IOStream) Write(b []byte) (int, error) {
+	if len(b) == 0 {
+		return 0, nil
+	}
+	n := WriteIO(ctx, &b[0], len(b))
+	if n != len(b) {
+		return n, io.EOF
+	}
+	return n, nil
+}
+func (ctx *IOStream) Close() error {
+	if !CloseIO(ctx) {
+		return GetError()
+	}
+	return nil
+}
 
 //so:extern SDL_IOFromFile
 func IOFromFile(file string, mode string) *IOStream
@@ -90,5 +122,11 @@ func IOFromFile(file string, mode string) *IOStream
 //so:extern SDL_WriteIO
 func WriteIO(ctx *IOStream, ptr *byte, size int) int
 
+//so:extern SDL_ReadIO
+func ReadIO(ctx *IOStream, ptr *byte, size int) int
+
 //so:extern SDL_CloseIO
 func CloseIO(ctx *IOStream) bool
+
+//so:extern SDL_GetIOStatus
+func GetIOStatus(ctx *IOStream) IOStatus

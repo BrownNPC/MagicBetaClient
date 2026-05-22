@@ -229,3 +229,18 @@ type PixelFormat int
 
 //so:extern SDL_PIXELFORMAT_RGBA32
 const PIXELFORMAT_RGBA32 PixelFormat = iota
+
+type IOStatus int
+
+//so:extern SDL_IO_STATUS_READY
+const IO_STATUS_READY IOStatus = iota /**< Everything is ready (no errors and not EOF). */
+//so:extern SDL_IO_STATUS_ERROR
+const IO_STATUS_ERROR IOStatus = iota /**< Read or write I/O error */
+//so:extern SDL_IO_STATUS_EOF
+const IO_STATUS_EOF IOStatus = iota /**< End of file */
+//so:extern SDL_IO_STATUS_NOT_READY
+const IO_STATUS_NOT_READY IOStatus = iota /**< Non blocking I/O, not ready */
+//so:extern SDL_IO_STATUS_READONLY
+const IO_STATUS_READONLY IOStatus = iota /**< Tried to write a read-only buffer */
+//so:extern SDL_IO_STATUS_WRITEONLY
+const IO_STATUS_WRITEONLY IOStatus = iota /**< Tried to read a write-only buffer */
