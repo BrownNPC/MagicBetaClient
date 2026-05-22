@@ -25,9 +25,15 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 	state.window = sdl.CreateWindow("MagicBetaClient", 640, 480, sdl.WINDOW_OPENGL|sdl.WINDOW_RESIZABLE)
 
 	gfx.Init(state.window)
-	icon, err := gfx.LoadTexture("./assets/icon.png")
+	icon, err := gfx.LoadTexture("assets/icons/icon_16x16.png")
 	if err != nil {
-		panic(err)
+		io := sdl.IOFromFile("error.log", "w")
+		str := []byte(err.Error())
+		if sdl.WriteIO(io, &str[0], len(str)) != len(str) {
+			panic(sdl.GetError())
+		}
+		sdl.CloseIO(io)
+		return sdl.APP_FAILURE
 	}
 	state.Tex = icon
 	return sdl.APP_CONTINUE
@@ -35,7 +41,7 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 
 func AppIterate(appState any) sdl.AppResult {
 	state := appState.(*AppState)
-	_=state
+	_ = state
 	gfx.BeginDrawing()
 	gfx.DrawTexturePro(
 		state.Tex,

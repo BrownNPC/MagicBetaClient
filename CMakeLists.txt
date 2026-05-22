@@ -31,9 +31,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if (PSP)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE int32_t=int)  
-  target_compile_definitions(${PROJECT_NAME} PRIVATE _INT32_T_DECLARED)  
-
   set(PSPDEV $ENV{PSPDEV})
   # make clangd happy
   file(GLOB GCC_INCLUDE_DIR "${PSPDEV}/lib/gcc/psp/*/include")
@@ -48,4 +45,11 @@ if (PSP)
     BUILD_PRX=1
     ENC_PRX=1
   )
+  # Copy assets at build time
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${CMAKE_CURRENT_SOURCE_DIR}/assets
+          $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
+  )
+
 endif()

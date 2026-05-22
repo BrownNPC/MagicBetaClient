@@ -80,3 +80,15 @@ func DestroySurface(*Surface)
 
 //so:extern SDL_ConvertSurface
 func ConvertSurface(src *Surface, format PixelFormat) *Surface
+
+//so:extern SDL_IOStream
+type IOStream struct{}
+
+//so:extern SDL_IOFromFile
+func IOFromFile(file string, mode string) *IOStream
+
+//so:extern SDL_WriteIO
+func WriteIO(ctx *IOStream, ptr *byte, size int) int
+
+//so:extern SDL_CloseIO
+func CloseIO(ctx *IOStream) bool
