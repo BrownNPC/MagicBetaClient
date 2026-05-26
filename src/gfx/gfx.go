@@ -126,6 +126,10 @@ func initGLDefaultState() {
 
 func BeginDrawing() { gl.LoadIdentity() }
 func EndDrawing()   { sdl.GLSwapWindow(window) }
+func ClearBackground(c Color) {
+	gl.ClearColor(float32(c.R)/255, float32(c.G)/255, float32(c.B)/255, float32(c.A)/255)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+}
 func BeginMode3D(cam Camera) {
 	var w, h sdl.Cint
 	sdl.GetWindowSizeInPixels(window, &w, &h)

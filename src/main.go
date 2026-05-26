@@ -27,7 +27,6 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 	gfx.Init(state.window)
 	icon, err := gfx.LoadTexture("assets/icons/icon_16x16.png")
 	if err != nil {
-
 		f := sdl.IOFromFile("error.log", "w")
 		if f == nil {
 			panic(sdl.GetError())
@@ -49,6 +48,7 @@ func AppIterate(appState any) sdl.AppResult {
 	state := appState.(*AppState)
 	_ = state
 	gfx.BeginDrawing()
+	gfx.ClearBackground(gfx.Red)
 	gfx.DrawTexturePro(
 		state.Tex,
 		gfx.NewRectangle(0, 0, float32(state.Tex.Width), float32(state.Tex.Height)),
@@ -68,5 +68,6 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 }
 
 func AppQuit(appState any, result sdl.AppResult) {
+	mem.Free(mem.System, appState.(*AppState))
 	curl.DeInit()
 }
