@@ -20,7 +20,6 @@ type AppState struct {
 func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 	var state = mem.Alloc[AppState](nil)
 	*appState = state
-
 	sdl.Init(sdl.INIT_VIDEO)
 	state.window = sdl.CreateWindow("MagicBetaClient", 640, 480, sdl.WINDOW_OPENGL|sdl.WINDOW_RESIZABLE)
 

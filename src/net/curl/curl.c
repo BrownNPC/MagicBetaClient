@@ -17,7 +17,7 @@ void CurlDeInit() {
 void CurlCloseSocket(CURL* curl) {
   curl_easy_cleanup(curl);
 }
-so_String CurlErrorimpl(void* self){
+so_String CurlErrorimpl(void* self) {
   CURLcode code = (intptr_t)self;
   return so_str(curl_easy_strerror(code));
 }
@@ -38,6 +38,7 @@ so_Error CurlCreateSocket(const char* hostname, CURL** curlRet) {
   curl_easy_setopt(curl, CURLOPT_URL, hostname);
   // raw TCP connection only
   curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
+  curl_easy_setopt(curl, CURLOPT_TCP_NODELAY, 1L); // disable nagle algorithm
 
   // connect to the server.
   CURLcode result = curl_easy_perform(curl);

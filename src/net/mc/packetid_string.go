@@ -1,0 +1,70 @@
+package mc
+
+var packetIDStrings = [256]string{
+	0x00: "KeepAlive",
+	0x01: "Login",
+	0x02: "PreLogin",
+	0x03: "ChatMessage",
+	0x04: "SetTime",
+	0x05: "SetEquipment",
+	0x06: "SetSpawnPosition",
+	0x07: "InteractWithEntity",
+	0x08: "SetHealth",
+	0x09: "Respawn",
+	0x0A: "PlayerMovement",
+	0x0B: "PlayerPosition",
+	0x0C: "PlayerRotation",
+	0x0D: "PlayerPositionAndRotation",
+	0x0E: "MineBlock",
+	0x0F: "PlaceBlock",
+	0x10: "SetHotbarSlot",
+	0x11: "InteractWithBlock",
+	0x12: "Animation",
+	0x13: "PlayerAction",
+	0x14: "SpawnPlayer",
+	0x15: "SpawnItem",
+	0x16: "CollectItem",
+	0x17: "SpawnObject",
+	0x18: "SpawnMob",
+	0x19: "SpawnPainting",
+	0x1B: "PlayerInput",
+	0x1C: "EntityVelocity",
+	0x1D: "DespawnEntity",
+	0x1E: "EntityMovement",
+	0x1F: "EntityPosition",
+	0x20: "EntityRotation",
+	0x21: "EntityPositionAndRotation",
+	0x22: "TeleportEntity",
+	0x26: "EntityEvent",
+	0x27: "AddPassenger",
+	0x28: "EntityMetadata",
+	0x32: "SetChunkVisibility",
+	0x33: "Chunk",
+	0x34: "SetMultipleBlocks",
+	0x35: "SetBlock",
+	0x36: "BlockEvent",
+	0x3C: "Explosion",
+	0x3D: "WorldEvent",
+	0x46: "GameEvent",
+	0x47: "LightningBolt",
+	0x64: "OpenContainer",
+	0x65: "CloseContainer",
+	0x66: "ClickSlot",
+	0x67: "SetSlot",
+	0x68: "FillContainer",
+	0x69: "ContainerData",
+	0x6A: "ContainerTransaction",
+	0x82: "UpdateSign",
+	0x83: "ItemData",
+	0xC8: "IncrementStatistic",
+	0xFF: "Disconnect",
+}
+
+func (p PacketID) String() string {
+	if int(p) < len(packetIDStrings) {
+		if s := packetIDStrings[p]; s != "" {
+			return s
+		}
+	}
+	return "PacketID(unknown)"
+}

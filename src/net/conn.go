@@ -9,10 +9,9 @@ import (
 )
 
 var ErrConnectionClosed = errors.New("Connection closed.")
-var PollDelay = time.Millisecond * 25
 
-// Read blocks until bytes are read or there is an error.
-// It does not guarantee that the full buffer is used.
+// Read can return (0,nil) if there is nothing to be read.
+// Read never blocks.
 func (conn *Conn) Read(b []byte) (int, error) {
 	if conn.closed { // already errored.
 		return 0, ErrConnectionClosed
@@ -21,17 +20,15 @@ func (conn *Conn) Read(b []byte) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
-	for {
-		n, err := curl.ReadFromSocket(conn.sock, &b[0], len(b))
-		if err != nil {
-			conn.Close()
-			return 0, err
-		}
-		if n != 0 {
-			return n, nil
-		}
-		sdl.Delay(PollDelay)
+	n, err := curl.ReadFromSocket(conn.sock, &b[0], len(b))
+	if err != nil {
+		conn.Close()
+		return 0, ErrConnectionClosed
 	}
+	if n != 0 {
+		return n, nil
+	}
+	return 0, nil
 }
 
 // Write blocks until all bytes from the buffer have been written.
@@ -49,8 +46,7 @@ func (conn *Conn) Write(b []byte) (int, error) {
 		}
 
 		if n == 0 {
-			// avoid tight spin
-			sdl.Delay(PollDelay)
+			sdl.Delay(time.Millisecond)
 			continue
 		}
 
@@ -73,10 +69,6 @@ func (conn *Conn) Close() {
 type Conn struct {
 	closed bool
 	sock   *curl.CURL
-}
-type ConnResult struct {
-	val Conn
-	err error
 }
 
 // Dial dials the connection with a default timeout.
