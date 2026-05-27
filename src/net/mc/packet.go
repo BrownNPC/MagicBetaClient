@@ -22,6 +22,7 @@ type String8Reader struct {
 	bytesIndex int
 	bytes      []byte
 }
+
 // a zero value String16Reader is valid to use.
 type String16Reader struct {
 	step int
@@ -34,6 +35,7 @@ type String16Reader struct {
 	runesIndex int
 	Runes      []rune
 }
+
 // https://pixelbrush.dev/beta-wiki/networking/packets/000-keep-alive
 type PacketKeepAlive struct {
 	// no body
@@ -55,7 +57,6 @@ type ClientboundLogin struct {
 	entityID net.SteppedReader32
 	EntityID int32
 
-	_      String16 //unused
 	unused String16Reader
 
 	WorldSeed int64
@@ -70,7 +71,7 @@ type ClientboundLogin struct {
 func (p *ClientboundLogin) Step(a mem.Allocator, r io.Reader) (bool, error) {
 	switch p.step {
 	case 0:
-		if ok, err := p.entityID.Step( r); !ok {
+		if ok, err := p.entityID.Step(r); !ok {
 			return ok, err
 		}
 		p.EntityID = int32(binary.BigEndian.Uint32(p.entityID.Buf[:]))
@@ -81,13 +82,13 @@ func (p *ClientboundLogin) Step(a mem.Allocator, r io.Reader) (bool, error) {
 		}
 		p.step++ //step
 	case 2:
-		if ok, err := p.worldSeed.Step( r); !ok {
+		if ok, err := p.worldSeed.Step(r); !ok {
 			return ok, err
 		}
 		p.WorldSeed = int64(binary.BigEndian.Uint64(p.worldSeed.Buf[:]))
 		p.step++ //step
 	case 3:
-		if ok, err := p.dimension.Step( r); !ok {
+		if ok, err := p.dimension.Step(r); !ok {
 			return ok, err
 		}
 		p.Dimension = p.dimension.Buf[0]
@@ -121,6 +122,15 @@ func (p ServerboundLogin) Write(w io.Writer) error {
 
 type ClientboundPreLogin struct {
 	ConnectionHash String16
+	connectionHash String16Reader
+}
+
+func (p *ClientboundPreLogin) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+	if ok, err := p.connectionHash.Step(a, rd); !ok {
+		return ok, err
+	}
+	p.ConnectionHash = p.connectionHash.Runes
+	return true, nil
 }
 
 type ServerboundPreLogin struct {
@@ -128,10 +138,7 @@ type ServerboundPreLogin struct {
 }
 
 func (p ServerboundPreLogin) Write(w io.Writer) error {
-	if err := WriteString16(w, p.Username); err != nil {
-		return err
-	}
-	return nil
+	return WriteString16(w, p.Username)
 }
 
 type PacketChatMessage struct {
@@ -139,8 +146,5 @@ type PacketChatMessage struct {
 }
 
 func (p *PacketChatMessage) Write(w io.Writer) error {
-	if err := WriteString16(w, p.Message); err != nil {
-		return err
-	}
-	return nil
+	return WriteString16(w, p.Message)
 }
