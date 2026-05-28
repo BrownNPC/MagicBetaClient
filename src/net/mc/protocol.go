@@ -4,6 +4,7 @@ import (
 	"solod.dev/so/encoding/binary"
 	"solod.dev/so/io"
 	"solod.dev/so/mem"
+	"solod.dev/so/math"
 )
 
 // -------------------- BYTE --------------------
@@ -60,6 +61,22 @@ func WriteBool(w io.Writer, v bool) error {
 		b = 1
 	}
 	return WriteByte(w, b)
+}
+
+// -------------------- FLOAT / DOUBLE --------------------
+
+func WriteFloat32(w io.Writer, v float32) error {
+	var b [4]byte
+	binary.BigEndian.PutUint32(b[:], math.Float32bits(v))
+	_, err := w.Write(b[:])
+	return err
+}
+
+func WriteFloat64(w io.Writer, v float64) error {
+	var b [8]byte
+	binary.BigEndian.PutUint64(b[:], math.Float64bits(v))
+	_, err := w.Write(b[:])
+	return err
 }
 
 // -------------------- STRING8 (UTF-8) --------------------

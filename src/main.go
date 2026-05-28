@@ -2,7 +2,9 @@ package SDL
 
 import (
 	"mbc/gfx"
+	"mbc/net"
 	"mbc/net/curl"
+	"mbc/net/mc"
 	"mbc/sdl"
 
 	"solod.dev/so/c"
@@ -21,6 +23,10 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 	var state = mem.Alloc[AppState](nil)
 	*appState = state
 	sdl.Init(sdl.INIT_VIDEO)
+	a := net.SteppedReader32{}
+	b := mc.PKT_AddPassenger
+	_ = b
+	_ = a
 	state.window = sdl.CreateWindow("MagicBetaClient", 640, 480, sdl.WINDOW_OPENGL|sdl.WINDOW_RESIZABLE)
 
 	gfx.Init(state.window)
