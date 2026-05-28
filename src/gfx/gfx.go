@@ -4,6 +4,7 @@ import (
 	"mbc/gfx/gl"
 	"mbc/sdl"
 
+	"solod.dev/so/c"
 	"solod.dev/so/math"
 )
 
@@ -167,31 +168,65 @@ func EndMode3D() {
 	gl.Disable(gl.DEPTH_TEST) // Disable DEPTH_TEST for 2D}
 }
 
-func LoadTexture(path string) (Texture, error) {
+// Image backed by an RGBA32 SDL3 surface.
+type Image struct {
+	Surface *sdl.Surface
+}
+
+func LoadImage(path string) (Image, error) {
 	src := sdl.LoadSurface(path)
 	if src == nil {
-		return Texture{}, sdl.GetError()
+		return Image{}, sdl.GetError()
 	}
 	defer sdl.DestroySurface(src)
 
 	converted := sdl.ConvertSurface(src, sdl.PIXELFORMAT_RGBA32)
 	if converted == nil {
-		return Texture{}, sdl.GetError()
+		return Image{}, sdl.GetError()
+	}
+	return Image{Surface: converted}, nil
+}
+func (i *Image) Destroy() {
+	sdl.DestroySurface(i.Surface)
+}
+func (i *Image) Size() (int, int) {
+	return i.Surface.Width(), i.Surface.Height()
+}
+
+// Get a pixel from the image.
+func (i *Image) Get(x, y int) Color {
+	if x < 0 || y < 0 || x >= i.Surface.Width() || y >= i.Surface.Height() {
+		panic("out of bounds")
+	}
+	s := i.Surface
+	base := s.Pixels()
+	p := c.PtrAdd(base, y*s.Pitch()+x*4)
+
+	return Color{
+		R: *p,
+		G: *(c.PtrAdd(p, 1)),
+		B: *(c.PtrAdd(p, 2)),
+		A: *(c.PtrAdd(p, 3)),
+	}
+}
+
+func LoadTexture(path string) (Texture, error) {
+	img, err := LoadImage(path)
+	if err != nil {
+		return Texture{}, err
 	}
 
-	defer sdl.DestroySurface(converted)
+	defer img.Destroy()
 
-	t := Texture{
-		Width:  converted.Width(),
-		Height: converted.Height(),
-	}
+	t := Texture{}
+	t.Width, t.Height = img.Size()
 
 	gl.GenTextures(1, &t.ID)
 	gl.BindTexture(gl.TEXTURE_2D, t.ID)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, converted.Pixels())
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, img.Surface.Pixels())
 
 	return t, nil
 }
@@ -304,4 +339,71 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 
 	gl.End()
 	DisableTexture()
+}
+
+// Draw a color-filled rectangle with pro parameters
+// DrawRectanglePro draws a color-filled rectangle with rotation and origin.
+//
+// origin is relative to rectangle size, matching raylib semantics.
+func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, color Color) {
+	var topLeft, topRight, bottomLeft, bottomRight Vector2
+
+	// Normalize negative sizes
+	if rectangle.Width < 0 {
+		rectangle.X += rectangle.Width
+		rectangle.Width = -rectangle.Width
+	}
+
+	if rectangle.Height < 0 {
+		rectangle.Y += rectangle.Height
+		rectangle.Height = -rectangle.Height
+	}
+
+	// Fast path: no rotation
+	if rotation == 0 {
+		x := rectangle.X - origin.X
+		y := rectangle.Y - origin.Y
+
+		topLeft = Vector2{x, y}
+		topRight = Vector2{x + rectangle.Width, y}
+		bottomLeft = Vector2{x, y + rectangle.Height}
+		bottomRight = Vector2{x + rectangle.Width, y + rectangle.Height}
+	} else {
+		rad := rotation * Deg2rad
+
+		sinR := float32(math.Sin(float64(rad)))
+		cosR := float32(math.Cos(float64(rad)))
+
+		x := rectangle.X
+		y := rectangle.Y
+
+		dx := -origin.X
+		dy := -origin.Y
+
+		topLeft.X = x + dx*cosR - dy*sinR
+		topLeft.Y = y + dx*sinR + dy*cosR
+
+		topRight.X = x + (dx+rectangle.Width)*cosR - dy*sinR
+		topRight.Y = y + (dx+rectangle.Width)*sinR + dy*cosR
+
+		bottomLeft.X = x + dx*cosR - (dy+rectangle.Height)*sinR
+		bottomLeft.Y = y + dx*sinR + (dy+rectangle.Height)*cosR
+
+		bottomRight.X = x + (dx+rectangle.Width)*cosR - (dy+rectangle.Height)*sinR
+		bottomRight.Y = y + (dx+rectangle.Width)*sinR + (dy+rectangle.Height)*cosR
+	}
+
+	gl.Disable(gl.TEXTURE_2D)
+
+	gl.Begin(gl.QUADS)
+
+	gl.Color4ub(color.R, color.G, color.B, color.A)
+	gl.Normal3f(0, 0, 1)
+
+	gl.Vertex2f(topLeft.X, topLeft.Y)
+	gl.Vertex2f(bottomLeft.X, bottomLeft.Y)
+	gl.Vertex2f(bottomRight.X, bottomRight.Y)
+	gl.Vertex2f(topRight.X, topRight.Y)
+
+	gl.End()
 }

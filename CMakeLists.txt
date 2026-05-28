@@ -23,22 +23,23 @@ find_package(SDL3 REQUIRED)
 # Link with OpenGL
 find_package(OpenGL REQUIRED)
 
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     CURL::libcurl
     OpenGL::GL
     m
 )
-target_compile_options(${PROJECT_NAME} PRIVATE
-    -g
-    -O1
-    -fno-omit-frame-pointer
-    -fsanitize=address
-)
+# target_compile_options(${PROJECT_NAME} PRIVATE
+#     -g
+#     -O1
+#     -fno-omit-frame-pointer
+#     -fsanitize=address
+# )
 
-target_link_options(${PROJECT_NAME} PRIVATE
-    -fsanitize=address
-)
+# target_link_options(${PROJECT_NAME} PRIVATE
+#     -fsanitize=address
+# )
 
 if (PSP)
   set(PSPDEV $ENV{PSPDEV})

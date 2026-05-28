@@ -66,12 +66,14 @@ func GLSwapWindow(*Window)
 //so:extern SDL_Surface
 type Surface struct {
 	w, h   int
-	pixels any
+	pixels *uint8
+	pitch  int
 }
 
-func (s Surface) Width() int  { return s.w }
-func (s Surface) Height() int { return s.h }
-func (s Surface) Pixels() any { return s.pixels }
+func (s Surface) Width() int     { return s.w }
+func (s Surface) Height() int    { return s.h }
+func (s Surface) Pitch() int     { return s.pitch }
+func (s Surface) Pixels() *uint8 { return s.pixels }
 
 //so:extern SDL_LoadSurface
 func LoadSurface(path string) *Surface
