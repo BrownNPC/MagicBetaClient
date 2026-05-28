@@ -1,3 +1,4 @@
 build/
+_build/
 assets/
 cmd/sobind

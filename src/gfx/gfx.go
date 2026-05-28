@@ -87,7 +87,6 @@ func EnableTexture(t Texture) {
 }
 func DisableTexture() {
 	gl.Disable(gl.TEXTURE_2D)
-	gl.BindTexture(gl.TEXTURE_2D, 0)
 }
 
 var window *sdl.Window
@@ -229,6 +228,29 @@ func LoadTexture(path string) (Texture, error) {
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, img.Surface.Pixels())
 
 	return t, nil
+}
+func SetTextureConfig(t Texture, blur bool, clamp bool) {
+	EnableTexture(t)
+	defer DisableTexture()
+	if blur {
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	}
+	if clamp {
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP)
+	} else {
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+	}
+}
+
+func DrawTexture(texture Texture, x, y float32, scale float32) {
+	DrawTexturePro(texture,
+		NewRectangle(0, 0, float32(texture.Width), float32(texture.Height)),
+		NewRectangle(float32(x), float32(y),
+			float32(texture.Width)*scale, float32(texture.Height)*scale),
+		Vector2{}, 0, White)
 }
 
 // DrawTexturePro draws a portion of a texture into a destination rectangle,

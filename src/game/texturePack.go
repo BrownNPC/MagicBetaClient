@@ -1,0 +1,63 @@
+package game
+
+import (
+	"mbc/gfx"
+
+	"solod.dev/so/path"
+
+	"solod.dev/so/maps"
+	"solod.dev/so/mem"
+)
+
+// Unload implements [TexturePack].
+func (p *DefaultTexturePack) Unload() {
+	p.Textures.Free()
+}
+
+// Description implements [TexturePack].
+func (p *DefaultTexturePack) Description() string {
+	return "The default look of Minecraft"
+}
+
+// GetTexture implements [TexturePack].
+func (p *DefaultTexturePack) GetTexture(name string) gfx.Texture {
+	if p.Textures.Has(name) {
+		return p.Textures.Get(name)
+	}
+	p.scratch.Reset()
+
+	t, err := gfx.LoadTexture(path.Join(&p.scratch, "assets", name))
+	if err != nil {
+		return gfx.Texture{}
+	}
+
+	p.Textures.Set(name, t)
+	return t
+}
+
+// Icon implements [TexturePack].
+func (p *DefaultTexturePack) Icon() gfx.Texture {
+	if tex := p.GetTexture("/pack.png"); (tex != gfx.Texture{}) {
+		return tex
+
+	}
+	panic("pack.png not found. assets are missing.")
+}
+
+// Name implements [TexturePack].
+func (p *DefaultTexturePack) Name() string {
+	return "Default"
+}
+
+var _defaultTexturePackScratchBuffer = [1024 * 100]byte{}
+
+func NewDefaultTexturePack() TexturePack {
+	parent := mem.NewArena(_defaultTexturePackScratchBuffer[:])
+	p := mem.Alloc[DefaultTexturePack](&parent)
+	 // minecraft has 76 pngs:
+	 // find assets -type f -name "*.png" | wc -l
+	p.Textures = maps.New[string, gfx.Texture](&parent, 76)
+
+	p.scratch = mem.NewArena(mem.AllocSlice[byte](&parent, 512, 512))
+	return p
+}

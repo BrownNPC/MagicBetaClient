@@ -30,16 +30,18 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     OpenGL::GL
     m
 )
-# target_compile_options(${PROJECT_NAME} PRIVATE
-#     -g
-#     -O1
-#     -fno-omit-frame-pointer
-#     -fsanitize=address
-# )
+if (!PSP)
+target_compile_options(${PROJECT_NAME} PRIVATE
+    -g
+    -O1
+    -fno-omit-frame-pointer
+    -fsanitize=address
+)
 
-# target_link_options(${PROJECT_NAME} PRIVATE
-#     -fsanitize=address
-# )
+target_link_options(${PROJECT_NAME} PRIVATE
+    -fsanitize=address
+)
+endif()
 
 if (PSP)
   set(PSPDEV $ENV{PSPDEV})

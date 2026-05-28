@@ -74,12 +74,12 @@ func NewQuaternion(x, y, z, w float32) Quaternion {
 
 // Color type, RGBA (32bit)
 // TODO remove later, keep type for now to not break code
-type Color struct{
-	R,G,B,A uint8
+type Color struct {
+	R, G, B, A uint8
 }
 
 // NewColor - Returns new Color
-func NewColor(r, g, b, a uint8) Color{
+func NewColor(r, g, b, a uint8) Color {
 	return Color{r, g, b, a}
 }
 
@@ -138,7 +138,6 @@ type Camera struct {
 	Fovy float32
 }
 
-
 // NewCamera3D - Returns new Camera3D
 func NewCamera3D(pos, target, up Vector3, fovy float32) Camera {
 	return Camera{pos, target, up, fovy}
@@ -156,7 +155,7 @@ type Camera2D struct {
 	Zoom float32
 }
 
-type Texture struct{
-	Width,Height int
-	ID gl.GLuint
+type Texture struct {
+	Width, Height int
+	ID            gl.GLuint
 }

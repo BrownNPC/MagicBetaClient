@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-var TranspileDir = File("./build/transpiled/")
-var BuildDir = File("./build/")
+var TranspileDir = File("./_build/transpiled/")
+var BuildDir = File("./_build/")
 
 var Bootstrap = flag.String("bootstrap", "none", " -bootstrap=<psp,native>")
 
