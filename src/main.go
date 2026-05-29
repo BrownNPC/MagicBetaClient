@@ -14,8 +14,9 @@ import (
 var _ string
 
 type AppState struct {
-	lastTime time.Time
-	game     game.State
+	lastTime  time.Time
+	game      game.State
+	targetFPS float32
 }
 
 var state AppState
@@ -28,20 +29,33 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 		sdl.WINDOW_HIGH_PIXEL_DENSITY)
 	gfx.Init(window)
 	state.game.Init()
+	state.targetFPS = 60
+	state.lastTime = time.Now()
 
 	return sdl.APP_CONTINUE
 }
 
 func AppIterate(appState any) sdl.AppResult {
-	{ // calculate delta time
-		currentTime := time.Now()
-		state.game.Dt = float32(time.Since(currentTime).Seconds())
-		state.lastTime = currentTime
-	}
+	currentTime := time.Now()
 
+	// Delta time
+	state.game.Dt = float32(currentTime.Sub(state.lastTime).Seconds())
+	state.lastTime = currentTime
+
+	// Update/render
 	if !state.game.Update() {
 		return sdl.APP_SUCCESS
 	}
+
+	// FPS cap
+	targetFrameTime := 1.0 / state.targetFPS
+	frameTime := float32(state.game.Dt)
+
+	if frameTime < targetFrameTime {
+		sleepSeconds := targetFrameTime - frameTime
+		sdl.Delay(time.Duration(sleepSeconds * float32(time.Second)))
+	}
+
 	return sdl.APP_CONTINUE
 }
 

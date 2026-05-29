@@ -173,3 +173,12 @@ type Texture struct {
 	Width, Height int
 	ID            gl.GLuint
 }
+
+// Font is a Minecraft bitmap font.
+// Minecraft uses Ascii + Code Page 437 character set.
+//
+// With the exception that index 167 is assumed to be the [SectionSign].
+type Font struct {
+	Atlas      Texture
+	CharWidths [256]uint8
+}

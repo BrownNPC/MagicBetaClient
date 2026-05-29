@@ -30,7 +30,9 @@ curl -s $client_jar >assets/client.jar
 		misc/'*' \
 		mob/'*' \
 		terrain/'*' \
-		font/'*'
+		font/'*' \
+		title/'*' \
+		lang/'*'
 	rm -f client.jar
 )
 

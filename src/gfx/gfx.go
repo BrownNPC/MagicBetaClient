@@ -6,6 +6,8 @@ import (
 
 	"solod.dev/so/c"
 	"solod.dev/so/math"
+	"solod.dev/so/slices"
+	"solod.dev/so/unicode"
 )
 
 // Some basic Defines
@@ -226,10 +228,10 @@ type Image struct {
 
 func LoadImage(path string) (Image, error) {
 	src := sdl.LoadSurface(path)
+	defer sdl.DestroySurface(src)
 	if src == nil {
 		return Image{}, sdl.GetError()
 	}
-	defer sdl.DestroySurface(src)
 
 	converted := sdl.ConvertSurface(src, sdl.PIXELFORMAT_RGBA32)
 	if converted == nil {
@@ -260,15 +262,12 @@ func (i *Image) Get(x, y int) Color {
 		A: *(c.PtrAdd(p, 3)),
 	}
 }
-
-func LoadTexture(path string) (Texture, error) {
-	img, err := LoadImage(path)
-	if err != nil {
-		return Texture{}, err
-	}
-
-	defer img.Destroy()
-
+func (i *Image) Pixels() []uint8 {
+	base := i.Surface.Pixels()
+	size := 4 * i.Surface.Width() * i.Surface.Height()
+	return c.Slice(base, size, size)
+}
+func LoadTextureFromImage(img Image) (Texture, error) {
 	t := Texture{}
 	t.Width, t.Height = img.Size()
 
@@ -283,6 +282,20 @@ func LoadTexture(path string) (Texture, error) {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 
 	return t, nil
+}
+func LoadTexture(path string) (Texture, error) {
+	img, err := LoadImage(path)
+	// this code is ugly because of https://github.com/solod-dev/solod/issues/76
+	defer img.Destroy()
+	if err != nil {
+		return Texture{}, err
+	}
+	t, err := LoadTextureFromImage(img)
+	if err != nil {
+		return t, err
+	}
+	return t, nil
+
 }
 func SetTextureConfig(t Texture, blur bool, clamp bool) {
 	EnableTexture(t)
@@ -475,6 +488,236 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 
 	gl.End()
 	DisableTexture()
+}
+
+// drawTexturePro but the user should call:
+// EnableTexture(texture)
+// gl.Begin(gl.QUADS)
+//
+// drawTextureProUnsafe()
+//
+// gl.End()
+// DisableTexture()
+func drawTextureProUnsafe(texture Texture, source, dest Rectangle, tint Color) {
+
+	if texture.ID == 0 {
+		return
+	}
+
+	width := float32(texture.Width)
+	height := float32(texture.Height)
+
+	flipX := false
+
+	if source.Width < 0 {
+		flipX = true
+		source.Width = -source.Width
+	}
+	if source.Height < 0 {
+		source.Y -= source.Height
+		source.Height = -source.Height
+	}
+
+	if dest.Width < 0 {
+		dest.Width = -dest.Width
+	}
+	if dest.Height < 0 {
+		dest.Height = -dest.Height
+	}
+
+	var topLeft, topRight, bottomLeft, bottomRight Vector2
+
+	x := dest.X
+	y := dest.Y
+
+	topLeft = Vector2{x, y}
+	topRight = Vector2{x + dest.Width, y}
+	bottomLeft = Vector2{x, y + dest.Height}
+	bottomRight = Vector2{x + dest.Width, y + dest.Height}
+
+	u0 := source.X / width
+	v0 := source.Y / height
+	u1 := (source.X + source.Width) / width
+	v1 := (source.Y + source.Height) / height
+
+	EnableTexture(texture)
+	gl.Begin(gl.QUADS)
+
+	gl.Color4ub(tint.R, tint.G, tint.B, tint.A)
+	gl.Normal3f(0, 0, 1)
+
+	// Top-left
+	if flipX {
+		gl.TexCoord2f(u1, v0)
+	} else {
+		gl.TexCoord2f(u0, v0)
+	}
+	gl.Vertex2f(topLeft.X, topLeft.Y)
+
+	// Bottom-left
+	if flipX {
+		gl.TexCoord2f(u1, v1)
+	} else {
+		gl.TexCoord2f(u0, v1)
+	}
+	gl.Vertex2f(bottomLeft.X, bottomLeft.Y)
+
+	// Bottom-right
+	if flipX {
+		gl.TexCoord2f(u0, v1)
+	} else {
+		gl.TexCoord2f(u1, v1)
+	}
+	gl.Vertex2f(bottomRight.X, bottomRight.Y)
+
+	// Top-right
+	if flipX {
+		gl.TexCoord2f(u0, v0)
+	} else {
+		gl.TexCoord2f(u1, v0)
+	}
+	gl.Vertex2f(topRight.X, topRight.Y)
+
+	gl.End()
+	DisableTexture()
+}
+
+const glyphsPerRow = 16
+
+// Load Minecraft bitmap font
+func LoadFont(path string) (Font, error) {
+	img, err := LoadImage(path)
+	defer img.Destroy()
+	if err != nil {
+		return Font{}, err
+	}
+	fnt := Font{}
+	fnt.Atlas, err = LoadTextureFromImage(img)
+	if err != nil {
+		return fnt, err
+	}
+
+	atlasSize := img.Surface.Width()
+	glyphSize := atlasSize / glyphsPerRow
+
+	for charCode := range 256 {
+		col := charCode % glyphsPerRow
+		row := charCode / glyphsPerRow
+
+		glyphWidth := glyphSize - 1
+
+		for glyphWidth >= 0 {
+			emptyColumn := true
+
+			pixelX := col*glyphSize + glyphWidth
+
+			for y := range glyphSize {
+				pixelY := row*glyphSize + y
+
+				if img.Get(pixelX, pixelY).A > 0 {
+					emptyColumn = false
+					break
+				}
+			}
+
+			if !emptyColumn {
+				break
+			}
+
+			glyphWidth--
+		}
+
+		if charCode == ' ' {
+			glyphWidth = 2
+		}
+
+		fnt.CharWidths[charCode] = uint8(glyphWidth + 2)
+	}
+	return fnt, nil
+}
+
+// Minecraft assumes that this is the section sign (§) which is used for coloring text.
+//
+// https://minecraft.wiki/w/Formatting_codes
+const SectionSign rune = 167
+
+func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color, darken bool) {
+	if len(text) == 0 {
+		return
+	}
+
+	if darken {
+		color.R /= 4
+		color.G /= 4
+		color.B /= 4
+	}
+
+	cellSize := float32(fnt.Atlas.Width / glyphsPerRow)
+	penX := x
+
+	// use drawTextureProUnsafe to avoid state switching per character.
+	EnableTexture(fnt.Atlas)
+	defer DisableTexture()
+	gl.Begin(gl.QUADS)
+	defer gl.End()
+
+	for i := 0; i < len(text); i++ {
+		// exotic notch code :D
+		for len(text) > i+1 && text[i] == SectionSign { //colored text using format strings
+			colorCode := slices.Index(
+				[]rune("0123456789abcdef"),
+				unicode.ToLower(text[i+1]),
+			)
+			if colorCode < 0 {
+				colorCode = 15
+			}
+			i += 2
+
+			colorIndex := uint8(colorCode)
+			if darken {
+				colorIndex += 16
+			}
+
+			base := uint8((colorIndex >> 3 & 1) * 85)
+			red := uint8((colorIndex>>2&1)*170 + base)
+			green := uint8((colorIndex>>1&1)*170 + base)
+			blue := uint8((colorIndex>>0&1)*170 + base)
+
+			if colorIndex == 6 {
+				green += 85
+			}
+			if colorIndex >= 16 {
+				red /= 4
+				green /= 4
+				blue /= 4
+			}
+
+			color = Color{red, green, blue, color.A}
+		}
+
+		charCode := text[i]
+		col := charCode % glyphsPerRow
+		row := charCode / glyphsPerRow
+
+		src := Rectangle{
+			X:      float32(col) * cellSize,
+			Y:      float32(row) * cellSize,
+			Width:  cellSize,
+			Height: cellSize,
+		}
+
+		dst := Rectangle{
+			X:      penX,
+			Y:      y,
+			Width:  cellSize * size,
+			Height: cellSize * size,
+		}
+
+		drawTextureProUnsafe(fnt.Atlas, src, dst, color) // slight performance increase?
+		// DrawTexturePro(fnt.Atlas, src, dst, Vector2{}, 0, color)
+
+		penX += float32(fnt.CharWidths[charCode]) * size
+	}
 }
 
 // Draw a color-filled rectangle with pro parameters

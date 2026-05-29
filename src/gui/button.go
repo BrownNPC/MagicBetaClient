@@ -2,7 +2,7 @@ package gui
 
 import "mbc/gfx"
 
-func Button(GuiTexture gfx.Texture, X, Y, ScalePercent float32, Hovered bool, Enabled bool) {
+func Button(GuiTexture gfx.Texture, X, Y, WidthScale float32, Hovered bool, Enabled bool) {
 	state := float32(1)
 	if !Enabled {
 		state = 0
@@ -10,18 +10,18 @@ func Button(GuiTexture gfx.Texture, X, Y, ScalePercent float32, Hovered bool, En
 		state = 2
 	}
 	asX, asY := GetAtlasScale(GuiTexture)
-	const maxWidth float32 = 200.0
-	Width := ScalePercent * 0.01 * 200
-	Height := float32(20)
+
+	Width := min(200, 200*WidthScale) * Scale()
+	Height := float32(20) * Scale()
 
 	srcY := (46 + state*20) * asY
 	srcWidth := 200 * asX
 	srcHeight := 20 * asY
 	dst1 := gfx.Rectangle{
-		X:      X,
+		X:      X-Width/2,
 		Y:      Y,
-		Width:  min(Width/2, maxWidth/2) * Scale(),
-		Height: Height * Scale(),
+		Width:  Width / 2,
+		Height: Height,
 	}
 	gfx.DrawTextureRec(
 		GuiTexture,
@@ -42,10 +42,10 @@ func Button(GuiTexture gfx.Texture, X, Y, ScalePercent float32, Hovered bool, En
 			Height: srcHeight,
 		},
 		gfx.Rectangle{
-			X:      X + dst1.Width,
+			X:      dst1.X + Width/2,
 			Y:      Y,
-			Width:  min(Width/2, maxWidth/2) * Scale(),
-			Height: Height * Scale(),
+			Width:  Width / 2,
+			Height: Height,
 		},
 	)
 }
