@@ -78,6 +78,17 @@ type Color struct {
 	R, G, B, A uint8
 }
 
+func (c Color) Tint(target Color, percent int) Color {
+	amount := float32(percent) * 0.01
+
+	return Color{
+		R: uint8(Lerp(float32(c.R), float32(target.R), amount)),
+		G: uint8(Lerp(float32(c.G), float32(target.G), amount)),
+		B: uint8(Lerp(float32(c.B), float32(target.B), amount)),
+		A: c.A,
+	}
+}
+
 // NewColor - Returns new Color
 func NewColor(r, g, b, a uint8) Color {
 	return Color{r, g, b, a}
@@ -94,6 +105,9 @@ type Rectangle struct {
 // NewRectangle - Returns new Rectangle
 func NewRectangle(x, y, width, height float32) Rectangle {
 	return Rectangle{x, y, width, height}
+}
+func NewRecFromTexture(t Texture) Rectangle {
+	return NewRectangle(0, 0, float32(t.Width), float32(t.Height))
 }
 
 // ToInt32 converts rectangle to int32 variant

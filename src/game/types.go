@@ -19,9 +19,10 @@ type DefaultTexturePack struct {
 	Textures maps.Map[string, gfx.Texture]
 	scratch  mem.Arena
 }
-
+// Game state
 type State struct {
 	Dt float32
+	ScreenWidth,ScreenHeight int
 
 	Pack TexturePack
 }

@@ -3,14 +3,17 @@ package game
 import (
 	"mbc/gfx"
 
-	"solod.dev/so/path"
-
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
+	"solod.dev/so/path"
 )
 
 // Unload implements [TexturePack].
 func (p *DefaultTexturePack) Unload() {
+	iter := p.Textures.Iter()
+	for iter.Next() {
+		gfx.UnloadTexture(iter.Value())
+	}
 	p.Textures.Free()
 }
 
@@ -49,15 +52,14 @@ func (p *DefaultTexturePack) Name() string {
 	return "Default"
 }
 
-var _defaultTexturePackScratchBuffer = [1024 * 100]byte{}
+var _defaultTexturePackScratchBuffer = [1024 * 1024 * 2]byte{}
 
 func NewDefaultTexturePack() TexturePack {
 	parent := mem.NewArena(_defaultTexturePackScratchBuffer[:])
 	p := mem.Alloc[DefaultTexturePack](&parent)
-	 // minecraft has 76 pngs:
-	 // find assets -type f -name "*.png" | wc -l
-	p.Textures = maps.New[string, gfx.Texture](&parent, 76)
-
+	// minecraft has 76 pngs:
+	// find assets -type f -name "*.png" | wc -l
+	p.Textures = maps.New[string, gfx.Texture](&parent, 1)
 	p.scratch = mem.NewArena(mem.AllocSlice[byte](&parent, 512, 512))
 	return p
 }

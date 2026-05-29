@@ -94,10 +94,14 @@ var window *sdl.Window
 func Init(win *sdl.Window) {
 	window = win
 	sdl.GLCreateContext(win)
-	var width, height sdl.Cint
-	sdl.GetWindowSizeInPixels(win, &width, &height)
+	width, height := GetWindowSize()
 	initGLDefaultState()
-	SetupViewport(int(width), int(height))
+	SetupViewport(width, height)
+}
+func GetWindowSize() (int, int) {
+	var w, h sdl.Cint
+	sdl.GetWindowSizeInPixels(window, &w, &h)
+	return int(w), int(h)
 }
 
 func initGLDefaultState() {
@@ -167,6 +171,54 @@ func EndMode3D() {
 	gl.Disable(gl.DEPTH_TEST) // Disable DEPTH_TEST for 2D}
 }
 
+func GetCameraMatrix2D(cam Camera2D) Matrix {
+	// The camera in world-space is set by
+	//   1. Move it to target
+	//   2. Rotate by -rotation and scale by (1/zoom)
+	//      When setting higher scale, it's more intuitive for the world to become bigger (= camera become smaller),
+	//      not for the camera getting bigger, hence the invert. Same deal with rotation
+	//   3. Move it by (-offset);
+	//      Offset defines target transform relative to screen, but since effectively "moving" screen (camera)
+	//      it needs to be moved into opposite direction (inverse transform)
+
+	// Having camera transform in world-space, inverse of it gives the modelview transform
+	// Since (A*B*C)' = C'*B'*A', the modelview is
+	//   1. Move to offset
+	//   2. Rotate and Scale
+	//   3. Move by -target
+	matOrigin := MatrixTranslate(-cam.Target.X, -cam.Target.Y, 0)
+	matRotation := MatrixRotate(Vector3{0.0, 0.0, 1.0}, cam.Rotation*Deg2rad)
+	matScale := MatrixScale(cam.Zoom, cam.Zoom, 1.0)
+	matTranslation := MatrixTranslate(cam.Offset.X, cam.Offset.Y, 0.0)
+
+	matTransform := MatrixMultiply(MatrixMultiply(matOrigin, MatrixMultiply(matScale, matRotation)), matTranslation)
+	return matTransform
+}
+
+func BeginMode2D(cam Camera2D) {
+	gl.LoadIdentity() // Reset current matrix (modelview)
+	matCamera := GetCameraMatrix2D(cam).ToFloat().V[0]
+	// Apply 2d camera transformation to modelview
+	gl.MultMatrixf(&matCamera)
+}
+func EndMode2D() { gl.LoadIdentity() }
+
+// Get the screen space position for a 2d camera world space position
+func GetWorldToScreen2D(position Vector2, camera Camera2D) Vector2 {
+	matCamera := GetCameraMatrix2D(camera)
+	transform := Vector3Transform(Vector3{position.X, position.Y, 0}, matCamera)
+
+	return Vector2{transform.X, transform.Y}
+}
+
+// Get the world space position for a 2d camera screen space position
+func GetScreenToWorld2D(position Vector2, camera Camera2D) Vector2 {
+	invMatCamera := MatrixInvert(GetCameraMatrix2D(camera))
+	transform := Vector3Transform(Vector3{position.X, position.Y, 0}, invMatCamera)
+
+	return Vector2{transform.X, transform.Y}
+}
+
 // Image backed by an RGBA32 SDL3 surface.
 type Image struct {
 	Surface *sdl.Surface
@@ -222,10 +274,13 @@ func LoadTexture(path string) (Texture, error) {
 
 	gl.GenTextures(1, &t.ID)
 	gl.BindTexture(gl.TEXTURE_2D, t.ID)
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, img.Surface.Pixels())
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, img.Surface.Pixels())
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 
 	return t, nil
 }
@@ -235,6 +290,9 @@ func SetTextureConfig(t Texture, blur bool, clamp bool) {
 	if blur {
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	} else {
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 	}
 	if clamp {
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP)
@@ -245,12 +303,68 @@ func SetTextureConfig(t Texture, blur bool, clamp bool) {
 	}
 }
 
-func DrawTexture(texture Texture, x, y float32, scale float32) {
-	DrawTexturePro(texture,
+func UnloadTexture(texture Texture) {
+	if texture.ID != 0 {
+		gl.DeleteTextures(1, &texture.ID)
+	}
+}
+func DrawTexture(texture Texture, x, y float32) {
+	DrawTexturePro(
+		texture,
 		NewRectangle(0, 0, float32(texture.Width), float32(texture.Height)),
-		NewRectangle(float32(x), float32(y),
-			float32(texture.Width)*scale, float32(texture.Height)*scale),
+		NewRectangle(float32(x), float32(y), float32(texture.Width), float32(texture.Height)),
 		Vector2{}, 0, White)
+}
+func DrawTextureRec(texture Texture, src, dst Rectangle) {
+	DrawTexturePro(texture, src, dst, Vector2{}, 0, White)
+}
+func DrawTextureTiled(
+	texture Texture,
+	dest Rectangle,
+	scale float32,
+	tint Color,
+) {
+	if texture.ID == 0 {
+		return
+	}
+
+	if scale <= 0 {
+		scale = 1
+	}
+
+	tileW := float32(texture.Width) * scale
+	tileH := float32(texture.Height) * scale
+
+	// UVs larger than 1.0 cause GL_REPEAT wrapping
+	u := dest.Width / tileW
+	v := dest.Height / tileH
+
+	EnableTexture(texture)
+
+	gl.Begin(gl.QUADS)
+
+	gl.Color4ub(tint.R, tint.G, tint.B, tint.A)
+	gl.Normal3f(0, 0, 1)
+
+	// Top-left
+	gl.TexCoord2f(0, 0)
+	gl.Vertex2f(dest.X, dest.Y)
+
+	// Bottom-left
+	gl.TexCoord2f(0, v)
+	gl.Vertex2f(dest.X, dest.Y+dest.Height)
+
+	// Bottom-right
+	gl.TexCoord2f(u, v)
+	gl.Vertex2f(dest.X+dest.Width, dest.Y+dest.Height)
+
+	// Top-right
+	gl.TexCoord2f(u, 0)
+	gl.Vertex2f(dest.X+dest.Width, dest.Y)
+
+	gl.End()
+
+	DisableTexture()
 }
 
 // DrawTexturePro draws a portion of a texture into a destination rectangle,

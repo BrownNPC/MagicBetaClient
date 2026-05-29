@@ -10,10 +10,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 # add sources
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS build/transpiled/*.c)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS _build/transpiled/*.c)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC build/transpiled external/)
+target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled external/)
 
 set(CMAKE_BUILD_TYPE Debug)
 # Link with CURL
@@ -31,16 +31,16 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     m
 )
 if (!PSP)
-target_compile_options(${PROJECT_NAME} PRIVATE
-    -g
-    -O1
-    -fno-omit-frame-pointer
-    -fsanitize=address
-)
+# target_compile_options(${PROJECT_NAME} PRIVATE
+#     -g
+#     -O1
+#     -fno-omit-frame-pointer
+#     -fsanitize=address
+# )
 
-target_link_options(${PROJECT_NAME} PRIVATE
-    -fsanitize=address
-)
+# target_link_options(${PROJECT_NAME} PRIVATE
+#     -fsanitize=address
+# )
 endif()
 
 if (PSP)
@@ -50,6 +50,8 @@ if (PSP)
   target_compile_options(${PROJECT_NAME} PRIVATE
       -isystem ${GCC_INCLUDE_DIR}
   )
+  # pretend to be openbsd for PSP.
+  target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd)
 
   create_pbp_file(
     TARGET ${PROJECT_NAME}

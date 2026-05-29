@@ -15,7 +15,7 @@ var _ string
 
 type AppState struct {
 	lastTime time.Time
-	game        game.State
+	game     game.State
 }
 
 var state AppState
@@ -23,7 +23,9 @@ var state AppState
 func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 	sdl.Init(sdl.INIT_VIDEO)
 
-	window := sdl.CreateWindow("MagicBetaClient", 640, 480, sdl.WINDOW_OPENGL|sdl.WINDOW_RESIZABLE)
+	window := sdl.CreateWindow("MagicBetaClient", 480, 272, sdl.WINDOW_OPENGL|
+		sdl.WINDOW_RESIZABLE|
+		sdl.WINDOW_HIGH_PIXEL_DENSITY)
 	gfx.Init(window)
 	state.game.Init()
 
@@ -44,8 +46,13 @@ func AppIterate(appState any) sdl.AppResult {
 }
 
 func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
-	if e.Type() == sdl.EVENT_QUIT {
+	switch e.Type() {
+	case sdl.EVENT_QUIT:
 		return sdl.APP_SUCCESS
+	case sdl.EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+		w := e.Window()
+		state.game.ScreenWidth, state.game.ScreenHeight = int(w.Data1), int(w.Data2)
+		gfx.SetupViewport(int(w.Data1), int(w.Data2))
 	}
 	return sdl.APP_CONTINUE
 }
