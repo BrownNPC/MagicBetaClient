@@ -21,10 +21,12 @@ type DefaultTexturePack struct {
 }
 
 // Game state
+var ___scratchBuf [1024 * 1024]byte // 1MiB
 type State struct {
 	Dt                        float32
 	ScreenWidth, ScreenHeight int
 
-	Pack TexturePack
-	Font gfx.Font
+	Pack    TexturePack
+	Font    gfx.Font
+	Scratch mem.Arena
 }

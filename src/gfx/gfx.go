@@ -636,11 +636,12 @@ func LoadFont(path string) (Font, error) {
 	return fnt, nil
 }
 
-// Minecraft assumes that this is the section sign (§) which is used for coloring text.
-//
 // https://minecraft.wiki/w/Formatting_codes
-const SectionSign rune = 167
+const SectionSign rune = '§'
 
+func (fnt *Font) DrawString(text string, x, y float32, size float32, color Color) {
+	fnt.DrawRunes([]rune(text), x, y, size, color, false)
+}
 func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color, darken bool) {
 	if len(text) == 0 {
 		return
@@ -663,7 +664,7 @@ func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color,
 
 	for i := 0; i < len(text); i++ {
 		// exotic notch code :D
-		for len(text) > i+1 && text[i] == SectionSign { //colored text using format strings
+		for len(text) > i+1 && text[i] == '§' { //colored text using format strings
 			colorCode := slices.Index(
 				[]rune("0123456789abcdef"),
 				unicode.ToLower(text[i+1]),

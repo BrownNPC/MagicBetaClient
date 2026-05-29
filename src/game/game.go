@@ -3,6 +3,8 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/gui"
+
+	"solod.dev/so/mem"
 )
 
 func (s *State) Init() {
@@ -14,6 +16,7 @@ func (s *State) Init() {
 	if err != nil {
 		panic(err)
 	}
+	s.Scratch = mem.NewArena(___scratchBuf[:])
 }
 
 // return false to quit.
@@ -45,6 +48,6 @@ func (s *State) DrawMainMenu() {
 		GuiTexture,
 		cX, cY, .90,
 		true, true)
-	r := []rune{gfx.SectionSign, '2', 'H', 'e', 'l', 'l', 'o'}
-	s.Font.DrawRunes(r, 0, 0, 20, gfx.White, false)
+
+	s.Font.DrawRunes([]rune("§aCreeper§f §cAwww man!"), 0, 0, gui.Scale(), gfx.White, false)
 }
