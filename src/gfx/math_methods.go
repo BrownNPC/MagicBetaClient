@@ -8,13 +8,14 @@ func (r Rectangle) Anchor(parent Rectangle, anchorX, anchorY float32) Rectangle 
 		parent.Y+(parent.H-r.H)*anchorY,
 	))
 }
-func (r Rectangle)Multiply(v float32)Rectangle{
+func (r Rectangle) Multiply(v float32) Rectangle {
 	r.W *= v
 	r.H *= v
 	r.X *= v
 	r.Y *= v
 	return r
 }
+
 // Scale size
 func (r Rectangle) Scale(v float32) Rectangle {
 	r.W *= v
@@ -51,6 +52,12 @@ func (r Rectangle) Size() Vector2 {
 		X: r.W,
 		Y: r.H,
 	}
+}
+func (r Rectangle) Contains(p Vector2) bool {
+	return p.X >= r.X &&
+		p.X <= r.X+r.W &&
+		p.Y >= r.Y &&
+		p.Y <= r.Y+r.H
 }
 
 // MultiplyVector2 - Multiplies a vector by a matrix 2x2
@@ -241,9 +248,9 @@ func (v Vector2) Distance(v2 Vector2) float32 {
 	return Vector2Distance(v, v2)
 }
 
-// DistanceSqr - Calculate square distance between two vectors
-func (v Vector2) DistanceSqr(v2 Vector2) float32 {
-	return Vector2DistanceSqr(v, v2)
+// Intersect - Calculate square distance between two vectors
+func (v Vector2) Intersect(v2 Vector2, radius float32) bool {
+	return Vector2DistanceSqr(v, v2) <= radius
 }
 
 // Divide - Divide vector by vector

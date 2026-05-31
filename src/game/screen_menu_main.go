@@ -6,7 +6,7 @@ import (
 	"mbc/gui"
 )
 
-func (s *State) DrawMainMenu(screen gfx.Rectangle) {
+func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 	// draw background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	// Draw dirt background
@@ -27,19 +27,24 @@ func (s *State) DrawMainMenu(screen gfx.Rectangle) {
 		gui.MinecraftLogo(logo)
 	}
 	const Nbuttons = 3
+	ButtonTitles := [Nbuttons]string{
+		"Join Server",
+		"Texture Packs",
+		"Options",
+	}
+
 	buttonSet := gfx.Rectangle{W: gui.ButtonSize.W, H: (gui.ButtonSize.H + 2) * 4}.
 		Scale(gui.Scale).
 		Anchor(menuScreen, .5, .70)
 	btn := gui.ButtonSize.
 		SetPosition(buttonSet.Position()).
 		Scale(gui.Scale)
-
-	for i := range 4 {
+	for i := range Nbuttons {
 		btn.Y += btn.H
 		if i != 0 {
 			btn.Y += 2 * gui.Scale //padding
 		}
-		gui.Button("Play",
+		gui.Button(ButtonTitles[i],
 			btn,
 			i == 0, true,
 		)

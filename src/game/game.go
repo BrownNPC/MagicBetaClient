@@ -17,11 +17,15 @@ func (s *State) Init() {
 // return false to quit.
 func (s *State) Update() bool {
 	gui.Update(s.ScreenWidth, s.ScreenHeight, s.Pack)
-
 	screen := gfx.Rectangle{W: float32(s.ScreenWidth), H: float32(s.ScreenHeight)}
 	gfx.BeginDrawing()
 	gfx.ClearBackground(gfx.Black)
-	s.DrawMainMenu(screen)
+
+	switch s.Screen {
+	case SCREEN_MENU_MAIN:
+		s.Screen_MenuMain(screen)
+	}
 	gfx.EndDrawing()
+
 	return true
 }

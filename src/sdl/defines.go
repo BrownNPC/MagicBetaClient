@@ -44,3 +44,10 @@ const (
 	WINDOW_NOT_FOCUSABLE       WindowFlags = (0x0000000080000000) /**< window should not be focusable */
 
 )
+const (
+	BUTTON_LEFT   = 1
+	BUTTON_MIDDLE = 2
+	BUTTON_RIGHT  = 3
+	BUTTON_X1     = 4
+	BUTTON_X2     = 5
+)

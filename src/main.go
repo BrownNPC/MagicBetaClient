@@ -68,6 +68,21 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		w := e.Window()
 		state.game.ScreenWidth, state.game.ScreenHeight = float32(w.Data1), float32(w.Data2)
 		gfx.SetupViewport(int(w.Data1), int(w.Data2))
+	case sdl.EVENT_MOUSE_MOTION:
+		m := e.MouseMotion()
+		state.game.Cursor = gfx.Vector2{X: m.X, Y: m.Y}
+		state.game.CursorDelta = gfx.Vector2{X: m.Xrel, Y: m.Yrel}
+		state.game.Inputs[game.InputLook].Direction = state.game.CursorDelta
+	case sdl.EVENT_MOUSE_BUTTON_UP, sdl.EVENT_MOUSE_BUTTON_DOWN:
+		m := e.MouseButton()
+		i := game.InputType(0)
+		switch m.Button {
+		case sdl.BUTTON_LEFT:
+			i = game.InputLeftClick
+		case sdl.BUTTON_RIGHT:
+			i = game.InputRightClick
+		}
+		state.game.Inputs[i] = game.Input{Down: m.Down}
 	}
 	return sdl.APP_CONTINUE
 }
