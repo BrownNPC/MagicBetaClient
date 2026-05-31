@@ -44,9 +44,13 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 		if i != 0 {
 			btn.Y += 2 * gui.Scale //padding
 		}
+		hovered := btn.Contains(s.Cursor)
+		if hovered && s.Inputs[InputLeftClick].Released {
+			println("Clicked:", ButtonTitles[i])
+		}
 		gui.Button(ButtonTitles[i],
 			btn,
-			i == 0, true,
+			hovered, true,
 		)
 	}
 }

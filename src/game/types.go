@@ -27,7 +27,8 @@ type MenuMain struct {
 
 type InputType uint32
 type Input struct {
-	Down      bool
+	Pressed   bool
+	Released  bool
 	Direction gfx.Vector2
 }
 
@@ -47,13 +48,13 @@ type State struct {
 	Dt                        float32
 	ScreenWidth, ScreenHeight float32
 
-	Pack        gfx.TexturePack
-	Scratch     mem.Arena
-	Cursor      gfx.Vector2
-	ShowCursor  bool
-	CursorDelta gfx.Vector2
-	Screen      Screen
-	Inputs      [TotalInputs]Input
+	Pack            gfx.TexturePack
+	Scratch         mem.Arena
+	Cursor          gfx.Vector2
+	ShowCursor      bool
+	CursorDelta     gfx.Vector2
+	Screen          Screen
+	Inputs          [TotalInputs]Input
 	// screen data
 	MenuMain MenuMain
 }

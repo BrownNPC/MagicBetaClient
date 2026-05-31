@@ -47,7 +47,7 @@ func AppIterate(appState any) sdl.AppResult {
 	if !state.game.Update() {
 		return sdl.APP_SUCCESS
 	}
-
+	state.game.Inputs = [6]game.Input{}
 	// FPS cap
 	targetFrameTime := 1.0 / state.targetFPS
 	frameTime := float32(state.game.Dt)
@@ -82,7 +82,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		case sdl.BUTTON_RIGHT:
 			i = game.InputRightClick
 		}
-		state.game.Inputs[i] = game.Input{Down: m.Down}
+		state.game.Inputs[i] = game.Input{Pressed: m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN, Released: m.Type == sdl.EVENT_MOUSE_BUTTON_UP}
 	}
 	return sdl.APP_CONTINUE
 }
