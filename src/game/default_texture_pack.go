@@ -2,14 +2,23 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/gfx/assets"
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
 	"solod.dev/so/path"
 )
 
-// Unload implements [TexturePack].
 func (p *DefaultTexturePack) Unload() {
+	iter := p.Textures.Iter()
+	defer p.Textures.Clear()
+	for iter.Next() {
+		gfx.UnloadTexture(iter.Value())
+	}
+}
+
+// Destroy implements [TexturePack].
+func (p *DefaultTexturePack) Destroy() {
 	iter := p.Textures.Iter()
 	for iter.Next() {
 		gfx.UnloadTexture(iter.Value())
@@ -24,24 +33,23 @@ func (p *DefaultTexturePack) Description() string {
 }
 
 // GetTexture implements [TexturePack].
-func (p *DefaultTexturePack) GetTexture(name string) gfx.Texture {
-	if p.Textures.Has(name) {
-		return p.Textures.Get(name)
+func (p *DefaultTexturePack) GetTexture(asset assets.ID) gfx.Texture {
+	if p.Textures.Has(asset) {
+		return p.Textures.Get(asset)
 	}
 	p.scratch.Reset()
-
-	t, err := gfx.LoadTexture(path.Join(&p.scratch, "assets", name))
+	t, err := gfx.LoadTexture(path.Join(&p.scratch, "assets", asset.String()))
 	if err != nil {
 		return gfx.Texture{}
 	}
+	p.Textures.Set(asset, t)
 
-	p.Textures.Set(name, t)
 	return t
 }
 
 // Icon implements [TexturePack].
 func (p *DefaultTexturePack) Icon() gfx.Texture {
-	if tex := p.GetTexture("/pack.png"); (tex != gfx.Texture{}) {
+	if tex := p.GetTexture(assets.Pack); (tex != gfx.Texture{}) {
 		return tex
 
 	}
@@ -68,14 +76,13 @@ func (p *DefaultTexturePack) Name() string {
 	return "Default"
 }
 
-var _defaultTexturePackScratchBuffer = [1024 * 1024 * 2]byte{}
+// memory for storing Maps in DefaultTexturePack
+var _defaultTexturePackScratchBuffer = [1024 * 20]byte{}
 
 func NewDefaultTexturePack() gfx.TexturePack {
 	parent := mem.NewArena(_defaultTexturePackScratchBuffer[:])
 	p := mem.Alloc[DefaultTexturePack](&parent)
-	// minecraft has 76 pngs:
-	// find assets -type f -name "*.png" | wc -l
-	p.Textures = maps.New[string, gfx.Texture](&parent, 1)
 	p.scratch = mem.NewArena(mem.AllocSlice[byte](&parent, 512, 512))
+	p.Textures = maps.New[assets.ID, gfx.Texture](&parent, 100)
 	return p
 }

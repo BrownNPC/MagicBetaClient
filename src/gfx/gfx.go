@@ -239,7 +239,6 @@ func LoadTextureFromImage(img Image) (Texture, error) {
 
 	gl.GenTextures(1, &t.ID)
 	gl.BindTexture(gl.TEXTURE_2D, t.ID)
-
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, img.Surface.Pixels())
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
@@ -249,9 +248,14 @@ func LoadTextureFromImage(img Image) (Texture, error) {
 
 	return t, nil
 }
+
+var TexturesLoaded = 0
+
+// Approximately the GPU memory used by textures in bytes.
+var TextureMemoryUsed = 0
+
 func LoadTexture(path string) (Texture, error) {
 	img, err := LoadImage(path)
-	// this code is ugly because of https://github.com/solod-dev/solod/issues/76
 	defer img.Destroy()
 	if err != nil {
 		return Texture{}, err
@@ -260,6 +264,8 @@ func LoadTexture(path string) (Texture, error) {
 	if err != nil {
 		return t, err
 	}
+	TexturesLoaded++
+	TextureMemoryUsed += t.Width * t.Height * 4
 	return t, nil
 
 }
@@ -284,6 +290,8 @@ func SetTextureConfig(t Texture, blur bool, clamp bool) {
 
 func UnloadTexture(texture Texture) {
 	if texture.ID != 0 {
+		TexturesLoaded--
+		TextureMemoryUsed -= texture.Width * texture.Height * 4
 		gl.DeleteTextures(1, &texture.ID)
 	}
 }

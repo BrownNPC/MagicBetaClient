@@ -22,11 +22,12 @@ type AppState struct {
 var state AppState
 
 func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
-	sdl.Init(sdl.INIT_VIDEO)
+	sdl.Init(sdl.INIT_VIDEO | sdl.INIT_GAMEPAD)
 
-	window := sdl.CreateWindow("MagicBetaClient", 480, 272, sdl.WINDOW_OPENGL|
-		sdl.WINDOW_RESIZABLE|
-		sdl.WINDOW_HIGH_PIXEL_DENSITY)
+	window := sdl.CreateWindow("MagicBetaClient", 480, 272,
+		sdl.WINDOW_OPENGL|
+			sdl.WINDOW_RESIZABLE|
+			sdl.WINDOW_HIGH_PIXEL_DENSITY)
 	gfx.Init(window)
 	state.game.Init()
 	state.targetFPS = 60
@@ -65,7 +66,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		return sdl.APP_SUCCESS
 	case sdl.EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 		w := e.Window()
-		state.game.ScreenWidth, state.game.ScreenHeight = int(w.Data1), int(w.Data2)
+		state.game.ScreenWidth, state.game.ScreenHeight = float32(w.Data1), float32(w.Data2)
 		gfx.SetupViewport(int(w.Data1), int(w.Data2))
 	}
 	return sdl.APP_CONTINUE

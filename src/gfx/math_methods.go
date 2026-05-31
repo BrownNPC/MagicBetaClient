@@ -8,6 +8,13 @@ func (r Rectangle) Anchor(parent Rectangle, anchorX, anchorY float32) Rectangle 
 		parent.Y+(parent.H-r.H)*anchorY,
 	))
 }
+func (r Rectangle)Multiply(v float32)Rectangle{
+	r.W *= v
+	r.H *= v
+	r.X *= v
+	r.Y *= v
+	return r
+}
 // Scale size
 func (r Rectangle) Scale(v float32) Rectangle {
 	r.W *= v

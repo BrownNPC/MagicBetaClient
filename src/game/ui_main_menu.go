@@ -2,44 +2,45 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/gfx/assets"
 	"mbc/gui"
 )
 
 func (s *State) DrawMainMenu(screen gfx.Rectangle) {
 	// draw background
-	bg := s.Pack.GetTexture("/gui/background.png")
+	bg := s.Pack.GetTexture(assets.Gui_background)
 	// Draw dirt background
 	gfx.DrawTextureTiled(bg,
 		gfx.NewRectangle(0, 0, float32(s.ScreenWidth), float32(s.ScreenHeight)),
-		gui.Scale()*2,
+		gui.Scale*2,
 		gfx.White.Tint(gfx.Black, 75),
 	)
 
-	menuScreen := gfx.Rectangle{H: 320 * .75, W: 200}.
-		Scale(gui.Scale()).
+	menuScreen := gfx.Rectangle{H: gui.BaseWidth * .75, W: 200}.
+		Scale(gui.Scale).
 		Anchor(screen, .5, .1)
+	{ // Draw Minecraft logo
+		logo := gui.MinecraftLogoSize.
+			Scale(gui.Scale).
+			Anchor(menuScreen, .50, .1)
 
-	// Main Menu Layout(menuScreen)
-	logo := gfx.Rectangle{}.
-		SetSize(gui.MinecraftLogoSize).
-		Scale(gui.Scale()).
-		Anchor(menuScreen, .50, .1)
-	gui.MinecraftLogo(logo)
-
-	buttonSet := gfx.Rectangle{W: gui.ButtonSize.X, H: (gui.ButtonSize.Y + 2) * 4}.
-		Scale(gui.Scale()).
+		gui.MinecraftLogo(logo)
+	}
+	const Nbuttons = 3
+	buttonSet := gfx.Rectangle{W: gui.ButtonSize.W, H: (gui.ButtonSize.H + 2) * 4}.
+		Scale(gui.Scale).
 		Anchor(menuScreen, .5, .70)
-	btn := gfx.Rectangle{}.
-		SetSize(gui.ButtonSize).
-		SetPosition(buttonSet.Position())
+	btn := gui.ButtonSize.
+		SetPosition(buttonSet.Position()).
+		Scale(gui.Scale)
+
 	for i := range 4 {
-		// btn.X *= gui.Scale()
-		btn.Y += btn.H * gui.Scale()
+		btn.Y += btn.H
 		if i != 0 {
-			btn.Y += 2 //padding
+			btn.Y += 2 * gui.Scale //padding
 		}
 		gui.Button("Play",
-			btn.Scale(gui.Scale()),
+			btn,
 			i == 0, true,
 		)
 	}

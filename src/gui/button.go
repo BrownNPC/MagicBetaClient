@@ -1,13 +1,18 @@
 package gui
 
-import "mbc/gfx"
+import (
+	"mbc/gfx"
+	"mbc/gfx/assets"
+)
 
-var ButtonSize = gfx.Vector2{
-	X: 200, Y: 20,
+var ButtonSize = gfx.Rectangle{
+	W: 200, H: 20,
 }
 
 func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
-	GuiTexture := ActivePack.GetTexture("/gui/gui.png")
+	GuiTexture := ActivePack.GetTexture(assets.Gui_gui)
+	as := float32(GuiTexture.Width) / 256 // atlas scale
+
 	state := float32(1)
 	if !Enabled {
 		state = 0
@@ -20,7 +25,7 @@ func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
 		Y: 46 + state*20,
 		W: 100,
 		H: 20,
-	}.Scale(AtlasScale)
+	}.Scale(as)
 	// draw button in two halves, centered.
 	dst := bbox
 	dst.W *= .5
@@ -34,9 +39,9 @@ func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
 	font := ActivePack.Font()
 	runes := []rune(Text)
 	tBB := gfx.Rectangle{
-		W: float32(font.TextWidth(runes)) * float32(guiScale),
-		H: float32(font.TextHeight()) * float32(guiScale),
+		W: float32(font.TextWidth(runes)) * Scale,
+		H: float32(font.TextHeight()) * Scale,
 	}.Anchor(bbox, .5, .5)
 
-	font.DrawRunes(runes, tBB.X, tBB.Y, guiScale, gfx.White, false)
+	font.DrawRunes(runes, tBB.X, tBB.Y, int(Scale), gfx.White, false)
 }

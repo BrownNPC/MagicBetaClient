@@ -2,6 +2,7 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/gfx/assets"
 	"mbc/gui"
 
 	"solod.dev/so/mem"
@@ -9,8 +10,7 @@ import (
 
 func (s *State) Init() {
 	s.Pack = NewDefaultTexturePack()
-	gfx.SetTextureConfig(s.Pack.GetTexture("/pack.png"), true, false)
-	gui.Init(320, 180)
+	gfx.SetTextureConfig(s.Pack.GetTexture(assets.Pack), true, false)
 	s.Scratch = mem.NewArena(___scratchBuf[:])
 }
 
@@ -25,4 +25,3 @@ func (s *State) Update() bool {
 	gfx.EndDrawing()
 	return true
 }
-

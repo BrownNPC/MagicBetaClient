@@ -11,8 +11,6 @@ package sdl
 //so:extern SDL_EventType
 type EventType uint32
 
-
-
 //so:extern SDL_AppResult
 type AppResult uint32
 
@@ -26,6 +24,8 @@ type PixelFormat int
 
 //so:extern SDL_PIXELFORMAT_RGBA32
 const PIXELFORMAT_RGBA32 PixelFormat = iota
+//so:extern SDL_PIXELFORMAT_ABGR4444 
+const PIXELFORMAT_ABGR4444 PixelFormat = iota
 
 type IOStatus int
 

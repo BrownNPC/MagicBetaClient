@@ -12,7 +12,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # add sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS _build/transpiled/*.c)
 add_executable(${PROJECT_NAME} ${SOURCES})
-
+if (PSP)
+  # pretend to be openbsd for PSP.
+  target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd)
+endif()
 target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled external/)
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -50,8 +53,6 @@ if (PSP)
   target_compile_options(${PROJECT_NAME} PRIVATE
       -isystem ${GCC_INCLUDE_DIR}
   )
-  # pretend to be openbsd for PSP.
-  target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd)
 
   create_pbp_file(
     TARGET ${PROJECT_NAME}

@@ -1,6 +1,9 @@
 package gfx
 
-import "mbc/gfx/gl"
+import (
+	"mbc/gfx/assets"
+	"mbc/gfx/gl"
+)
 
 // Vector2 type
 type Vector2 struct {
@@ -96,9 +99,9 @@ func NewColor(r, g, b, a uint8) Color {
 
 // Rectangle type
 type Rectangle struct {
-	X      float32
-	Y      float32
-	W  float32
+	X float32
+	Y float32
+	W float32
 	H float32
 }
 
@@ -106,7 +109,6 @@ type Rectangle struct {
 func NewRectangle(x, y, width, height float32) Rectangle {
 	return Rectangle{x, y, width, height}
 }
-
 
 // ToInt32 converts rectangle to int32 variant
 func (r *Rectangle) ToInt32() RectangleInt32 {
@@ -172,6 +174,10 @@ type Texture struct {
 	ID            gl.GLuint
 }
 
+func (t Texture) Size() Vector2 {
+	return Vector2{float32(t.Width), float32(t.Height)}
+}
+
 // Font is a Minecraft bitmap font.
 // Minecraft uses Ascii + Code Page 437 character set.
 //
@@ -184,10 +190,12 @@ type Font struct {
 const glyphsPerRow = 16 // font glyphs per row in the atlas
 
 type TexturePack interface {
-	Icon() Texture                  // should always return a valid texture.
-	Name() string                       // name of the pack
-	Description() string                // Description of the pack
-	GetTexture(path string) Texture // will return zero value if not found.
-	Font() *Font                    // should always return a valid font.
-	Unload()                            // free all textures and memory.
+	Icon() Texture       // should always return a valid texture.
+	Name() string        // name of the pack
+	Description() string // Description of the pack
+	// You should not store the texture recieved from this for more than 1 frame.
+	GetTexture(asset assets.ID) Texture // will return zero value if not found.
+	Font() *Font                        // should always return a valid font.
+	Unload()                            // unloads all textures that are currently
+	Destroy()                           // free all textures and memory.
 }
