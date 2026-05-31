@@ -2,50 +2,41 @@ package gui
 
 import "mbc/gfx"
 
-func Button(GuiTexture gfx.Texture, X, Y, WidthScale float32, Hovered bool, Enabled bool) {
+var ButtonSize = gfx.Vector2{
+	X: 200, Y: 20,
+}
+
+func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
+	GuiTexture := ActivePack.GetTexture("/gui/gui.png")
 	state := float32(1)
 	if !Enabled {
 		state = 0
 	} else if Hovered {
 		state = 2
 	}
-	asX, asY := GetAtlasScale(GuiTexture)
 
-	Width := min(200, 200*WidthScale) * Scale()
-	Height := float32(20) * Scale()
+	src := gfx.Rectangle{
+		X: 0,
+		Y: 46 + state*20,
+		W: 100,
+		H: 20,
+	}.Scale(AtlasScale)
+	// draw button in two halves, centered.
+	dst := bbox
+	dst.W *= .5
 
-	srcY := (46 + state*20) * asY
-	srcWidth := 200 * asX
-	srcHeight := 20 * asY
-	dst1 := gfx.Rectangle{
-		X:      X-Width/2,
-		Y:      Y,
-		Width:  Width / 2,
-		Height: Height,
-	}
-	gfx.DrawTextureRec(
-		GuiTexture,
-		gfx.Rectangle{
-			X:      0,
-			Y:      srcY,
-			Width:  srcWidth / 2,
-			Height: srcHeight,
-		},
-		dst1,
-	)
-	gfx.DrawTextureRec(
-		GuiTexture,
-		gfx.Rectangle{
-			X:      srcWidth / 2,
-			Y:      srcY,
-			Width:  srcWidth / 2,
-			Height: srcHeight,
-		},
-		gfx.Rectangle{
-			X:      dst1.X + Width/2,
-			Y:      Y,
-			Width:  Width / 2,
-			Height: Height,
-		},
-	)
+	gfx.DrawTextureRec(GuiTexture, src, dst)
+
+	src.X += 100 // capture other half
+
+	dst.X += bbox.W / 2
+	gfx.DrawTextureRec(GuiTexture, src, dst)
+	font := ActivePack.Font()
+	runes := []rune(Text)
+	tBB := gfx.Rectangle{
+		W: float32(font.TextWidth(runes)) * float32(guiScale),
+		H: float32(font.TextHeight()) * float32(guiScale),
+	}.Anchor(bbox, .5, .5)
+
+	font.DrawRunes(runes, tBB.X, tBB.Y, guiScale, gfx.White, false)
 }

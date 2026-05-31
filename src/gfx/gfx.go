@@ -17,58 +17,24 @@ const (
 	Rad2deg = 57.295776
 )
 
+// Java edition chat colors
 var (
-	// Light Gray
-	LightGray = Color{200, 200, 200, 255}
-	// Gray
-	Gray = Color{130, 130, 130, 255}
-	// Dark Gray
-	DarkGray = Color{80, 80, 80, 255}
-	// Yellow
-	Yellow = Color{253, 249, 0, 255}
-	// Gold
-	Gold = Color{255, 203, 0, 255}
-	// Orange
-	Orange = Color{255, 161, 0, 255}
-	// Pink
-	Pink = Color{255, 109, 194, 255}
-	// Red
-	Red = Color{230, 41, 55, 255}
-	// Maroon
-	Maroon = Color{190, 33, 55, 255}
-	// Green
-	Green = Color{0, 228, 48, 255}
-	// Lime
-	Lime = Color{0, 158, 47, 255}
-	// Dark Green
-	DarkGreen = Color{0, 117, 44, 255}
-	// Sky Blue
-	SkyBlue = Color{102, 191, 255, 255}
-	// Blue
-	Blue = Color{0, 121, 241, 255}
-	// Dark Blue
-	DarkBlue = Color{0, 82, 172, 255}
-	// Purple
-	Purple = Color{200, 122, 255, 255}
-	// Violet
-	Violet = Color{135, 60, 190, 255}
-	// Dark Purple
-	DarkPurple = Color{112, 31, 126, 255}
-	// Beige
-	Beige = Color{211, 176, 131, 255}
-	// Brown
-	Brown = Color{127, 106, 79, 255}
-	// Dark Brown
-	DarkBrown = Color{76, 63, 47, 255}
-	// White
-	White = Color{255, 255, 255, 255}
-	// Black
-	Black = Color{0, 0, 0, 255}
-	// Blank (Transparent)
-	Blank = Color{0, 0, 0, 0}
-	// Magenta
-	Magenta = Color{255, 0, 255, 255}
-	// Ray White (RayLib Logo White)
+	Black       = Color{0, 0, 0, 255}       // §0
+	DarkBlue    = Color{0, 0, 170, 255}     // §1
+	DarkGreen   = Color{0, 170, 0, 255}     // §2
+	DarkAqua    = Color{0, 170, 170, 255}   // §3
+	DarkRed     = Color{170, 0, 0, 255}     // §4
+	DarkPurple  = Color{170, 0, 170, 255}   // §5
+	Gold        = Color{255, 170, 0, 255}   // §6
+	Gray        = Color{170, 170, 170, 255} // §7
+	DarkGray    = Color{85, 85, 85, 255}    // §8
+	Blue        = Color{85, 85, 255, 255}   // §9
+	Green       = Color{85, 255, 85, 255}   // §a
+	Aqua        = Color{85, 255, 255, 255}  // §b
+	Red         = Color{255, 85, 85, 255}   // §c
+	LightPurple = Color{255, 85, 255, 255}  // §d
+	Yellow      = Color{255, 255, 85, 255}  // §e
+	White       = Color{255, 255, 255, 255} // §f
 )
 
 // Set viewport for a provided width and height
@@ -321,11 +287,17 @@ func UnloadTexture(texture Texture) {
 		gl.DeleteTextures(1, &texture.ID)
 	}
 }
-func DrawTexture(texture Texture, x, y float32) {
+func DrawTexture(texture Texture, pos Vector2) {
+	DrawTextureEx(texture,
+		NewRectangle(0, 0, float32(texture.Width), float32(texture.Height)),
+		NewRectangle(float32(pos.X), float32(pos.Y), float32(texture.Width), float32(texture.Height)),
+	)
+}
+func DrawTextureEx(texture Texture, src, dst Rectangle) {
 	DrawTexturePro(
 		texture,
-		NewRectangle(0, 0, float32(texture.Width), float32(texture.Height)),
-		NewRectangle(float32(x), float32(y), float32(texture.Width), float32(texture.Height)),
+		src,
+		dst,
 		Vector2{}, 0, White)
 }
 func DrawTextureRec(texture Texture, src, dst Rectangle) {
@@ -349,8 +321,8 @@ func DrawTextureTiled(
 	tileH := float32(texture.Height) * scale
 
 	// UVs larger than 1.0 cause GL_REPEAT wrapping
-	u := dest.Width / tileW
-	v := dest.Height / tileH
+	u := dest.W / tileW
+	v := dest.H / tileH
 
 	EnableTexture(texture)
 
@@ -365,15 +337,15 @@ func DrawTextureTiled(
 
 	// Bottom-left
 	gl.TexCoord2f(0, v)
-	gl.Vertex2f(dest.X, dest.Y+dest.Height)
+	gl.Vertex2f(dest.X, dest.Y+dest.H)
 
 	// Bottom-right
 	gl.TexCoord2f(u, v)
-	gl.Vertex2f(dest.X+dest.Width, dest.Y+dest.Height)
+	gl.Vertex2f(dest.X+dest.W, dest.Y+dest.H)
 
 	// Top-right
 	gl.TexCoord2f(u, 0)
-	gl.Vertex2f(dest.X+dest.Width, dest.Y)
+	gl.Vertex2f(dest.X+dest.W, dest.Y)
 
 	gl.End()
 
@@ -394,20 +366,20 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 
 	flipX := false
 
-	if source.Width < 0 {
+	if source.W < 0 {
 		flipX = true
-		source.Width = -source.Width
+		source.W = -source.W
 	}
-	if source.Height < 0 {
-		source.Y -= source.Height
-		source.Height = -source.Height
+	if source.H < 0 {
+		source.Y -= source.H
+		source.H = -source.H
 	}
 
-	if dest.Width < 0 {
-		dest.Width = -dest.Width
+	if dest.W < 0 {
+		dest.W = -dest.W
 	}
-	if dest.Height < 0 {
-		dest.Height = -dest.Height
+	if dest.H < 0 {
+		dest.H = -dest.H
 	}
 
 	var topLeft, topRight, bottomLeft, bottomRight Vector2
@@ -417,9 +389,9 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 		y := dest.Y - origin.Y
 
 		topLeft = Vector2{x, y}
-		topRight = Vector2{x + dest.Width, y}
-		bottomLeft = Vector2{x, y + dest.Height}
-		bottomRight = Vector2{x + dest.Width, y + dest.Height}
+		topRight = Vector2{x + dest.W, y}
+		bottomLeft = Vector2{x, y + dest.H}
+		bottomRight = Vector2{x + dest.W, y + dest.H}
 	} else {
 		rad := rotation * (math.Pi / 180.0)
 		sinR := float32(math.Sin(float64(rad)))
@@ -433,20 +405,20 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 		topLeft.X = x + dx*cosR - dy*sinR
 		topLeft.Y = y + dx*sinR + dy*cosR
 
-		topRight.X = x + (dx+dest.Width)*cosR - dy*sinR
-		topRight.Y = y + (dx+dest.Width)*sinR + dy*cosR
+		topRight.X = x + (dx+dest.W)*cosR - dy*sinR
+		topRight.Y = y + (dx+dest.W)*sinR + dy*cosR
 
-		bottomLeft.X = x + dx*cosR - (dy+dest.Height)*sinR
-		bottomLeft.Y = y + dx*sinR + (dy+dest.Height)*cosR
+		bottomLeft.X = x + dx*cosR - (dy+dest.H)*sinR
+		bottomLeft.Y = y + dx*sinR + (dy+dest.H)*cosR
 
-		bottomRight.X = x + (dx+dest.Width)*cosR - (dy+dest.Height)*sinR
-		bottomRight.Y = y + (dx+dest.Width)*sinR + (dy+dest.Height)*cosR
+		bottomRight.X = x + (dx+dest.W)*cosR - (dy+dest.H)*sinR
+		bottomRight.Y = y + (dx+dest.W)*sinR + (dy+dest.H)*cosR
 	}
 
 	u0 := source.X / width
 	v0 := source.Y / height
-	u1 := (source.X + source.Width) / width
-	v1 := (source.Y + source.Height) / height
+	u1 := (source.X + source.W) / width
+	v1 := (source.Y + source.H) / height
 
 	EnableTexture(texture)
 	gl.Begin(gl.QUADS)
@@ -509,20 +481,20 @@ func drawTextureProUnsafe(texture Texture, source, dest Rectangle, tint Color) {
 
 	flipX := false
 
-	if source.Width < 0 {
+	if source.W < 0 {
 		flipX = true
-		source.Width = -source.Width
+		source.W = -source.W
 	}
-	if source.Height < 0 {
-		source.Y -= source.Height
-		source.Height = -source.Height
+	if source.H < 0 {
+		source.Y -= source.H
+		source.H = -source.H
 	}
 
-	if dest.Width < 0 {
-		dest.Width = -dest.Width
+	if dest.W < 0 {
+		dest.W = -dest.W
 	}
-	if dest.Height < 0 {
-		dest.Height = -dest.Height
+	if dest.H < 0 {
+		dest.H = -dest.H
 	}
 
 	var topLeft, topRight, bottomLeft, bottomRight Vector2
@@ -531,14 +503,14 @@ func drawTextureProUnsafe(texture Texture, source, dest Rectangle, tint Color) {
 	y := dest.Y
 
 	topLeft = Vector2{x, y}
-	topRight = Vector2{x + dest.Width, y}
-	bottomLeft = Vector2{x, y + dest.Height}
-	bottomRight = Vector2{x + dest.Width, y + dest.Height}
+	topRight = Vector2{x + dest.W, y}
+	bottomLeft = Vector2{x, y + dest.H}
+	bottomRight = Vector2{x + dest.W, y + dest.H}
 
 	u0 := source.X / width
 	v0 := source.Y / height
-	u1 := (source.X + source.Width) / width
-	v1 := (source.Y + source.Height) / height
+	u1 := (source.X + source.W) / width
+	v1 := (source.Y + source.H) / height
 
 	EnableTexture(texture)
 	gl.Begin(gl.QUADS)
@@ -582,7 +554,10 @@ func drawTextureProUnsafe(texture Texture, source, dest Rectangle, tint Color) {
 	DisableTexture()
 }
 
-const glyphsPerRow = 16
+// These are all the characters allowed by Minecraft.
+func IsRuneAllowed(r rune) bool {
+	return r >= 0 && r <= 255
+}
 
 // Load Minecraft bitmap font
 func LoadFont(path string) (Font, error) {
@@ -637,12 +612,42 @@ func LoadFont(path string) (Font, error) {
 }
 
 // https://minecraft.wiki/w/Formatting_codes
+//
+// NOTE: only color formatting codes are supported in beta 1.7.3
 const SectionSign rune = '§'
 
-func (fnt *Font) DrawString(text string, x, y float32, size float32, color Color) {
+func (fnt *Font) DrawString(text string, x, y float32, size int, color Color) {
 	fnt.DrawRunes([]rune(text), x, y, size, color, false)
 }
-func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color, darken bool) {
+
+// TextHeight is the same as the full glyph bounding box in the Atlas.
+func (fnt *Font) TextHeight() int {
+	return fnt.Atlas.Width / glyphsPerRow
+}
+
+// Get text width.
+func (fnt *Font) TextWidth(text []rune) int {
+	if len(text) == 0 {
+		return 0
+	}
+	var width int = 0.0
+	for i := 0; i < len(text); i++ {
+		r := text[i]
+		if r == SectionSign {
+			i++
+			continue
+		}
+		if IsRuneAllowed(r) {
+			width += int(fnt.CharWidths[r])
+		}
+	}
+	return width
+}
+func (fnt *Font) Destroy() {
+	UnloadTexture(fnt.Atlas)
+	*fnt = Font{}
+}
+func (fnt *Font) DrawRunes(text []rune, x, y float32, scale int, color Color, darken bool) {
 	if len(text) == 0 {
 		return
 	}
@@ -653,8 +658,8 @@ func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color,
 		color.B /= 4
 	}
 
-	cellSize := float32(fnt.Atlas.Width / glyphsPerRow)
-	penX := x
+	cellSize := float32(fnt.TextHeight())
+	penX := int(x)
 
 	// use drawTextureProUnsafe to avoid state switching per character.
 	EnableTexture(fnt.Atlas)
@@ -663,8 +668,7 @@ func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color,
 	defer gl.End()
 
 	for i := 0; i < len(text); i++ {
-		// exotic notch code :D
-		for len(text) > i+1 && text[i] == '§' { //colored text using format strings
+		for len(text) > i+1 && text[i] == SectionSign { // colored text using format strings
 			colorCode := slices.Index(
 				[]rune("0123456789abcdef"),
 				unicode.ToLower(text[i+1]),
@@ -678,7 +682,7 @@ func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color,
 			if darken {
 				colorIndex += 16
 			}
-
+			// no clue wtf this is, thanks Notch!
 			base := uint8((colorIndex >> 3 & 1) * 85)
 			red := uint8((colorIndex>>2&1)*170 + base)
 			green := uint8((colorIndex>>1&1)*170 + base)
@@ -701,24 +705,27 @@ func (fnt *Font) DrawRunes(text []rune, x, y float32, size float32, color Color,
 		row := charCode / glyphsPerRow
 
 		src := Rectangle{
-			X:      float32(col) * cellSize,
-			Y:      float32(row) * cellSize,
-			Width:  cellSize,
-			Height: cellSize,
+			X: float32(col) * cellSize,
+			Y: float32(row) * cellSize,
+			W: cellSize,
+			H: cellSize,
 		}
 
 		dst := Rectangle{
-			X:      penX,
-			Y:      y,
-			Width:  cellSize * size,
-			Height: cellSize * size,
+			X: float32(penX),
+			Y: y,
+			W: cellSize * float32(scale),
+			H: cellSize * float32(scale),
 		}
 
 		drawTextureProUnsafe(fnt.Atlas, src, dst, color) // slight performance increase?
 		// DrawTexturePro(fnt.Atlas, src, dst, Vector2{}, 0, color)
 
-		penX += float32(fnt.CharWidths[charCode]) * size
+		penX += int(fnt.CharWidths[charCode]) * scale
 	}
+}
+func DrawRectangle(rectangle Rectangle, color Color) {
+	DrawRectanglePro(rectangle, Vector2{}, 0, color)
 }
 
 // Draw a color-filled rectangle with pro parameters
@@ -729,14 +736,14 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 	var topLeft, topRight, bottomLeft, bottomRight Vector2
 
 	// Normalize negative sizes
-	if rectangle.Width < 0 {
-		rectangle.X += rectangle.Width
-		rectangle.Width = -rectangle.Width
+	if rectangle.W < 0 {
+		rectangle.X += rectangle.W
+		rectangle.W = -rectangle.W
 	}
 
-	if rectangle.Height < 0 {
-		rectangle.Y += rectangle.Height
-		rectangle.Height = -rectangle.Height
+	if rectangle.H < 0 {
+		rectangle.Y += rectangle.H
+		rectangle.H = -rectangle.H
 	}
 
 	// Fast path: no rotation
@@ -745,9 +752,9 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 		y := rectangle.Y - origin.Y
 
 		topLeft = Vector2{x, y}
-		topRight = Vector2{x + rectangle.Width, y}
-		bottomLeft = Vector2{x, y + rectangle.Height}
-		bottomRight = Vector2{x + rectangle.Width, y + rectangle.Height}
+		topRight = Vector2{x + rectangle.W, y}
+		bottomLeft = Vector2{x, y + rectangle.H}
+		bottomRight = Vector2{x + rectangle.W, y + rectangle.H}
 	} else {
 		rad := rotation * Deg2rad
 
@@ -763,14 +770,14 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 		topLeft.X = x + dx*cosR - dy*sinR
 		topLeft.Y = y + dx*sinR + dy*cosR
 
-		topRight.X = x + (dx+rectangle.Width)*cosR - dy*sinR
-		topRight.Y = y + (dx+rectangle.Width)*sinR + dy*cosR
+		topRight.X = x + (dx+rectangle.W)*cosR - dy*sinR
+		topRight.Y = y + (dx+rectangle.W)*sinR + dy*cosR
 
-		bottomLeft.X = x + dx*cosR - (dy+rectangle.Height)*sinR
-		bottomLeft.Y = y + dx*sinR + (dy+rectangle.Height)*cosR
+		bottomLeft.X = x + dx*cosR - (dy+rectangle.H)*sinR
+		bottomLeft.Y = y + dx*sinR + (dy+rectangle.H)*cosR
 
-		bottomRight.X = x + (dx+rectangle.Width)*cosR - (dy+rectangle.Height)*sinR
-		bottomRight.Y = y + (dx+rectangle.Width)*sinR + (dy+rectangle.Height)*cosR
+		bottomRight.X = x + (dx+rectangle.W)*cosR - (dy+rectangle.H)*sinR
+		bottomRight.Y = y + (dx+rectangle.W)*sinR + (dy+rectangle.H)*cosR
 	}
 
 	gl.Disable(gl.TEXTURE_2D)

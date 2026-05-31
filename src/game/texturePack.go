@@ -15,6 +15,7 @@ func (p *DefaultTexturePack) Unload() {
 		gfx.UnloadTexture(iter.Value())
 	}
 	p.Textures.Free()
+	p.font.Destroy()
 }
 
 // Description implements [TexturePack].
@@ -47,6 +48,21 @@ func (p *DefaultTexturePack) Icon() gfx.Texture {
 	panic("pack.png not found. assets are missing.")
 }
 
+// Font implements [TexturePack].
+func (p *DefaultTexturePack) Font() *gfx.Font {
+	p.scratch.Reset()
+	if p.font.Atlas.ID != 0 {
+		return &p.font
+	}
+	var err error
+	p.font, err = gfx.LoadFont(path.Join(&p.scratch,
+		"assets", "font", "default.png"))
+	if err != nil {
+		panic(err)
+	}
+	return &p.font
+}
+
 // Name implements [TexturePack].
 func (p *DefaultTexturePack) Name() string {
 	return "Default"
@@ -54,7 +70,7 @@ func (p *DefaultTexturePack) Name() string {
 
 var _defaultTexturePackScratchBuffer = [1024 * 1024 * 2]byte{}
 
-func NewDefaultTexturePack() TexturePack {
+func NewDefaultTexturePack() gfx.TexturePack {
 	parent := mem.NewArena(_defaultTexturePackScratchBuffer[:])
 	p := mem.Alloc[DefaultTexturePack](&parent)
 	// minecraft has 76 pngs:

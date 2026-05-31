@@ -1,5 +1,51 @@
 package gfx
 
+// anchor this rectangle's position inside parent rectangle.
+// Returns new position
+func (r Rectangle) Anchor(parent Rectangle, anchorX, anchorY float32) Rectangle {
+	return r.SetPosition(NewVector2(
+		parent.X+(parent.W-r.W)*anchorX,
+		parent.Y+(parent.H-r.H)*anchorY,
+	))
+}
+// Scale size
+func (r Rectangle) Scale(v float32) Rectangle {
+	r.W *= v
+	r.H *= v
+	return r
+}
+
+// AddPosition position by adding it
+func (r Rectangle) AddPosition(v Vector2) Rectangle {
+	return r.SetPosition(r.Position().Add(v))
+}
+func (r Rectangle) SubractPosition(v Vector2) Rectangle {
+	return r.SetPosition(r.Position().Subtract(v))
+}
+
+func (r Rectangle) SetPosition(v Vector2) Rectangle {
+	r.X = v.X
+	r.Y = v.Y
+	return r
+}
+func (r Rectangle) SetSize(v Vector2) Rectangle {
+	r.W = v.X
+	r.H = v.Y
+	return r
+}
+func (r Rectangle) Position() Vector2 {
+	return Vector2{
+		X: r.X,
+		Y: r.Y,
+	}
+}
+func (r Rectangle) Size() Vector2 {
+	return Vector2{
+		X: r.W,
+		Y: r.H,
+	}
+}
+
 // MultiplyVector2 - Multiplies a vector by a matrix 2x2
 func (m Mat2) MultiplyVector2(vector Vector2) Vector2 {
 	return Mat2MultiplyVector2(m, vector)
@@ -45,9 +91,8 @@ func (m Matrix) Subtract(right Matrix) Matrix {
 	return MatrixSubtract(m, right)
 }
 
-
 // ToFloatV - Get float array of matrix data
-func (m Matrix) ToFloat() Float16{
+func (m Matrix) ToFloat() Float16 {
 	return MatrixToFloat(m)
 }
 
@@ -264,6 +309,9 @@ func (v Vector2) Reflect(normal Vector2) Vector2 {
 func (v Vector2) Rotate(angle float32) Vector2 {
 	return Vector2Rotate(v, angle)
 }
+func (v Vector2) Half() Vector2 {
+	return v.Scale(.5)
+}
 
 // Scale - Scale vector (multiply by value)
 func (v Vector2) Scale(scale float32) Vector2 {
@@ -283,6 +331,11 @@ func (v Vector2) SubtractValue(sub float32) Vector2 {
 // Transform - Transforms a Vector2 by a given Matrix
 func (v Vector2) Transform(mat Matrix) Vector2 {
 	return Vector2Transform(v, mat)
+}
+
+// Transform - Transforms a Vector2 by a given Matrix
+func (v Vector2) XY() (float32, float32) {
+	return v.X, v.Y
 }
 
 // Add - Add two vectors
@@ -445,7 +498,7 @@ func (v Vector3) SubtractValue(sub float32) Vector3 {
 }
 
 // ToFloat - Converts Vector3 to float32 slice
-func (v Vector3) ToFloat() Float3{
+func (v Vector3) ToFloat() Float3 {
 	return Vector3ToFloat(v)
 }
 

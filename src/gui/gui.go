@@ -10,7 +10,9 @@ var (
 	screenWidth, screenHeight   float32
 
 	// Final integer GUI scale actually in use.
-	guiScale int
+	guiScale   int
+	ActivePack gfx.TexturePack
+	AtlasScale float32
 
 	// 0 = automatic scaling
 	ScaleFactor uint // manually set scale factor.
@@ -22,11 +24,13 @@ func Init(baseWidth, baseHeight float32) {
 }
 
 // Must be called whenever screen size changes.
-func Update(screenW, screenH int) {
+func Update(screenW, screenH int, pack gfx.TexturePack) {
 	if ScaleFactor != 0 { // manual scale factor
 		guiScale = int(ScaleFactor)
 		return
 	}
+	ActivePack = pack
+	AtlasScale = float32(pack.GetTexture("/gui/gui.png").Width / 255)
 
 	screenWidth = float32(screenW)
 	screenHeight = float32(screenH)
@@ -42,13 +46,6 @@ func Update(screenW, screenH int) {
 	guiScale = min(scale, MaxAutoScale)
 }
 
-// anchor should be a number between 0-1 where 0.5 is the center.
-func Anchor(anchorX, anchorY float32, offsetX, offsetY float32) (float32, float32) {
-	x := screenWidth*anchorX + offsetX
-	y := screenHeight*anchorY + offsetY
-	return x, y
-}
-
 // Current GUI scale factor
 func Scale() float32 {
 	return float32(guiScale)
@@ -56,7 +53,3 @@ func Scale() float32 {
 
 // Minecraft uses a 256x256 atlas.
 // HD texture packs may use larger atlases.
-func GetAtlasScale(t gfx.Texture) (float32, float32) {
-	return float32(t.Width) / 256,
-		float32(t.Height) / 256
-}

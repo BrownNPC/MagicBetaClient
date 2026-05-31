@@ -98,25 +98,23 @@ func NewColor(r, g, b, a uint8) Color {
 type Rectangle struct {
 	X      float32
 	Y      float32
-	Width  float32
-	Height float32
+	W  float32
+	H float32
 }
 
 // NewRectangle - Returns new Rectangle
 func NewRectangle(x, y, width, height float32) Rectangle {
 	return Rectangle{x, y, width, height}
 }
-func NewRecFromTexture(t Texture) Rectangle {
-	return NewRectangle(0, 0, float32(t.Width), float32(t.Height))
-}
+
 
 // ToInt32 converts rectangle to int32 variant
 func (r *Rectangle) ToInt32() RectangleInt32 {
 	rect := RectangleInt32{}
 	rect.X = int32(r.X)
 	rect.Y = int32(r.Y)
-	rect.Width = int32(r.Width)
-	rect.Height = int32(r.Height)
+	rect.Width = int32(r.W)
+	rect.Height = int32(r.H)
 
 	return rect
 }
@@ -134,8 +132,8 @@ func (r *RectangleInt32) ToFloat32() Rectangle {
 	rect := Rectangle{}
 	rect.X = float32(r.X)
 	rect.Y = float32(r.Y)
-	rect.Width = float32(r.Width)
-	rect.Height = float32(r.Height)
+	rect.W = float32(r.Width)
+	rect.H = float32(r.Height)
 
 	return rect
 }
@@ -181,4 +179,15 @@ type Texture struct {
 type Font struct {
 	Atlas      Texture
 	CharWidths [256]uint8
+}
+
+const glyphsPerRow = 16 // font glyphs per row in the atlas
+
+type TexturePack interface {
+	Icon() Texture                  // should always return a valid texture.
+	Name() string                       // name of the pack
+	Description() string                // Description of the pack
+	GetTexture(path string) Texture // will return zero value if not found.
+	Font() *Font                    // should always return a valid font.
+	Unload()                            // free all textures and memory.
 }
