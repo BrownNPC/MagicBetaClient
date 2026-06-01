@@ -14,9 +14,6 @@ type SteppedReader struct {
 // Will read sizeof(T) bytes.
 // Step is a no-op if the reading has completed.
 func (r *SteppedReader) Step(rd io.Reader) (bool, error) {
-	if len(r.Buf) == 0 {
-		return false, nil
-	}
 	for r.n < len(r.Buf) { // no-op if fully read sizeof(T)
 		n, err := rd.Read(r.Buf[r.n:])
 		r.n += n
@@ -46,9 +43,6 @@ type SteppedReader16 struct {
 // Will read sizeof(T) bytes.
 // Step is a no-op if the reading has completed.
 func (r *SteppedReader16) Step(rd io.Reader) (bool, error) {
-	if len(r.Buf) == 0 {
-		return false, nil
-	}
 	for r.n < len(r.Buf) { // no-op if fully read sizeof(T)
 		n, err := rd.Read(r.Buf[r.n:])
 		r.n += n
@@ -78,9 +72,6 @@ type SteppedReader32 struct {
 // Will read sizeof(T) bytes.
 // Step is a no-op if the reading has completed.
 func (r *SteppedReader32) Step(rd io.Reader) (bool, error) {
-	if len(r.Buf) == 0 {
-		return false, nil
-	}
 	for r.n < len(r.Buf) { // no-op if fully read sizeof(T)
 		n, err := rd.Read(r.Buf[r.n:])
 		r.n += n
@@ -110,9 +101,6 @@ type SteppedReader64 struct {
 // Will read sizeof(T) bytes.
 // Step is a no-op if the reading has completed.
 func (r *SteppedReader64) Step(rd io.Reader) (bool, error) {
-	if len(r.Buf) == 0 {
-		return false, nil
-	}
 	for r.n < len(r.Buf) { // no-op if fully read sizeof(T)
 		n, err := rd.Read(r.Buf[r.n:])
 		r.n += n

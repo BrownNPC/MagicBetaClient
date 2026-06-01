@@ -323,6 +323,11 @@ func (v Vector2) Reflect(normal Vector2) Vector2 {
 func (v Vector2) Rotate(angle float32) Vector2 {
 	return Vector2Rotate(v, angle)
 }
+
+func (v Vector2) RotateAroundPivot(pivot Vector2, angle float32) Vector2 {
+	return pivot.Add(v.Subtract(pivot).Rotate(angle))
+}
+
 func (v Vector2) Half() Vector2 {
 	return v.Scale(.5)
 }

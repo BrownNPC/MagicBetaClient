@@ -6,12 +6,14 @@ import (
 	"mbc/gui"
 
 	"solod.dev/so/mem"
+	"solod.dev/so/time"
 )
 
 func (s *State) Init() {
 	s.Pack = NewDefaultTexturePack()
 	gfx.SetTextureConfig(s.Pack.GetTexture(assets.Pack), true, false)
 	s.Scratch = mem.NewArena(___scratchBuf[:])
+	s.InitTime = time.Now()
 }
 
 // return false to quit.

@@ -33,7 +33,7 @@ var (
 	Aqua        = Color{85, 255, 255, 255}  // §b
 	Red         = Color{255, 85, 85, 255}   // §c
 	LightPurple = Color{255, 85, 255, 255}  // §d
-	Yellow      = Color{255, 255, 85, 255}  // §e
+	Yellow      = Color{255, 255, 0, 255}   //
 	White       = Color{255, 255, 255, 255} // §f
 )
 
@@ -478,8 +478,7 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 //
 // gl.End()
 // DisableTexture()
-func drawTextureProUnsafe(texture Texture, source, dest Rectangle, tint Color) {
-
+func drawTextureProUnsafe(texture Texture, source, dest Rectangle, origin Vector2, rotation float32, tint Color) {
 	if texture.ID == 0 {
 		return
 	}
@@ -507,21 +506,44 @@ func drawTextureProUnsafe(texture Texture, source, dest Rectangle, tint Color) {
 
 	var topLeft, topRight, bottomLeft, bottomRight Vector2
 
-	x := dest.X
-	y := dest.Y
+	if rotation == 0 {
+		x := dest.X - origin.X
+		y := dest.Y - origin.Y
 
-	topLeft = Vector2{x, y}
-	topRight = Vector2{x + dest.W, y}
-	bottomLeft = Vector2{x, y + dest.H}
-	bottomRight = Vector2{x + dest.W, y + dest.H}
+		topLeft = Vector2{x, y}
+		topRight = Vector2{x + dest.W, y}
+		bottomLeft = Vector2{x, y + dest.H}
+		bottomRight = Vector2{x + dest.W, y + dest.H}
+	} else {
+		rad := rotation * (math.Pi / 180.0)
+		sinR := float32(math.Sin(float64(rad)))
+		cosR := float32(math.Cos(float64(rad)))
+
+		x := dest.X
+		y := dest.Y
+		dx := -origin.X
+		dy := -origin.Y
+
+		topLeft.X = x + dx*cosR - dy*sinR
+		topLeft.Y = y + dx*sinR + dy*cosR
+
+		topRight.X = x + (dx+dest.W)*cosR - dy*sinR
+		topRight.Y = y + (dx+dest.W)*sinR + dy*cosR
+
+		bottomLeft.X = x + dx*cosR - (dy+dest.H)*sinR
+		bottomLeft.Y = y + dx*sinR + (dy+dest.H)*cosR
+
+		bottomRight.X = x + (dx+dest.W)*cosR - (dy+dest.H)*sinR
+		bottomRight.Y = y + (dx+dest.W)*sinR + (dy+dest.H)*cosR
+	}
 
 	u0 := source.X / width
 	v0 := source.Y / height
 	u1 := (source.X + source.W) / width
 	v1 := (source.Y + source.H) / height
 
-	EnableTexture(texture)
-	gl.Begin(gl.QUADS)
+	// EnableTexture(texture)
+	// gl.Begin(gl.QUADS)
 
 	gl.Color4ub(tint.R, tint.G, tint.B, tint.A)
 	gl.Normal3f(0, 0, 1)
@@ -558,8 +580,8 @@ func drawTextureProUnsafe(texture Texture, source, dest Rectangle, tint Color) {
 	}
 	gl.Vertex2f(topRight.X, topRight.Y)
 
-	gl.End()
-	DisableTexture()
+	// gl.End()
+	// DisableTexture()
 }
 
 // These are all the characters allowed by Minecraft.
@@ -624,13 +646,16 @@ func LoadFont(path string) (Font, error) {
 // NOTE: only color formatting codes are supported in beta 1.7.3
 const SectionSign rune = '§'
 
-func (fnt *Font) DrawString(text string, x, y float32, size int, color Color) {
-	fnt.DrawRunes([]rune(text), x, y, size, color, false)
-}
-
 // TextHeight is the same as the full glyph bounding box in the Atlas.
 func (fnt *Font) TextHeight() int {
 	return fnt.Atlas.Width / glyphsPerRow
+}
+func (fnt *Font) TextSize(text []rune) Vector2 {
+	return Vector2{X: float32(fnt.TextWidth(text)), Y: float32(fnt.TextHeight())}
+}
+func (fnt *Font) GlyphSize(charCode rune) Vector2 {
+
+	return Vector2{X: float32(fnt.CharWidths[charCode]), Y: float32(fnt.TextHeight())}
 }
 
 // Get text width.
@@ -655,7 +680,7 @@ func (fnt *Font) Destroy() {
 	UnloadTexture(fnt.Atlas)
 	*fnt = Font{}
 }
-func (fnt *Font) DrawRunes(text []rune, x, y float32, scale int, color Color, darken bool) {
+func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float32, color Color, darken bool) {
 	if len(text) == 0 {
 		return
 	}
@@ -667,14 +692,26 @@ func (fnt *Font) DrawRunes(text []rune, x, y float32, scale int, color Color, da
 	}
 
 	cellSize := float32(fnt.TextHeight())
-	penX := int(x)
+	textSize := fnt.TextSize(text).Scale(scale)
 
 	// use drawTextureProUnsafe to avoid state switching per character.
 	EnableTexture(fnt.Atlas)
 	defer DisableTexture()
+
+	// Pivot at center of the whole text block.
+	pivot := position.Add(textSize.Half())
+	gl.PushMatrix()
+	defer gl.PopMatrix()
+
+	// Move to pivot, rotate, then move back to local text space.
+	gl.Translatef(pivot.X, pivot.Y, 0)
+	gl.Rotatef(rotation, 0, 0, 1)
+	gl.Translatef(-textSize.X*0.5, -textSize.Y*0.5, 0)
+
 	gl.Begin(gl.QUADS)
 	defer gl.End()
 
+	textOffsetX := float32(0)
 	for i := 0; i < len(text); i++ {
 		for len(text) > i+1 && text[i] == SectionSign { // colored text using format strings
 			colorCode := slices.Index(
@@ -720,16 +757,15 @@ func (fnt *Font) DrawRunes(text []rune, x, y float32, scale int, color Color, da
 		}
 
 		dst := Rectangle{
-			X: float32(penX),
-			Y: y,
+			X: textOffsetX,
+			Y: 0,
 			W: cellSize * float32(scale),
 			H: cellSize * float32(scale),
 		}
 
-		drawTextureProUnsafe(fnt.Atlas, src, dst, color) // slight performance increase?
-		// DrawTexturePro(fnt.Atlas, src, dst, Vector2{}, 0, color)
+		drawTextureProUnsafe(fnt.Atlas, src, dst, Vector2{}, 0, color)
 
-		penX += int(fnt.CharWidths[charCode]) * scale
+		textOffsetX += float32(fnt.CharWidths[charCode]) * scale
 	}
 }
 func DrawRectangle(rectangle Rectangle, color Color) {

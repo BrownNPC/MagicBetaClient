@@ -5,6 +5,7 @@ import (
 	"mbc/gfx/assets"
 
 	"solod.dev/so/maps"
+	"solod.dev/so/time"
 	"solod.dev/so/mem"
 )
 
@@ -48,13 +49,14 @@ type State struct {
 	Dt                        float32
 	ScreenWidth, ScreenHeight float32
 
-	Pack            gfx.TexturePack
-	Scratch         mem.Arena
-	Cursor          gfx.Vector2
-	ShowCursor      bool
-	CursorDelta     gfx.Vector2
-	Screen          Screen
-	Inputs          [TotalInputs]Input
+	Pack        gfx.TexturePack
+	Scratch     mem.Arena
+	Cursor      gfx.Vector2
+	ShowCursor  bool
+	CursorDelta gfx.Vector2
+	Screen      Screen
+	Inputs      [TotalInputs]Input
+	InitTime    time.Time // time when init was called
 	// screen data
 	MenuMain MenuMain
 }

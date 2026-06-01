@@ -36,8 +36,8 @@ func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
 
 	dst.X += bbox.W / 2
 	gfx.DrawTextureRec(GuiTexture, src, dst)
-	font := ActivePack.Font()
 	runes := []rune(Text)
+	font := ActivePack.Font()
 	tBB := gfx.Rectangle{
 		W: float32(font.TextWidth(runes)) * Scale,
 		H: float32(font.TextHeight()) * Scale,
@@ -47,6 +47,6 @@ func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
 	if Hovered {
 		btnColor = gfx.Yellow
 	}
-	font.DrawRunes(runes, tBB.X+1, tBB.Y+1, int(Scale), btnColor, true) // shadow
-	font.DrawRunes(runes, tBB.X, tBB.Y, int(Scale), btnColor, false)
+	font.DrawRunes(runes, tBB.Position().AddValue(1), Scale, 0, btnColor, true) // shadow
+	font.DrawRunes(runes, tBB.Position(), Scale, 0, btnColor, false)
 }

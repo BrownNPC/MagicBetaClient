@@ -23,8 +23,10 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 		logo := gui.MinecraftLogoSize.
 			Scale(gui.Scale).
 			Anchor(menuScreen, .50, .1)
-
-		gui.MinecraftLogo(logo)
+		gui.MinecraftLogo(
+			"Happy birthday, Notch!",
+			logo,
+		)
 	}
 	const Nbuttons = 3
 	ButtonTitles := [Nbuttons]string{

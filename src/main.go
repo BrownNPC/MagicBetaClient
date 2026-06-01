@@ -47,7 +47,7 @@ func AppIterate(appState any) sdl.AppResult {
 	if !state.game.Update() {
 		return sdl.APP_SUCCESS
 	}
-	state.game.Inputs = [6]game.Input{}
+	state.game.Inputs = [game.TotalInputs]game.Input{} // clear inputs after they're used.
 	// FPS cap
 	targetFrameTime := 1.0 / state.targetFPS
 	frameTime := float32(state.game.Dt)
