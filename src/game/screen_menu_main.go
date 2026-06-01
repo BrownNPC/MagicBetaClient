@@ -4,8 +4,40 @@ import (
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/gui"
+	"mbc/sdl"
+
+	"solod.dev/so/bufio"
+	"solod.dev/so/math/rand"
+	"solod.dev/so/mem"
+	"solod.dev/so/path"
+	"solod.dev/so/strings"
 )
 
+func (s *State) LoadRandomSplashText() string {
+	s.Scratch.Reset()
+	f := sdl.IOFromFile(path.Join(&s.Scratch, "assets/", "title/splashes.txt"), "r")
+	if f == nil {
+		panic(sdl.GetError())
+	}
+
+	var __Rbuf [1024 * 10]byte
+	rArena := mem.NewArena(__Rbuf[:])
+	r := bufio.NewReader(&rArena, f)
+
+	const TotalSplashes = 226
+	n := rand.IntN(TotalSplashes - 1)
+
+	finalString := ""
+	var err error
+	for range n {
+		finalString, err = r.ReadString('\n')
+		if err != nil {
+			panic(err)
+		}
+	}
+	finalString = strings.TrimSpace(finalString)
+	return strings.Clone(mem.System, finalString)
+}
 func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 	// draw background
 	bg := s.Pack.GetTexture(assets.Gui_background)
@@ -24,7 +56,7 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 			Scale(gui.Scale).
 			Anchor(menuScreen, .50, .1)
 		gui.MinecraftLogo(
-			"Happy birthday, Notch!",
+			s.SplashText,
 			logo,
 		)
 	}
@@ -49,6 +81,7 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 		hovered := btn.Contains(s.Cursor)
 		if hovered && s.Inputs[InputLeftClick].Released {
 			println("Clicked:", ButtonTitles[i])
+			s.Screen = SCREEN_MENU_MAIN + i + 1
 		}
 		gui.Button(ButtonTitles[i],
 			btn,

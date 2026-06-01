@@ -239,7 +239,21 @@ func LoadTextureFromImage(img Image) (Texture, error) {
 
 	gl.GenTextures(1, &t.ID)
 	gl.BindTexture(gl.TEXTURE_2D, t.ID)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(t.Width), int32(t.Height), 0, gl.RGBA, gl.UNSIGNED_BYTE, img.Surface.Pixels())
+
+	gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
+
+	gl.TexImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA,
+		int32(t.Width),
+		int32(t.Height),
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		img.Surface.Pixels(),
+	)
+
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
@@ -470,120 +484,6 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 	DisableTexture()
 }
 
-// drawTexturePro but the user should call:
-// EnableTexture(texture)
-// gl.Begin(gl.QUADS)
-//
-// drawTextureProUnsafe()
-//
-// gl.End()
-// DisableTexture()
-func drawTextureProUnsafe(texture Texture, source, dest Rectangle, origin Vector2, rotation float32, tint Color) {
-	if texture.ID == 0 {
-		return
-	}
-
-	width := float32(texture.Width)
-	height := float32(texture.Height)
-
-	flipX := false
-
-	if source.W < 0 {
-		flipX = true
-		source.W = -source.W
-	}
-	if source.H < 0 {
-		source.Y -= source.H
-		source.H = -source.H
-	}
-
-	if dest.W < 0 {
-		dest.W = -dest.W
-	}
-	if dest.H < 0 {
-		dest.H = -dest.H
-	}
-
-	var topLeft, topRight, bottomLeft, bottomRight Vector2
-
-	if rotation == 0 {
-		x := dest.X - origin.X
-		y := dest.Y - origin.Y
-
-		topLeft = Vector2{x, y}
-		topRight = Vector2{x + dest.W, y}
-		bottomLeft = Vector2{x, y + dest.H}
-		bottomRight = Vector2{x + dest.W, y + dest.H}
-	} else {
-		rad := rotation * (math.Pi / 180.0)
-		sinR := float32(math.Sin(float64(rad)))
-		cosR := float32(math.Cos(float64(rad)))
-
-		x := dest.X
-		y := dest.Y
-		dx := -origin.X
-		dy := -origin.Y
-
-		topLeft.X = x + dx*cosR - dy*sinR
-		topLeft.Y = y + dx*sinR + dy*cosR
-
-		topRight.X = x + (dx+dest.W)*cosR - dy*sinR
-		topRight.Y = y + (dx+dest.W)*sinR + dy*cosR
-
-		bottomLeft.X = x + dx*cosR - (dy+dest.H)*sinR
-		bottomLeft.Y = y + dx*sinR + (dy+dest.H)*cosR
-
-		bottomRight.X = x + (dx+dest.W)*cosR - (dy+dest.H)*sinR
-		bottomRight.Y = y + (dx+dest.W)*sinR + (dy+dest.H)*cosR
-	}
-
-	u0 := source.X / width
-	v0 := source.Y / height
-	u1 := (source.X + source.W) / width
-	v1 := (source.Y + source.H) / height
-
-	// EnableTexture(texture)
-	// gl.Begin(gl.QUADS)
-
-	gl.Color4ub(tint.R, tint.G, tint.B, tint.A)
-	gl.Normal3f(0, 0, 1)
-
-	// Top-left
-	if flipX {
-		gl.TexCoord2f(u1, v0)
-	} else {
-		gl.TexCoord2f(u0, v0)
-	}
-	gl.Vertex2f(topLeft.X, topLeft.Y)
-
-	// Bottom-left
-	if flipX {
-		gl.TexCoord2f(u1, v1)
-	} else {
-		gl.TexCoord2f(u0, v1)
-	}
-	gl.Vertex2f(bottomLeft.X, bottomLeft.Y)
-
-	// Bottom-right
-	if flipX {
-		gl.TexCoord2f(u0, v1)
-	} else {
-		gl.TexCoord2f(u1, v1)
-	}
-	gl.Vertex2f(bottomRight.X, bottomRight.Y)
-
-	// Top-right
-	if flipX {
-		gl.TexCoord2f(u0, v0)
-	} else {
-		gl.TexCoord2f(u1, v0)
-	}
-	gl.Vertex2f(topRight.X, topRight.Y)
-
-	// gl.End()
-	// DisableTexture()
-}
-
 // These are all the characters allowed by Minecraft.
 func IsRuneAllowed(r rune) bool {
 	return r >= 0 && r <= 255
@@ -680,6 +580,7 @@ func (fnt *Font) Destroy() {
 	UnloadTexture(fnt.Atlas)
 	*fnt = Font{}
 }
+
 func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float32, color Color, darken bool) {
 	if len(text) == 0 {
 		return
@@ -695,9 +596,6 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 	textSize := fnt.TextSize(text).Scale(scale)
 
 	// use drawTextureProUnsafe to avoid state switching per character.
-	EnableTexture(fnt.Atlas)
-	defer DisableTexture()
-
 	// Pivot at center of the whole text block.
 	pivot := position.Add(textSize.Half())
 	gl.PushMatrix()
@@ -707,9 +605,6 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 	gl.Translatef(pivot.X, pivot.Y, 0)
 	gl.Rotatef(rotation, 0, 0, 1)
 	gl.Translatef(-textSize.X*0.5, -textSize.Y*0.5, 0)
-
-	gl.Begin(gl.QUADS)
-	defer gl.End()
 
 	textOffsetX := float32(0)
 	for i := 0; i < len(text); i++ {
@@ -763,7 +658,7 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 			H: cellSize * float32(scale),
 		}
 
-		drawTextureProUnsafe(fnt.Atlas, src, dst, Vector2{}, 0, color)
+		DrawTexturePro(fnt.Atlas, src, dst, Vector2{}, 0, color)
 
 		textOffsetX += float32(fnt.CharWidths[charCode]) * scale
 	}

@@ -34,12 +34,20 @@ func MinecraftLogo(Splash string, bbox gfx.Rectangle) {
 	t := float64(time.Now().UnixMilli()%1000) / 1000.0
 
 	wave := math.Sin(t*2*math.Pi) * 0.2
-	scale := float32(float64(Scale) - math.Abs(wave))+.5
+	scale := float32(float64(Scale)-math.Abs(wave)) + .5
 
 	textSize := font.TextSize([]rune(Splash)).Scale(scale)
-	textBBox := gfx.Rectangle{}.SetSize(textSize).
-		Anchor(bbox, .75, .75).
-		AddPosition(textSize.Half())
 
-	font.DrawRunes([]rune(Splash), textBBox.Position(), float32(scale), -20, gfx.Yellow, false)
+	anchor := gfx.Rectangle{
+		X: bbox.X + bbox.W*.85,
+		Y: bbox.Y + bbox.H*.8,
+	}
+
+	pos := gfx.Vector2{
+		X: anchor.X - textSize.X/2,
+		Y: anchor.Y - textSize.Y/2,
+	}
+
+	font.DrawRunes([]rune(Splash), pos, float32(scale), -20,gfx.Yellow, false)
+
 }

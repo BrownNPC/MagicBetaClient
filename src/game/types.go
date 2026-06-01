@@ -5,7 +5,6 @@ import (
 	"mbc/gfx/assets"
 
 	"solod.dev/so/maps"
-	"solod.dev/so/time"
 	"solod.dev/so/mem"
 )
 
@@ -16,10 +15,12 @@ type DefaultTexturePack struct {
 	scratch  mem.Arena
 	font     gfx.Font
 }
-type Screen int
 
 const (
 	SCREEN_MENU_MAIN = iota
+	SCREEN_MENU_JOIN_SERVER
+	SCREEN_MENU_TEXTURE_PACKS
+	SCREEN_MENU_OPTIONS
 )
 
 type MenuMain struct {
@@ -54,9 +55,7 @@ type State struct {
 	Cursor      gfx.Vector2
 	ShowCursor  bool
 	CursorDelta gfx.Vector2
-	Screen      Screen
+	Screen      int
 	Inputs      [TotalInputs]Input
-	InitTime    time.Time // time when init was called
-	// screen data
-	MenuMain MenuMain
+	SplashText  string // splash text shown on main menu
 }
