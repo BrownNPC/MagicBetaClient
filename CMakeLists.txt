@@ -25,14 +25,17 @@ find_package(CURL REQUIRED)
 find_package(SDL3 REQUIRED)
 # Link with OpenGL
 find_package(OpenGL REQUIRED)
-
+# Link with SDL3_mixer
+find_package(SDL3_mixer REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
+    SDL3_mixer::SDL3_mixer
     CURL::libcurl
     OpenGL::GL
     m
 )
+# sanitizers - increases compile times.
 if (!PSP)
 # target_compile_options(${PROJECT_NAME} PRIVATE
 #     -g

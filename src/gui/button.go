@@ -43,10 +43,12 @@ func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
 		H: float32(font.TextHeight()) * Scale,
 	}.Anchor(bbox, .5, .5)
 
-	btnColor := gfx.White
-	if Hovered {
-		btnColor = gfx.Yellow
+	btnTextColor := gfx.White
+	if !Enabled {
+		btnTextColor = gfx.Gray
+	} else if Hovered {
+		btnTextColor = gfx.Yellow
 	}
-	font.DrawRunes(runes, tBB.Position().AddValue(1), Scale, 0, btnColor, true) // shadow
-	font.DrawRunes(runes, tBB.Position(), Scale, 0, btnColor, false)
+	font.DrawRunes(runes, tBB.Position().AddValue(1), Scale, 0, btnTextColor, true) // shadow
+	font.DrawRunes(runes, tBB.Position(), Scale, 0, btnTextColor, false)
 }

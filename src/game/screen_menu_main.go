@@ -13,31 +13,6 @@ import (
 	"solod.dev/so/strings"
 )
 
-func (s *State) LoadRandomSplashText() string {
-	s.Scratch.Reset()
-	f := sdl.IOFromFile(path.Join(&s.Scratch, "assets/", "title/splashes.txt"), "r")
-	if f == nil {
-		panic(sdl.GetError())
-	}
-
-	var __Rbuf [1024 * 10]byte
-	rArena := mem.NewArena(__Rbuf[:])
-	r := bufio.NewReader(&rArena, f)
-
-	const TotalSplashes = 226
-	n := rand.IntN(TotalSplashes - 1)
-
-	finalString := ""
-	var err error
-	for range n {
-		finalString, err = r.ReadString('\n')
-		if err != nil {
-			panic(err)
-		}
-	}
-	finalString = strings.TrimSpace(finalString)
-	return strings.Clone(mem.System, finalString)
-}
 func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 	// draw background
 	bg := s.Pack.GetTexture(assets.Gui_background)
@@ -70,9 +45,9 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 	buttonSet := gfx.Rectangle{W: gui.ButtonSize.W, H: (gui.ButtonSize.H + 2) * 4}.
 		Scale(gui.Scale).
 		Anchor(menuScreen, .5, .70)
-	btn := gui.ButtonSize.
-		SetPosition(buttonSet.Position()).
-		Scale(gui.Scale)
+	btn := gui.ButtonSize.Scale(gui.Scale)
+	btn.X = btn.Anchor(buttonSet, .5, 0).X
+	btn.Y = buttonSet.Y
 	for i := range Nbuttons {
 		btn.Y += btn.H
 		if i != 0 {
@@ -88,4 +63,30 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 			hovered, true,
 		)
 	}
+}
+
+func (s *State) LoadRandomSplashText() string {
+	s.Scratch.Reset()
+	f := sdl.IOFromFile(path.Join(&s.Scratch, "assets/", "title/splashes.txt"), "r")
+	if f == nil {
+		panic(sdl.GetError())
+	}
+
+	var __Rbuf [1024 * 10]byte
+	rArena := mem.NewArena(__Rbuf[:])
+	r := bufio.NewReader(&rArena, f)
+
+	const TotalSplashes = 226
+	n := rand.IntN(TotalSplashes - 1)
+
+	finalString := ""
+	var err error
+	for range n {
+		finalString, err = r.ReadString('\n')
+		if err != nil {
+			panic(err)
+		}
+	}
+	finalString = strings.TrimSpace(finalString)
+	return strings.Clone(mem.System, finalString)
 }

@@ -48,6 +48,6 @@ func MinecraftLogo(Splash string, bbox gfx.Rectangle) {
 		Y: anchor.Y - textSize.Y/2,
 	}
 
-	font.DrawRunes([]rune(Splash), pos, float32(scale), -20,gfx.Yellow, false)
+	font.DrawRunes([]rune(Splash), pos, float32(scale), -20, gfx.Yellow, false)
 
 }

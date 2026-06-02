@@ -1,5 +1,7 @@
 package sdl
 
+import "solod.dev/so/c"
+
 type InitFlags uint32
 
 const (
@@ -51,3 +53,83 @@ const (
 	BUTTON_X1     = 4
 	BUTTON_X2     = 5
 )
+
+//so:extern SDL_EventType
+type EventType uint32
+
+//so:extern SDL_AppResult
+type AppResult uint32
+
+const (
+	APP_CONTINUE AppResult = iota /**< Value that requests that the app continue from the main callbacks. */
+	APP_SUCCESS                   /**< Value that requests termination with success from the main callbacks. */
+	APP_FAILURE                   /**< Value that requests termination with error from the main callbacks. */
+)
+
+type PixelFormat int
+
+//so:extern SDL_PIXELFORMAT_RGBA32
+const PIXELFORMAT_RGBA32 PixelFormat = iota
+
+//so:extern SDL_PIXELFORMAT_ABGR4444
+const PIXELFORMAT_ABGR4444 PixelFormat = iota
+
+type IOStatus int
+
+//so:extern SDL_IO_STATUS_READY
+const IO_STATUS_READY IOStatus = iota /**< Everything is ready (no errors and not EOF). */
+//so:extern SDL_IO_STATUS_ERROR
+const IO_STATUS_ERROR IOStatus = iota /**< Read or write I/O error */
+//so:extern SDL_IO_STATUS_EOF
+const IO_STATUS_EOF IOStatus = iota /**< End of file */
+//so:extern SDL_IO_STATUS_NOT_READY
+const IO_STATUS_NOT_READY IOStatus = iota /**< Non blocking I/O, not ready */
+//so:extern SDL_IO_STATUS_READONLY
+const IO_STATUS_READONLY IOStatus = iota /**< Tried to write a read-only buffer */
+//so:extern SDL_IO_STATUS_WRITEONLY
+const IO_STATUS_WRITEONLY IOStatus = iota /**< Tried to read a write-only buffer */
+
+//so:extern SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK
+const AUDIO_DEVICE_DEFAULT_PLAYBACK uint32 = 0xFFFFFFFF
+
+//so:extern SDL_AUDIO_UNKNOWN
+const AUDIO_UNKNOWN = 0x0000 /**< Unspecified audio format */
+//so:extern SDL_AUDIO_U8
+const AUDIO_U8 = 0x0008 /**< Unsigned 8-bit samples */
+/* SDL_DEFINE_AUDIO_FORMAT(0, 0, 0, 8), */
+//so:extern SDL_AUDIO_S8
+const AUDIO_S8 = 0x8008 /**< Signed 8-bit samples */
+/* SDL_DEFINE_AUDIO_FORMAT(1, 0, 0, 8), */
+//so:extern SDL_AUDIO_S16LE
+const AUDIO_S16LE = 0x8010 /**< Signed 16-bit samples */
+/* SDL_DEFINE_AUDIO_FORMAT(1, 0, 0, 16), */
+//so:extern SDL_AUDIO_S16BE
+const AUDIO_S16BE = 0x9010 /**< As above, but big-endian byte order */
+/* SDL_DEFINE_AUDIO_FORMAT(1, 1, 0, 16), */
+//so:extern SDL_AUDIO_S32LE
+const AUDIO_S32LE = 0x8020 /**< 32-bit integer samples */
+/* SDL_DEFINE_AUDIO_FORMAT(1, 0, 0, 32), */
+//so:extern SDL_AUDIO_S32BE
+const AUDIO_S32BE = 0x9020 /**< As above, but big-endian byte order */
+/* SDL_DEFINE_AUDIO_FORMAT(1, 1, 0, 32), */
+//so:extern SDL_AUDIO_F32LE
+const AUDIO_F32LE = 0x8120 /**< 32-bit floating point samples */
+/* SDL_DEFINE_AUDIO_FORMAT(1, 0, 1, 32), */
+//so:extern SDL_AUDIO_F32BE
+const AUDIO_F32BE = 0x9120 /**< As above, but big-endian byte order */
+/* SDL_DEFINE_AUDIO_FORMAT(1, 1, 1, 32), */
+
+type AudioCallback func(userdata any, stream *byte, length int)
+
+//so:extern SDL3_AudioSpec
+type AudioSpec struct {
+	freq              c.Int
+	format            uint32
+	channels, silence uint8
+	samples           uint16
+	size              uint32
+	callback          AudioCallback
+	userdata          any
+}
+//so:extern SDL_AudioStream
+type AudioStream struct{}
