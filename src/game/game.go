@@ -24,6 +24,10 @@ func (s *State) Init() {
 	if s.MusicTrack == nil {
 		panic(sdl.GetError())
 	}
+	s.UISoundTrack = mix.CreateTrack(s.Mixer)
+	if s.UISoundTrack == nil {
+		panic(sdl.GetError())
+	}
 }
 
 // return false to quit.

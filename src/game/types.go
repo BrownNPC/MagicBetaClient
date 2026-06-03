@@ -49,7 +49,9 @@ const (
 // since there are only 3 sound tracks. and all of them are well
 // under 5 minutes. We can rol a dice and decide whether to play music or not every 5minutes
 // without having to track if a song is already playing.
-const RollMusicEvery = time.Minute * 5 
+const RollMusicEvery = time.Minute * 5
+const MaxAudioLoaded = 100
+
 var ___scratchBuf [1024 * 1024]byte // 1MiB
 // Game state
 type State struct {
@@ -68,5 +70,9 @@ type State struct {
 	Mixer *mix.Mixer // global mixer
 
 	TimeSinceLastBackgroundMusicRoll time.Time  // when did we roll to play background music
-	MusicTrack        *mix.Track // track that plays background classic Minecraft music on loop.
+	MusicTrack                       *mix.Track // track that plays background classic Minecraft music on loop.
+	UISoundTrack                     *mix.Track
+
+	Audios maps.Map[assets.ID, *mix.Audio]
+	// Tracks [MaxAudioLoaded]*mix.Track
 }

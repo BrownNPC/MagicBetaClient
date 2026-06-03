@@ -26,12 +26,34 @@ func (s *State) RollBackgroundMusic() {
 	if n == 0 {
 		return
 	}
-	f := sdl.IOFromFile(path.Join(&s.Scratch, "assets", musics[n-1].String()), "r")
+	n -= 1
+	f := sdl.IOFromFile(path.Join(&s.Scratch, "assets", musics[n].String()), "r")
 	if f == nil {
 		panic(sdl.GetError()) // should always succeed because wtf
 	}
-	if !mix.SetTrackIOStream(s.MusicTrack, f, false) {
+	if !mix.SetTrackIOStream(s.MusicTrack, f, true) {
 		panic("game.RollBackgroundMusic: Failed to set music track")
 	}
 	mix.PlayTrack(s.MusicTrack, 0)
+}
+func (s *State) getAudio(audio assets.ID) *mix.Audio {
+	if s.Audios.Has(audio) {
+		return s.Audios.Get(audio)
+	}
+	if s.Audios.Len() > MaxAudioLoaded {
+		i := s.Audios.Iter()
+		id := i.Key()
+		mix.DestroyAudio(i.Value())
+		s.Audios.Delete(id)
+	}
+	s.Scratch.Reset()
+	file := mix.LoadAudio(s.Mixer, path.Join(&s.Scratch, "assets", audio.String()), false)
+	if file == nil {
+		panic(sdl.GetError())
+	}
+	return file
+}
+func (s *State) PlaySoundEffect(audio assets.ID) {
+	mix.SetTrackAudio(s.UISoundTrack, s.getAudio(audio))
+	mix.PlayTrack(s.UISoundTrack, 0)
 }

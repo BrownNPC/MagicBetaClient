@@ -38,3 +38,6 @@ func SetTrackAudio(track *Track, audio *Audio) bool
 
 //so:extern MIX_PlayTrack
 func PlayTrack(track *Track,options uint32)
+
+//so:extern MIX_DestroyAudio
+func DestroyAudio(audio *Audio)
