@@ -3,6 +3,7 @@ package SDL
 import (
 	"mbc/game"
 	"mbc/gfx"
+	"mbc/mix"
 	"mbc/net/curl"
 	"mbc/sdl"
 
@@ -29,6 +30,7 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 			sdl.WINDOW_RESIZABLE|
 			sdl.WINDOW_HIGH_PIXEL_DENSITY)
 	gfx.Init(window)
+	mix.Init()
 	state.game.Init()
 	state.targetFPS = 60
 	state.lastTime = time.Now()
