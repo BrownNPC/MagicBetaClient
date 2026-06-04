@@ -32,7 +32,6 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 			sdl.WINDOW_HIGH_PIXEL_DENSITY)
 	gfx.Init(window)
 	mix.Init()
-	sdl.StartTextInput(gfx.Window)
 	state.game.Init()
 	state.targetFPS = 60
 	state.lastTime = time.Now()
