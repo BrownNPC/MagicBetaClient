@@ -3,6 +3,7 @@ package sdl
 import (
 	"unsafe"
 
+	"solod.dev/so/c"
 	"solod.dev/so/time"
 )
 
@@ -25,11 +26,17 @@ func (e *Event) MouseButton() MouseButtonEvent {
 func (e *Event) MouseWheel() MouseWheelEvent {
 	return *any(e).(*MouseWheelEvent)
 }
-func (e *Event) MouseMotion() MouseMotionEvent{
+func (e *Event) MouseMotion() MouseMotionEvent {
 	return *any(e).(*MouseMotionEvent)
 }
 func (e *Event) Keyboard() KeyboardEvent {
 	return *any(e).(*KeyboardEvent)
+}
+func (e *Event) TextInput() TextInputEvent {
+	return *any(e).(*TextInputEvent)
+}
+func (e *Event) TextEditing() TextEditingEvent {
+	return *any(e).(*TextEditingEvent)
 }
 
 type QuitEvent struct {
@@ -99,4 +106,29 @@ type KeyboardEvent struct {
 	Raw       uint16        /**< The platform dependent scancode for this event */
 	Down      bool          /**< true if the key is pressed */
 	Repeat    bool          /**< true if this is a key repeat */
+}
+type TextInputEvent struct {
+	Type      EventType
+	reserved  uint32
+	Timestamp time.Duration
+	WindowID  uint32
+	text      *c.ConstChar
+}
+
+func (e TextInputEvent) Text() string {
+	return c.String(e.text)
+}
+
+type TextEditingEvent struct {
+	Type      EventType
+	reserved  uint32
+	Timestamp time.Duration
+	WindowID  uint32
+	text      *c.ConstChar
+	Start     int32
+	End       int32
+}
+
+func (e TextEditingEvent) Text() string {
+	return c.String(e.text)
 }

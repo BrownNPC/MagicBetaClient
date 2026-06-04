@@ -87,7 +87,7 @@ func ConvertSurface(src *Surface, format PixelFormat) *Surface
 // IOStream implements io.ReadWriteCloser
 //
 //so:extern SDL_IOStream
-type IOStream struct {}
+type IOStream struct{}
 
 func (ctx *IOStream) Read(b []byte) (int, error) {
 	if len(b) == 0 {
@@ -130,3 +130,9 @@ func CloseIO(ctx *IOStream) bool
 
 //so:extern SDL_GetIOStatus
 func GetIOStatus(ctx *IOStream) IOStatus
+
+//so:extern SDL_StartTextInput
+func StartTextInput(*Window) bool
+
+//so:extern SDL_StopTextInput
+func StopTextInput(*Window) bool

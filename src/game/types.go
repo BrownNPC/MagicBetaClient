@@ -7,6 +7,7 @@ import (
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
+	"solod.dev/so/strings"
 	"solod.dev/so/time"
 )
 
@@ -24,10 +25,6 @@ const (
 	SCREEN_MENU_TEXTURE_PACKS
 	SCREEN_MENU_OPTIONS
 )
-
-type MenuMain struct {
-	Buttons [3]bool
-}
 
 type InputType uint32
 type Input struct {
@@ -53,6 +50,14 @@ const RollMusicEvery = time.Minute * 5
 const MaxAudioLoaded = 100
 
 var ___scratchBuf [1024 * 1024]byte // 1MiB
+type ScreenJoinServerState struct {
+	Buf   [4 * 120]byte
+	Arena mem.Arena
+
+	TextField strings.Builder // text field on screen Join Server
+	TextFieldFocused bool
+}
+
 // Game state
 type State struct {
 	Dt                        float32
@@ -74,5 +79,6 @@ type State struct {
 	UISoundTrack                     *mix.Track
 
 	Audios maps.Map[assets.ID, *mix.Audio]
-	// Tracks [MaxAudioLoaded]*mix.Track
+
+	ScreenJoinServer ScreenJoinServerState
 }

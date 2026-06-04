@@ -8,17 +8,24 @@ set(CMAKE_CXX_STANDARD 23)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
+
 
 # add sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS _build/transpiled/*.c)
-add_executable(${PROJECT_NAME} ${SOURCES})
-if (PSP)
-  # pretend to be openbsd for PSP.
-  target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd)
+if(ANDROID)
+  add_library(${PROJECT_NAME} ${SOURCES}) # android needs shared library.
+else()
+  add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
-target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled external/)
 
-set(CMAKE_BUILD_TYPE Debug)
+#pretend to be OpenBSD for PSP
+if (PSP)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd) 
+endif()
+
+target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled external/)
 # Link with CURL
 find_package(CURL REQUIRED)
 # Link with SDL3
@@ -27,26 +34,27 @@ find_package(SDL3 REQUIRED)
 find_package(OpenGL REQUIRED)
 # Link with SDL3_mixer
 find_package(SDL3_mixer REQUIRED)
+if (NOT PSP)
+add_subdirectory(vendored/gl4es)
+endif()
+add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
+add_subdirectory(vendored/SDL_mixer EXCLUDE_FROM_ALL)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     SDL3_mixer::SDL3_mixer
     CURL::libcurl
-    OpenGL::GL
+    GL
     m
 )
-# sanitizers - increases compile times.
-if (!PSP)
-# target_compile_options(${PROJECT_NAME} PRIVATE
-#     -g
-#     -O1
-#     -fno-omit-frame-pointer
-#     -fsanitize=address
-# )
 
-# target_link_options(${PROJECT_NAME} PRIVATE
-#     -fsanitize=address
-# )
+
+# This is safe to set on all platforms. Otherwise your SDL app will
+#  have a terminal window pop up with it on Windows.
+set_property(TARGET ${PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
+
+if(EMSCRIPTEN)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY SUFFIX ".html") # create html web page.
 endif()
 
 if (PSP)
@@ -70,5 +78,4 @@ if (PSP)
           ${CMAKE_CURRENT_SOURCE_DIR}/assets
           $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
   )
-
 endif()

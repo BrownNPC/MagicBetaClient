@@ -55,8 +55,7 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 		}
 		hovered := btn.Contains(s.Cursor)
 		if hovered && s.Inputs[InputLeftClick].Released {
-			println("Clicked:", ButtonTitles[i])
-			// s.Screen = SCREEN_MENU_MAIN + i + 1
+			s.Screen = SCREEN_MENU_MAIN + i + 1 // Switch screen
 			s.PlaySoundEffect(assets.Sound3_random_click)
 		}
 		gui.Button(ButtonTitles[i],

@@ -8,6 +8,7 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/c"
+	"solod.dev/so/fmt"
 	"solod.dev/so/time"
 )
 
@@ -31,6 +32,7 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 			sdl.WINDOW_HIGH_PIXEL_DENSITY)
 	gfx.Init(window)
 	mix.Init()
+	sdl.StartTextInput(gfx.Window)
 	state.game.Init()
 	state.targetFPS = 60
 	state.lastTime = time.Now()
@@ -85,6 +87,12 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			i = game.InputRightClick
 		}
 		state.game.Inputs[i] = game.Input{Pressed: m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN, Released: m.Type == sdl.EVENT_MOUSE_BUTTON_UP}
+	case sdl.EVENT_TEXT_EDITING:
+		t := e.TextEditing()
+		println(t.Start, t.End, t.Text())
+	case sdl.EVENT_TEXT_INPUT:
+		t := e.TextInput()
+		fmt.Println(t.Text())
 	}
 	return sdl.APP_CONTINUE
 }

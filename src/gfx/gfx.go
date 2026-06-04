@@ -57,10 +57,10 @@ func DisableTexture() {
 	gl.Disable(gl.TEXTURE_2D)
 }
 
-var window *sdl.Window
+var Window *sdl.Window
 
 func Init(win *sdl.Window) {
-	window = win
+	Window = win
 	sdl.GLCreateContext(win)
 	width, height := GetWindowSize()
 	initGLDefaultState()
@@ -68,7 +68,7 @@ func Init(win *sdl.Window) {
 }
 func GetWindowSize() (int, int) {
 	var w, h sdl.Cint
-	sdl.GetWindowSizeInPixels(window, &w, &h)
+	sdl.GetWindowSizeInPixels(Window, &w, &h)
 	return int(w), int(h)
 }
 
@@ -97,14 +97,14 @@ func initGLDefaultState() {
 }
 
 func BeginDrawing() { gl.LoadIdentity() }
-func EndDrawing()   { sdl.GLSwapWindow(window) }
+func EndDrawing()   { sdl.GLSwapWindow(Window) }
 func ClearBackground(c Color) {
 	gl.ClearColor(float32(c.R)/255, float32(c.G)/255, float32(c.B)/255, float32(c.A)/255)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 func BeginMode3D(cam Camera) {
 	var w, h sdl.Cint
-	sdl.GetWindowSizeInPixels(window, &w, &h)
+	sdl.GetWindowSizeInPixels(Window, &w, &h)
 
 	gl.MatrixMode(gl.PROJECTION)
 	gl.PushMatrix()

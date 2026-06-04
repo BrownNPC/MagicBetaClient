@@ -8,6 +8,7 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/mem"
+	"solod.dev/so/strings"
 )
 
 func (s *State) Init() {
@@ -28,6 +29,9 @@ func (s *State) Init() {
 	if s.UISoundTrack == nil {
 		panic(sdl.GetError())
 	}
+	s.ScreenJoinServer.Arena = mem.NewArena(s.ScreenJoinServer.Buf[:])
+	s.ScreenJoinServer.TextField = strings.NewBuilder(&s.ScreenJoinServer.Arena)
+
 }
 
 // return false to quit.
@@ -41,6 +45,8 @@ func (s *State) Update() bool {
 	switch s.Screen {
 	case SCREEN_MENU_MAIN:
 		s.Screen_MenuMain(screen)
+	case SCREEN_MENU_JOIN_SERVER:
+		s.Screen_JoinServer(screen, &s.ScreenJoinServer)
 	}
 	gfx.EndDrawing()
 
