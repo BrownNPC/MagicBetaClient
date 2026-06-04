@@ -3,12 +3,12 @@ package gfx
 import (
 	"solod.dev/so/math"
 )
+//so:include "math_include.h"
 
 const epsilon = 1e-6
 
 // Clamp - Clamp float value
 //
-//so:include "math_include.h"
 func Clamp(value, min, max float32) float32 {
 	var res float32
 	if value < min {

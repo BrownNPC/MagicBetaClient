@@ -11,6 +11,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Debug)
 
+option(USE_VENDORED_SDL3 "Use vendored SDL3" OFF)
+option(USE_VENDORED_MIXER "Use vendored SDL_Mixer" OFF)
+option(USE_GL4ES "Use GL4ES to emulate opengl 1.1" ON)
+
 
 # add sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS _build/transpiled/*.c)
@@ -20,25 +24,35 @@ else()
   add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
 
+target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled src/)
+
 #pretend to be OpenBSD for PSP
 if (PSP)
   target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd) 
 endif()
 
-target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled external/)
+
+
+if (USE_GL4ES)
+  add_subdirectory(vendored/gl4es)
+else()
+  find_package(OpenGL REQUIRED) # Link with OpenGL
+endif()
+
+if (USE_VENDORED_SDL3)
+  add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
+else()
+  find_package(SDL3 REQUIRED)
+endif()
+
+if (USE_VENDORED_MIXER)
+  add_subdirectory(vendored/SDL_mixer EXCLUDE_FROM_ALL)
+else()
+  find_package(SDL3_mixer REQUIRED)
+endif()
+
 # Link with CURL
 find_package(CURL REQUIRED)
-# Link with SDL3
-find_package(SDL3 REQUIRED)
-# Link with OpenGL
-find_package(OpenGL REQUIRED)
-# Link with SDL3_mixer
-find_package(SDL3_mixer REQUIRED)
-if (NOT PSP)
-add_subdirectory(vendored/gl4es)
-endif()
-add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
-add_subdirectory(vendored/SDL_mixer EXCLUDE_FROM_ALL)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3

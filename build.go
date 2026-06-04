@@ -16,9 +16,13 @@ var Bootstrap = flag.String("bootstrap", "none", " -bootstrap=<psp,native>")
 func RunCmakeForTarget(target string) bool {
 	switch target {
 	case "psp":
-		return Command("psp-cmake", "-B", BuildDir, "-G", "Ninja")
+		return Command("psp-cmake",
+			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=ON", "-DUSE_GL4ES=OFF",
+			"-B", BuildDir, "-G", "Ninja")
 	case "native":
-		return Command("cmake", "-B", BuildDir, "-G", "Ninja")
+		return Command("cmake",
+			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF", "-DUSE_GL4ES=ON",
+			"-B", BuildDir, "-G", "Ninja")
 	}
 	return false
 }
