@@ -38,12 +38,12 @@ endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled src/)
 
+target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled vendored/)
+
 #pretend to be OpenBSD for PSP
 if (PSP)
   target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd) 
 endif()
-
-find_package(OpenGL REQUIRED)
 
 if (USE_VENDORED_SDL3)
   add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)

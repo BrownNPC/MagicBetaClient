@@ -17,11 +17,11 @@ func RunCmakeForTarget(target string) bool {
 	switch target {
 	case "psp":
 		return Command("psp-cmake",
-			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=ON", "-DUSE_GL4ES=OFF",
+			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=ON",
 			"-B", BuildDir, "-G", "Ninja")
 	case "native":
 		return Command("cmake",
-			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF", "-DUSE_GL4ES=ON",
+			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF",
 			"-B", BuildDir, "-G", "Ninja")
 	case "android":
 		ndk := os.Getenv("ANDROID_NDK")
@@ -35,7 +35,7 @@ func RunCmakeForTarget(target string) bool {
 			"-DANDROID_ABI="+"armeabi-v7a",
 			"-DANDROID_PLATFORM="+"android-28",
 			"-DANDROID_STL="+"c++_shared ",
-			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON", "-DUSE_GL4ES=ON",
+			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON",
 			"-B", BuildDir, "-G", "Ninja")
 	}
 	return false

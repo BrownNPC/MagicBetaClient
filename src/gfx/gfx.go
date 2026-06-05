@@ -10,6 +10,8 @@ import (
 	"solod.dev/so/unicode"
 )
 
+//so:embed rlgl.c
+
 // Some basic Defines
 const (
 	Pi      = 3.1415927
