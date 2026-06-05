@@ -62,8 +62,9 @@ if(ANDROID)
     set(CURL_TARGET curl::curl_static c++_shared) # need this or boringSSL will not compile :D
 else()
     find_package(CURL REQUIRED)
-    set(CURL_TARGET CURL::libcurl )
+    set(CURL_TARGET CURL::libcurl)
 endif()
+  add_subdirectory(vendored/gl4es)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
