@@ -9,7 +9,6 @@ import (
 	"solod.dev/so/bufio"
 	"solod.dev/so/math/rand"
 	"solod.dev/so/mem"
-	"solod.dev/so/path"
 	"solod.dev/so/strings"
 )
 
@@ -67,9 +66,12 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 
 func (s *State) LoadRandomSplashText() string {
 	s.Scratch.Reset()
-	f := sdl.IOFromFile(path.Join(&s.Scratch, "assets/", "title/splashes.txt"), "r")
+	// f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, "title/splashes.txt"), "r")
+	f := sdl.IOFromFile(("title/splashes.txt"), "r")
 	if f == nil {
-		panic(sdl.GetError())
+		newVar := sdl.GetError().Error()
+		sdl.LogError(1, "%s", newVar)
+		return "Bruh"
 	}
 
 	var __Rbuf [1024 * 10]byte

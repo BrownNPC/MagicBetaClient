@@ -1,6 +1,7 @@
 package game
 
 import (
+	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/mix"
 	"mbc/sdl"
@@ -27,7 +28,7 @@ func (s *State) RollBackgroundMusic() {
 		return
 	}
 	n -= 1
-	f := sdl.IOFromFile(path.Join(&s.Scratch, "assets", musics[n].String()), "r")
+	f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, musics[n].String()), "r")
 	if f == nil {
 		panic(sdl.GetError()) // should always succeed because wtf
 	}
@@ -47,7 +48,7 @@ func (s *State) getAudio(audio assets.ID) *mix.Audio {
 		s.Audios.Delete(id)
 	}
 	s.Scratch.Reset()
-	file := mix.LoadAudio(s.Mixer, path.Join(&s.Scratch, "assets", audio.String()), false)
+	file := mix.LoadAudio(s.Mixer, path.Join(&s.Scratch, gfx.AssetsPath, audio.String()), false)
 	if file == nil {
 		panic(sdl.GetError())
 	}

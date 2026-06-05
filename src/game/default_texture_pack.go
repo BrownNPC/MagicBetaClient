@@ -38,7 +38,7 @@ func (p *DefaultTexturePack) GetTexture(asset assets.ID) gfx.Texture {
 		return p.Textures.Get(asset)
 	}
 	p.scratch.Reset()
-	t, err := gfx.LoadTexture(path.Join(&p.scratch, "assets", asset.String()))
+	t, err := gfx.LoadTexture(path.Join(&p.scratch, gfx.AssetsPath, asset.String()))
 	if err != nil {
 		return gfx.Texture{}
 	}
@@ -64,7 +64,7 @@ func (p *DefaultTexturePack) Font() *gfx.Font {
 	}
 	var err error
 	p.font, err = gfx.LoadFont(path.Join(&p.scratch,
-		"assets", "font", "default.png"))
+		gfx.AssetsPath, "font", "default.png"))
 	if err != nil {
 		panic(err)
 	}

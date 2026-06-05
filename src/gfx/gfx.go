@@ -60,6 +60,7 @@ func DisableTexture() {
 }
 
 var Window *sdl.Window
+var AssetsPath string
 
 func Init(win *sdl.Window) {
 	Window = win
@@ -67,6 +68,12 @@ func Init(win *sdl.Window) {
 	width, height := GetWindowSize()
 	initGLDefaultState()
 	SetupViewport(width, height)
+	switch sdl.GetPlatform() {
+	default:
+		AssetsPath = "./assets"
+	case "Android":
+		AssetsPath = sdl.GetBasePath()
+	}
 }
 func GetWindowSize() (int, int) {
 	var w, h sdl.Cint

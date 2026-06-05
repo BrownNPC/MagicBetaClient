@@ -14,6 +14,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 option(USE_VENDORED_SDL3 "Use vendored SDL3" ON)
 option(USE_VENDORED_MIXER "Use vendored SDL_Mixer" ON)
+option(USE_GL4ES "Use vendored GL4ES" ON)
 
 
 # disable formats we don't use to make the build faster and smaller. Also some of these don't work on all platforms so you'll need to do some experimentation.
@@ -64,7 +65,12 @@ else()
     find_package(CURL REQUIRED)
     set(CURL_TARGET CURL::libcurl)
 endif()
-  add_subdirectory(vendored/gl4es)
+
+if (NOT USE_GL4ES)
+find_package(OpenGL REQUIRED)
+else()
+add_subdirectory(vendored/gl4es)
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3

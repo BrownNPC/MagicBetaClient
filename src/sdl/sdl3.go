@@ -35,6 +35,9 @@ func CreateWindow(title string, width, height int, windowFlags WindowFlags) *Win
 //so:extern SDL_Log
 func Log(string, ...any)
 
+//so:extern SDL_LogError
+func LogError(int, string, ...any)
+
 // Delay pauses the calling thread.
 //
 //so:extern SDL_DelayNS
@@ -136,3 +139,19 @@ func StartTextInput(*Window) bool
 
 //so:extern SDL_StopTextInput
 func StopTextInput(*Window) bool
+
+//so:extern SDL_GetBasePath
+func getBasePath() *c.ConstChar
+
+func GetBasePath() string {
+	return c.String(getBasePath())
+}
+
+// const char * SDL_GetPlatform(void);
+
+//so:extern SDL_GetPlatform
+func getPlatform() *c.ConstChar
+
+func GetPlatform() string {
+	return c.String(getPlatform())
+}
