@@ -22,7 +22,7 @@ so_String CurlErrorimpl(void* self) {
   return so_str(curl_easy_strerror(code));
 }
 so_Error newCurlError(CURLcode code) {
-  auto s = so_str(curl_easy_strerror(code));
+  so_String s = so_str(curl_easy_strerror(code));
   return (so_Error){
       .self = (void*)(intptr_t)code,
       .Error = CurlErrorimpl,

@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.17)
 
-project(MagicBetaClient)
 
-set(CMAKE_C_STANDARD 23)
+project(MagicBetaClient LANGUAGES C)
+
+
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS ON)
-set(CMAKE_CXX_STANDARD 23)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -13,13 +14,24 @@ set(CMAKE_BUILD_TYPE Debug)
 
 option(USE_VENDORED_SDL3 "Use vendored SDL3" ON)
 option(USE_VENDORED_MIXER "Use vendored SDL_Mixer" ON)
-option(USE_GL4ES "Use GL4ES to emulate opengl 1.1" ON)
 
 
+# disable formats we don't use to make the build faster and smaller. Also some of these don't work on all platforms so you'll need to do some experimentation.
+set(SDLMIXER_MIDI_NATIVE OFF)     
+set(SDLMIXER_GME OFF)
+set(SDLMIXER_WAVPACK OFF)     
+set(SDLMIXER_MOD OFF)
+set(SDLMIXER_MOD_XMP OFF)
+set(SDLMIXER_OPUS OFF)
+set(SDLMIXER_MP3_MPG123 OFF)
+set(SDLMIXER_VORBIS_VORBISFILE OFF)
+set(SDLMIXER_FLAC_LIBFLAC OFF)
+set(SDLMIXER_VENDORED ON)   # tell SDL_mixer to build its own dependencies
 # add sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS _build/transpiled/*.c)
 if(ANDROID)
-  add_library(${PROJECT_NAME} ${SOURCES}) # android needs shared library.
+  add_library(${PROJECT_NAME} SHARED ${SOURCES}) # android needs shared library.
+  set_target_properties(MagicBetaClient PROPERTIES OUTPUT_NAME main)
 else()
   add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
@@ -31,13 +43,7 @@ if (PSP)
   target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd) 
 endif()
 
-
-
-if (USE_GL4ES)
-  add_subdirectory(vendored/gl4es)
-else()
-  find_package(OpenGL REQUIRED) # Link with OpenGL
-endif()
+find_package(OpenGL REQUIRED)
 
 if (USE_VENDORED_SDL3)
   add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
@@ -51,17 +57,21 @@ else()
   find_package(SDL3_mixer REQUIRED)
 endif()
 
-# Link with CURL
-find_package(CURL REQUIRED)
+if(ANDROID)
+    find_package(curl REQUIRED CONFIG)
+    set(CURL_TARGET curl::curl_static c++_shared) # need this or boringSSL will not compile :D
+else()
+    find_package(CURL REQUIRED)
+    set(CURL_TARGET CURL::libcurl )
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     SDL3_mixer::SDL3_mixer
-    CURL::libcurl
+    ${CURL_TARGET}
     GL
     m
 )
-
 
 # This is safe to set on all platforms. Otherwise your SDL app will
 #  have a terminal window pop up with it on Windows.
