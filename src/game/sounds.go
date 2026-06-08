@@ -6,6 +6,8 @@ import (
 	"mbc/mix"
 	"mbc/sdl"
 
+	"solod.dev/so/c"
+	"solod.dev/so/fmt"
 	"solod.dev/so/math/rand"
 	"solod.dev/so/path"
 	"solod.dev/so/time"
@@ -42,6 +44,7 @@ func (s *State) getAudio(audio assets.ID) *mix.Audio {
 		return s.Audios.Get(audio)
 	}
 	if s.Audios.Len() > MaxAudioLoaded {
+		// delete one audio.
 		i := s.Audios.Iter()
 		id := i.Key()
 		mix.DestroyAudio(i.Value())
@@ -54,7 +57,15 @@ func (s *State) getAudio(audio assets.ID) *mix.Audio {
 	}
 	return file
 }
-func (s *State) PlaySoundEffect(audio assets.ID) {
-	mix.SetTrackAudio(s.UISoundTrack, s.getAudio(audio))
-	mix.PlayTrack(s.UISoundTrack, 0)
+func (s *State) PlaySoundEffect(audio assets.ID) *mix.Track {
+	for _, t := range s.TracksPool {
+		if !mix.TrackPlaying(t) {
+			mix.SetTrackAudio(t, s.getAudio(audio))
+			mix.PlayTrack(t, 0)
+			return t
+		}
+	}
+	c.Assert(false, fmt.Sprintf(fmt.NewBuffer(2048),
+		"PlaySoundEffect: out of Tracks in the pool. trying to play %s", audio.String()))
+	return nil
 }

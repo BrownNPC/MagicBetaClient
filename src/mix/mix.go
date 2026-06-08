@@ -37,7 +37,13 @@ func SetTrackIOStream(track *Track, io *sdl.IOStream, closeio bool) bool
 func SetTrackAudio(track *Track, audio *Audio) bool
 
 //so:extern MIX_PlayTrack
-func PlayTrack(track *Track,options uint32)
+func PlayTrack(track *Track, options uint32)
 
 //so:extern MIX_DestroyAudio
 func DestroyAudio(audio *Audio)
+
+//so:extern MIX_TrackPlaying
+func TrackPlaying(*Track) bool
+
+//so:extern MIX_TrackPaused
+func TrackPaused(*Track) bool

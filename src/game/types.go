@@ -30,47 +30,52 @@ type InputType uint32
 type Input struct {
 	Pressed   bool
 	Released  bool
+	Text      rune // for text input
 	Direction gfx.Vector2
 }
 
 const (
-	InputNone       InputType = iota
-	InputLeftClick            // 0 for release, 1 for press
-	InputRightClick           // 0 for release, 1 for press
+	InputNone InputType = iota
+	InputLeftClick
+	InputRightClick
 	InputClose
 	InputLook
 	InputMove
+	InputText // Text input
 	TotalInputs
 )
 
 // since there are only 3 sound tracks. and all of them are well
-// under 5 minutes. We can rol a dice and decide whether to play music or not every 5minutes
+// under 5 minutes. We can rol a dice and decide whether to play music or not every 5 minutes
 // without having to track if a song is already playing.
 const RollMusicEvery = time.Minute * 5
-const MaxAudioLoaded = 100
 
 var ___scratchBuf [1024 * 1024]byte // 1MiB
 type ScreenJoinServerState struct {
 	Buf   [4 * 120]byte
 	Arena mem.Arena
 
-	TextField strings.Builder // text field on screen Join Server
+	TextField        strings.Builder // text field on screen Join Server
 	TextFieldFocused bool
 }
+
+// Max number of sound effects that can be loaded at a time.
+const MaxAudioLoaded = 50
 
 // Game state
 type State struct {
 	Dt                        float32
 	ScreenWidth, ScreenHeight float32
+	TextInput                 bool // whether text input should be enabled.
 
-	Pack        gfx.TexturePack
-	Scratch     mem.Arena
-	Cursor      gfx.Vector2
-	ShowCursor  bool
-	CursorDelta gfx.Vector2
-	Screen      int
-	Inputs      [TotalInputs]Input
-	SplashText  string // splash text shown on main menu
+	Pack           gfx.TexturePack
+	Scratch        mem.Arena
+	Cursor         gfx.Vector2
+	ShowCursor     bool
+	CursorDelta    gfx.Vector2
+	CurrentScreeen int
+	Inputs         [TotalInputs]Input
+	SplashText     string // splash text shown on main menu
 
 	Mixer *mix.Mixer // global mixer
 
@@ -78,7 +83,8 @@ type State struct {
 	MusicTrack                       *mix.Track // track that plays background classic Minecraft music on loop.
 	UISoundTrack                     *mix.Track
 
-	Audios maps.Map[assets.ID, *mix.Audio]
+	Audios     maps.Map[assets.ID, *mix.Audio]
+	TracksPool [10]*mix.Track
 
 	ScreenJoinServer ScreenJoinServerState
 }

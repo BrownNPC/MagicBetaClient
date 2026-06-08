@@ -9,6 +9,7 @@ import (
 	"solod.dev/so/bufio"
 	"solod.dev/so/math/rand"
 	"solod.dev/so/mem"
+	"solod.dev/so/path"
 	"solod.dev/so/strings"
 )
 
@@ -54,7 +55,7 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 		}
 		hovered := btn.Contains(s.Cursor)
 		if hovered && s.Inputs[InputLeftClick].Released {
-			// s.Screen = SCREEN_MENU_MAIN + i + 1 // Switch screen
+			s.CurrentScreeen = SCREEN_MENU_MAIN + i + 1 // Switch screen
 			s.PlaySoundEffect(assets.Sound3_random_click)
 		}
 		gui.Button(ButtonTitles[i],
@@ -66,12 +67,9 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 
 func (s *State) LoadRandomSplashText() string {
 	s.Scratch.Reset()
-	// f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, "title/splashes.txt"), "r")
-	f := sdl.IOFromFile(("title/splashes.txt"), "r")
+	f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, "title/splashes.txt"), "r")
 	if f == nil {
-		newVar := sdl.GetError().Error()
-		sdl.LogError(1, "%s", newVar)
-		return "Bruh"
+		panic(sdl.GetError())
 	}
 
 	var __Rbuf [1024 * 10]byte
@@ -81,14 +79,14 @@ func (s *State) LoadRandomSplashText() string {
 	const TotalSplashes = 226
 	n := rand.IntN(TotalSplashes - 1)
 
-	finalString := ""
+	var final string
 	var err error
 	for range n {
-		finalString, err = r.ReadString('\n')
+		final, err = r.ReadString('\n')
 		if err != nil {
 			panic(err)
 		}
 	}
-	finalString = strings.TrimSpace(finalString)
-	return strings.Clone(mem.System, finalString)
+	final = strings.TrimSpace(final)
+	return strings.Clone(mem.System, final)
 }

@@ -131,5 +131,9 @@ type AudioSpec struct {
 	callback          AudioCallback
 	userdata          any
 }
+
 //so:extern SDL_AudioStream
 type AudioStream struct{}
+
+//so:extern SDL_Storage
+type Storage struct{}

@@ -147,11 +147,18 @@ func GetBasePath() string {
 	return c.String(getBasePath())
 }
 
-// const char * SDL_GetPlatform(void);
-
 //so:extern SDL_GetPlatform
 func getPlatform() *c.ConstChar
 
 func GetPlatform() string {
 	return c.String(getPlatform())
 }
+
+//so:extern SDL_TextInputActive
+func TextInputActive(*Window) bool
+
+//so:extern SDL_OpenTitleStorage
+func OpenTitleStorage(override any, proprs uint32) *Storage
+
+//so:externSDL_GL_SetAttribute
+func GLSetAttribute(attr int, value int) bool

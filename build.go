@@ -21,7 +21,7 @@ func RunCmakeForTarget(target string) bool {
 			"-B", BuildDir, "-G", "Ninja")
 	case "native":
 		return Command("cmake",
-			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF", "-DUSE_GL4ES=ON",
+			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF", "-DUSE_GL4ES=OFF",
 			"-B", BuildDir, "-G", "Ninja")
 	case "android":
 		ndk := os.Getenv("ANDROID_NDK")

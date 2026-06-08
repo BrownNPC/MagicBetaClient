@@ -25,6 +25,13 @@ func (s *State) Init() {
 	if s.MusicTrack == nil {
 		panic(sdl.GetError())
 	}
+	for i := range len(s.TracksPool) {
+		track := mix.CreateTrack(s.Mixer)
+		if track == nil {
+			panic(sdl.GetError())
+		}
+		s.TracksPool[i] = track
+	}
 	s.UISoundTrack = mix.CreateTrack(s.Mixer)
 	if s.UISoundTrack == nil {
 		panic(sdl.GetError())
@@ -42,7 +49,7 @@ func (s *State) Update() bool {
 	gfx.BeginDrawing()
 	gfx.ClearBackground(gfx.Black)
 
-	switch s.Screen {
+	switch s.CurrentScreeen {
 	case SCREEN_MENU_MAIN:
 		s.Screen_MenuMain(screen)
 	case SCREEN_MENU_JOIN_SERVER:

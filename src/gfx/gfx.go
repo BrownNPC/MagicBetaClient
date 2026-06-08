@@ -64,6 +64,11 @@ var AssetsPath string
 
 func Init(win *sdl.Window) {
 	Window = win
+	if sdl.GetPlatform() == "Android" {
+		sdl.GLSetAttribute(sdl.GL_CONTEXT_PROFILE_MASK, sdl.GL_CONTEXT_PROFILE_ES)
+		sdl.GLSetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, 3)
+		sdl.GLSetAttribute(sdl.GL_CONTEXT_MINOR_VERSION, 0)
+	}
 	sdl.GLCreateContext(win)
 	width, height := GetWindowSize()
 	initGLDefaultState()
@@ -72,7 +77,7 @@ func Init(win *sdl.Window) {
 	default:
 		AssetsPath = "./assets"
 	case "Android":
-		AssetsPath = sdl.GetBasePath()
+		AssetsPath = "./assets"
 	}
 }
 func GetWindowSize() (int, int) {
@@ -495,7 +500,7 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 
 // These are all the characters allowed by Minecraft.
 func IsRuneAllowed(r rune) bool {
-	return r >= 0 && r <= 255
+	return r >= 0 && r <= unicode.MaxLatin1
 }
 
 // Load Minecraft bitmap font
