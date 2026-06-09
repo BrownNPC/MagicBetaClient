@@ -14,7 +14,6 @@ type Window struct{}
 //so:extern SDL_Renderer
 type Renderer struct{}
 
-
 //so:extern SDL_SetAppMetadata
 func SetAppMetadata(appname, appversion, appidentifier string)
 
@@ -157,6 +156,44 @@ func TextInputActive(*Window) bool
 
 //so:extern SDL_OpenTitleStorage
 func OpenTitleStorage(override any, proprs uint32) *Storage
+
+//so:extern SDL_OpenUserStorage
+func OpenUserStorage(org, app string, proprs uint32) *Storage
+
+//so:extern SDL_StorageReady
+func storageReady(*Storage) bool
+func (storage *Storage) Ready() bool { return storageReady(storage) }
+
+//so:extern SDL_StorageFileSize
+func storageFileSize(s *Storage, path string, length *uint64) bool
+
+func (storage *Storage) FileSize(path string) (int, bool) {
+	var size uint64
+	ok := storageFileSize(storage, path, &size)
+	return int(size), ok
+}
+
+//so:extern SDL3_ReadStorageFile
+func readStorageFile(s *Storage, path string, dst any, len uint64) bool
+
+// dst must be big enough to hold the file
+func (s *Storage) ReadFile(path string, dst []byte) bool {
+	return readStorageFile(s, path, &dst[0], uint64(len(dst)))
+}
+
+//so:extern SDL3_WriteStorageFile
+func writeStorageFile(s *Storage, path string, src any, len uint64) bool
+
+func (s *Storage) WriteFile(path string, b []byte) bool {
+	return writeStorageFile(s, path, &b[0], uint64(len(b)))
+}
+
+//so:extern SDL3_CloseStorage
+func closeStorage(*Storage) bool
+
+func (s *Storage) Close() bool {
+	return closeStorage(s)
+}
 
 //so:extern SDL_GL_SetAttribute
 func GLSetAttribute(attr int, value int) bool
