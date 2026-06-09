@@ -7,7 +7,8 @@
 
 <img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/8e6d5074-b01a-4c16-8b39-03ac63e8538a" />
 
-
+# Roadmap
+see [Todo.md](./TODO.md) to get an idea of the roadmap.
 
 
 # Building
