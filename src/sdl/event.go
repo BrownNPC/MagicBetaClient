@@ -1,8 +1,6 @@
 package sdl
 
 import (
-	"unsafe"
-
 	"solod.dev/so/c"
 	"solod.dev/so/time"
 )
@@ -11,7 +9,7 @@ import (
 type Event struct{}
 
 func (e *Event) Type() EventType {
-	return *(*EventType)(unsafe.Pointer(e))
+	return *any(e).(*EventType)
 
 }
 func (e *Event) Quit() QuitEvent {

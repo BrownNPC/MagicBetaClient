@@ -40,16 +40,16 @@ func AppInit(appState *any, argc c.Int, argv **c.Char) sdl.AppResult {
 	state.game.TargetFPS = 60
 	state.game.Init()
 	state.lastTime = time.Now()
-
+	
 	return sdl.APP_CONTINUE
 }
 
 func AppIterate(appState any) sdl.AppResult {
-	currentTime := time.Now()
+	now := time.Now()
 
 	// Delta time
-	state.game.Dt = float32(currentTime.Sub(state.lastTime).Seconds())
-	state.lastTime = currentTime
+	state.game.Dt = float32(now.Sub(state.lastTime).Seconds())
+	state.lastTime = now
 
 	if state.game.TextInput && !sdl.TextInputActive(gfx.Window) {
 		sdl.StartTextInput(gfx.Window)

@@ -86,18 +86,18 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
 #include <stddef.h>
 
 /* cJSON Types: */
-#define cJSON_Invalid (0)
-#define cJSON_False  (1 << 0)
-#define cJSON_True   (1 << 1)
-#define cJSON_NULL   (1 << 2)
-#define cJSON_Number (1 << 3)
-#define cJSON_String (1 << 4)
-#define cJSON_Array  (1 << 5)
-#define cJSON_Object (1 << 6)
-#define cJSON_Raw    (1 << 7) /* raw json */
+#define cJSON_T_Invalid (0)
+#define cJSON_T_False  (1 << 0)
+#define cJSON_T_True   (1 << 1)
+#define cJSON_T_NULL   (1 << 2)
+#define cJSON_T_Number (1 << 3)
+#define cJSON_T_String (1 << 4)
+#define cJSON_T_Array  (1 << 5)
+#define cJSON_T_Object (1 << 6)
+#define cJSON_T_Raw    (1 << 7) /* raw json */
 
 #define cJSON_IsReference 256
-#define cJSON_StringIsConst 512
+#define cJSON_T_StringIsConst 512
 
 /* The cJSON structure: */
 typedef struct cJSON
@@ -111,11 +111,11 @@ typedef struct cJSON
     /* The type of the item, as above. */
     int type;
 
-    /* The item's string, if type==cJSON_String  and type == cJSON_Raw */
+    /* The item's string, if type==cJSON_T_String  and type == cJSON_T_Raw */
     char *valuestring;
     /* writing to valueint is DEPRECATED, use cJSON_SetNumberValue instead */
     int valueint;
-    /* The item's number, if type==cJSON_Number */
+    /* The item's number, if type==cJSON_T_Number */
     double valuedouble;
 
     /* The item's name string, if this item is the child of, or is in the list of subitems of an object. */
@@ -228,7 +228,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
 CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToArray(cJSON *array, cJSON *item);
 CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
 /* Use this when string is definitely const (i.e. a literal, or as good as), and will definitely survive the cJSON object.
- * WARNING: When this function was used, make sure to always check that (item->type & cJSON_StringIsConst) is zero before
+ * WARNING: When this function was used, make sure to always check that (item->type & cJSON_T_StringIsConst) is zero before
  * writing to `item->string` */
 CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
 /* Append reference to item to the specified array/object. Use this when you want to add an existing cJSON to a new cJSON, but don't want to corrupt your existing cJSON. */
@@ -282,18 +282,18 @@ CJSON_PUBLIC(cJSON*) cJSON_AddArrayToObject(cJSON * const object, const char * c
 /* helper for the cJSON_SetNumberValue macro */
 CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number);
 #define cJSON_SetNumberValue(object, number) ((object != NULL) ? cJSON_SetNumberHelper(object, (double)number) : (number))
-/* Change the valuestring of a cJSON_String object, only takes effect when type of object is cJSON_String */
+/* Change the valuestring of a cJSON_T_String object, only takes effect when type of object is cJSON_T_String */
 CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring);
 
-/* If the object is not a boolean type this does nothing and returns cJSON_Invalid else it returns the new type*/
+/* If the object is not a boolean type this does nothing and returns cJSON_T_Invalid else it returns the new type*/
 #define cJSON_SetBoolValue(object, boolValue) ( \
-    (object != NULL && ((object)->type & (cJSON_False|cJSON_True))) ? \
-    (object)->type=((object)->type &(~(cJSON_False|cJSON_True)))|((boolValue)?cJSON_True:cJSON_False) : \
-    cJSON_Invalid\
+    (object != NULL && ((object)->type & (cJSON_T_False|cJSON_T_True))) ? \
+    (object)->type=((object)->type &(~(cJSON_T_False|cJSON_T_True)))|((boolValue)?cJSON_T_True:cJSON_T_False) : \
+    cJSON_T_Invalid\
 )
 
 /* Macro for iterating over an array or object */
-#define cJSON_ArrayForEach(element, array) for(element = (array != NULL) ? (array)->child : NULL; element != NULL; element = element->next)
+#define cJSON_T_ArrayForEach(element, array) for(element = (array != NULL) ? (array)->child : NULL; element != NULL; element = element->next)
 
 /* malloc/free objects using the malloc/free functions that have been set with cJSON_InitHooks */
 CJSON_PUBLIC(void *) cJSON_malloc(size_t size);

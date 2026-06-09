@@ -1,6 +1,7 @@
 package game
 
 import (
+	"mbc/cfg"
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/mix"
@@ -50,7 +51,6 @@ const (
 // without having to track if a song is already playing.
 const RollMusicEvery = time.Minute * 5
 
-var ___scratchBuf [1024 * 1024]byte // 1MiB
 type ScreenJoinServerState struct {
 	Buf   [4 * 120]byte
 	Arena mem.Arena
@@ -60,7 +60,7 @@ type ScreenJoinServerState struct {
 }
 
 // Max number of sound effects that can be loaded at a time.
-const MaxAudioLoaded = 50
+const MaxAudioLoaded = 20
 
 // Game state
 type State struct {
@@ -68,9 +68,13 @@ type State struct {
 	ScreenWidth, ScreenHeight float32
 	TextInput                 bool // whether text input should be enabled.
 	TargetFPS                 int
+	Config cfg.Config
 
-	Pack           gfx.TexturePack
-	Scratch        mem.Arena
+	Pack gfx.TexturePack
+
+	___scratchBuf [1024 * 10]byte
+	Scratch       mem.Arena
+
 	Cursor         gfx.Vector2
 	ShowCursor     bool
 	CursorDelta    gfx.Vector2

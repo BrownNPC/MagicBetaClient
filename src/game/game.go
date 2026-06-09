@@ -1,6 +1,7 @@
 package game
 
 import (
+	"mbc/cfg"
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/gui"
@@ -14,10 +15,16 @@ import (
 func (s *State) Init() {
 	s.Pack = NewDefaultTexturePack()
 	gfx.SetTextureConfig(s.Pack.GetTexture(assets.Pack), true, false)
-	s.Scratch = mem.NewArena(___scratchBuf[:])
+	s.Scratch = mem.NewArena(s.___scratchBuf[:])
 	s.SplashText = s.LoadRandomSplashText()
 	// create mixer device
 	s.Mixer = mix.CreateMixerDevice(sdl.AUDIO_DEVICE_DEFAULT_PLAYBACK, nil)
+	var err error
+	s.Config, err = cfg.Load("config.json")
+	if err != nil {
+		panic(err)
+	}
+
 	if s.Mixer == nil {
 		panic(sdl.GetError())
 	}
@@ -34,7 +41,6 @@ func (s *State) Init() {
 	}
 	s.ScreenJoinServer.Arena = mem.NewArena(s.ScreenJoinServer.Buf[:])
 	s.ScreenJoinServer.TextField = strings.NewBuilder(&s.ScreenJoinServer.Arena)
-
 }
 
 // return false to quit.

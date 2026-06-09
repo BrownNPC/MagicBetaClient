@@ -49,9 +49,8 @@ func (p *DefaultTexturePack) GetTexture(asset assets.ID) gfx.Texture {
 
 // Icon implements [TexturePack].
 func (p *DefaultTexturePack) Icon() gfx.Texture {
-	if tex := p.GetTexture(assets.Pack); (tex != gfx.Texture{}) {
+	if tex := p.GetTexture(assets.Pack); tex.ID != 0 {
 		return tex
-
 	}
 	panic("pack.png not found. assets are missing.")
 }

@@ -24,13 +24,13 @@ func (s *State) RollBackgroundMusic() {
 		assets.Music_calm2,
 		assets.Music_calm3,
 	}
-	s.Scratch.Reset()
 	n := rand.IntN(4)
 	if n == 0 {
 		return
 	}
 	n -= 1
-	f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, musics[n].String()), "r")
+	s.Scratch.Reset()
+	f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, musics[n].String()), "rb")
 	if f == nil {
 		panic(sdl.GetError()) // should always succeed because wtf
 	}
