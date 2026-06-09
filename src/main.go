@@ -16,19 +16,17 @@ import (
 var _ string
 
 type AppState struct {
-	lastTime  time.Time
-	game      game.State
-	targetFPS float32
+	lastTime time.Time
+	game     game.State
 }
 
 var state AppState
 
-func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
+func AppInit(appState *any, argc c.Int, argv **c.Char) sdl.AppResult {
 	if !sdl.Init(sdl.INIT_VIDEO | sdl.INIT_GAMEPAD) {
 		sdl.Log("SDL init failed %s", sdl.GetError().Error())
 		return sdl.APP_FAILURE
 	}
-
 	window := sdl.CreateWindow("MagicBetaClient", 480, 272,
 		sdl.WINDOW_OPENGL|
 			sdl.WINDOW_RESIZABLE|
@@ -39,8 +37,8 @@ func AppInit(appState *any, argc sdl.Cint, argv **c.Char) sdl.AppResult {
 	}
 	gfx.Init(window)
 	mix.Init()
+	state.game.TargetFPS = 60
 	state.game.Init()
-	state.targetFPS = 60
 	state.lastTime = time.Now()
 
 	return sdl.APP_CONTINUE
@@ -65,10 +63,10 @@ func AppIterate(appState any) sdl.AppResult {
 	}
 	state.game.Inputs = [game.TotalInputs]game.Input{} // clear inputs after they're used.
 	// FPS cap
-	targetFrameTime := 1.0 / state.targetFPS
+	targetFrameTime := 1.0 / float32(state.game.TargetFPS)
 	frameTime := float32(state.game.Dt)
 
-	if frameTime < targetFrameTime {
+	if state.game.TargetFPS != 0 && frameTime < targetFrameTime {
 		sleepSeconds := targetFrameTime - frameTime
 		sdl.Delay(time.Duration(sleepSeconds * float32(time.Second)))
 	}

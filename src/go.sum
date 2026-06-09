@@ -2,3 +2,5 @@ github.com/nalgeon/be v0.3.0 h1:QsPANqEtcOD5qT2S3KAtIkDBBn8SXUf/Lb5Bi/z4UqM=
 github.com/nalgeon/be v0.3.0/go.mod h1:PMwMuBLopwKJkSHnr2qHyLcZYUTqNejN7A8RAqNWO3E=
 solod.dev v0.1.1-0.20260518224248-071fef386c17 h1:V73LDYp6O2PzRW2oqD98NzCCyvTqbpIH5zqPjtR3uMA=
 solod.dev v0.1.1-0.20260518224248-071fef386c17/go.mod h1:F8sRRT/id2KwekSYlEjE63QLLQawzYaMgpKq75Yl3Hg=
+solod.dev v0.1.1-0.20260603213735-d1fb00425807 h1:jj7f/LcR/MLfKjBJuZqR9qi/qkUqrBJB40S0Xrj/hcs=
+solod.dev v0.1.1-0.20260603213735-d1fb00425807/go.mod h1:F8sRRT/id2KwekSYlEjE63QLLQawzYaMgpKq75Yl3Hg=

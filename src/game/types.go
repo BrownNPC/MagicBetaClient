@@ -67,6 +67,7 @@ type State struct {
 	Dt                        float32
 	ScreenWidth, ScreenHeight float32
 	TextInput                 bool // whether text input should be enabled.
+	TargetFPS                 int
 
 	Pack           gfx.TexturePack
 	Scratch        mem.Arena
@@ -81,7 +82,6 @@ type State struct {
 
 	TimeSinceLastBackgroundMusicRoll time.Time  // when did we roll to play background music
 	MusicTrack                       *mix.Track // track that plays background classic Minecraft music on loop.
-	UISoundTrack                     *mix.Track
 
 	Audios     maps.Map[assets.ID, *mix.Audio]
 	TracksPool [10]*mix.Track

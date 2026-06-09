@@ -32,10 +32,6 @@ func (s *State) Init() {
 		}
 		s.TracksPool[i] = track
 	}
-	s.UISoundTrack = mix.CreateTrack(s.Mixer)
-	if s.UISoundTrack == nil {
-		panic(sdl.GetError())
-	}
 	s.ScreenJoinServer.Arena = mem.NewArena(s.ScreenJoinServer.Buf[:])
 	s.ScreenJoinServer.TextField = strings.NewBuilder(&s.ScreenJoinServer.Arena)
 
@@ -45,7 +41,7 @@ func (s *State) Init() {
 func (s *State) Update() bool {
 	gui.Update(s.ScreenWidth, s.ScreenHeight, s.Pack)
 	screen := gfx.Rectangle{W: float32(s.ScreenWidth), H: float32(s.ScreenHeight)}
-	// s.RollBackgroundMusic()
+	s.RollBackgroundMusic()
 	gfx.BeginDrawing()
 	gfx.ClearBackground(gfx.Black)
 

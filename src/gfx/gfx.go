@@ -81,7 +81,7 @@ func Init(win *sdl.Window) {
 	}
 }
 func GetWindowSize() (int, int) {
-	var w, h sdl.Cint
+	var w, h c.Int
 	sdl.GetWindowSizeInPixels(Window, &w, &h)
 	return int(w), int(h)
 }
@@ -117,7 +117,7 @@ func ClearBackground(c Color) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 func BeginMode3D(cam Camera) {
-	var w, h sdl.Cint
+	var w, h c.Int
 	sdl.GetWindowSizeInPixels(Window, &w, &h)
 
 	gl.MatrixMode(gl.PROJECTION)

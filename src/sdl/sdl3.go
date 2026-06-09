@@ -14,8 +14,6 @@ type Window struct{}
 //so:extern SDL_Renderer
 type Renderer struct{}
 
-//so:extern int
-type Cint int
 
 //so:extern SDL_SetAppMetadata
 func SetAppMetadata(appname, appversion, appidentifier string)
@@ -61,7 +59,7 @@ func GetError() error {
 func GLCreateContext(*Window)
 
 //so:extern SDL_GetWindowSizeInPixels
-func GetWindowSizeInPixels(win *Window, w, h *Cint)
+func GetWindowSizeInPixels(win *Window, w, h *c.Int)
 
 //so:extern SDL_GL_SwapWindow
 func GLSwapWindow(*Window)
@@ -160,5 +158,5 @@ func TextInputActive(*Window) bool
 //so:extern SDL_OpenTitleStorage
 func OpenTitleStorage(override any, proprs uint32) *Storage
 
-//so:externSDL_GL_SetAttribute
+//so:extern SDL_GL_SetAttribute
 func GLSetAttribute(attr int, value int) bool
