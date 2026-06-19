@@ -5,6 +5,7 @@ import (
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/mix"
+	"mbc/sdl"
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
@@ -61,6 +62,11 @@ type ScreenJoinServerState struct {
 
 // Max number of sound effects that can be loaded at a time.
 const MaxAudioLoaded = 20
+const SCRATCH_SIZE = 1024 * 100 // size of the scratch memory arena in State
+
+const ORG = "io.github.brownnpc"
+const APP = "MagicBetaClient"
+const CONFIG_FILE_NAME="config.json"
 
 // Game state
 type State struct {
@@ -68,12 +74,14 @@ type State struct {
 	ScreenWidth, ScreenHeight float32
 	TextInput                 bool // whether text input should be enabled.
 	TargetFPS                 int
-	Config cfg.Config
+	Config                    cfg.Config
 
 	Pack gfx.TexturePack
 
-	___scratchBuf [1024 * 10]byte
-	Scratch       mem.Arena
+	___scratchBuf [SCRATCH_SIZE]byte
+	// Lifetime of Scratch allocated objects should be the same as stack allocated objects.
+	Scratch       mem.Arena 
+	Storage       *sdl.Storage // Title storage
 
 	Cursor         gfx.Vector2
 	ShowCursor     bool

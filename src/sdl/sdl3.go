@@ -167,25 +167,50 @@ func (storage *Storage) Ready() bool { return storageReady(storage) }
 //so:extern SDL_GetStorageFileSize
 func storageFileSize(s *Storage, path string, length *uint64) bool
 
-func (storage *Storage) FileSize(path string) (int, bool) {
+func (storage *Storage) FileSize(path string) (int, error) {
 	var size uint64
 	ok := storageFileSize(storage, path, &size)
-	return int(size), ok
+	if ok {
+		return int(size), nil
+	}
+	return int(size), GetError()
+}
+
+func (storage *Storage) ReadFile(a mem.Allocator, path string) ([]byte, error) {
+	size, err := storage.FileSize(path)
+	if err != nil {
+		return nil, err
+	}
+	// allocate file memory
+	fileMem := mem.AllocSlice[byte](a, size, size)
+	// read the file
+	if ok := storage.readFile(path, fileMem); ok {
+		return fileMem, nil
+	}
+	// free file memory if we can
+	if fileMem != nil {
+		mem.FreeSlice(a, fileMem)
+	}
+	return nil, GetError()
+
 }
 
 //so:extern SDL_ReadStorageFile
 func readStorageFile(s *Storage, path string, dst any, len uint64) bool
 
 // dst must be long enough to hold the file
-func (s *Storage) ReadFile(path string, dst []byte) bool {
+func (s *Storage) readFile(path string, dst []byte) bool {
 	return readStorageFile(s, path, &dst[0], uint64(len(dst)))
 }
 
 //so:extern SDL_WriteStorageFile
 func writeStorageFile(s *Storage, path string, src any, len uint64) bool
 
-func (s *Storage) WriteFile(path string, b []byte) bool {
-	return writeStorageFile(s, path, &b[0], uint64(len(b)))
+func (storage *Storage) WriteFile(path string, src []byte) error {
+	if !writeStorageFile(storage, path, &src[0], uint64(len(src))) {
+		return GetError()
+	}
+	return nil
 }
 
 //so:extern SDL_CloseStorage

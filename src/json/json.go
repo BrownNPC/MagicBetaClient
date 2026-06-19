@@ -197,6 +197,7 @@ func getErrorPtr() *c.ConstChar
 func (*jsonError) Error() string {
 	return c.String(getErrorPtr())
 }
+func GetError() error { return &_jsonErr }
 
 var _jsonErr jsonError
 

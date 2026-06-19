@@ -1,7 +1,6 @@
 package game
 
 import (
-	"mbc/cfg"
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/gui"
@@ -13,21 +12,27 @@ import (
 )
 
 func (s *State) Init() {
-	s.Pack = NewDefaultTexturePack()
-	gfx.SetTextureConfig(s.Pack.GetTexture(assets.Pack), true, false)
+	// init scratch arena
 	s.Scratch = mem.NewArena(s.___scratchBuf[:])
-	s.SplashText = s.LoadRandomSplashText()
+	// init title storage, opened once.
+	s.Storage = sdl.OpenTitleStorage("", 0)
+	if s.Storage == nil {
+		panic(sdl.GetError())
+	}
+	for !s.Storage.Ready() {
+		// hang while not ready
+	}
+	// init default texture pack
+	s.Pack = NewDefaultTexturePack()
+	// pack.png should apply bilinear interpolation (TODO: implement a better way to do this)
+	gfx.SetTextureConfig(s.Pack.GetTexture(assets.Pack), true, false)
+
 	// create mixer device
 	s.Mixer = mix.CreateMixerDevice(sdl.AUDIO_DEVICE_DEFAULT_PLAYBACK, nil)
-	var err error
-	s.Config, err = cfg.Load("config.json")
-	if err != nil {
-		panic(err)
-	}
-
 	if s.Mixer == nil {
 		panic(sdl.GetError())
 	}
+	// initialize audio tracks
 	s.MusicTrack = mix.CreateTrack(s.Mixer)
 	if s.MusicTrack == nil {
 		panic(sdl.GetError())
@@ -39,6 +44,22 @@ func (s *State) Init() {
 		}
 		s.TracksPool[i] = track
 	}
+
+	// load splash text for main menu screen
+	s.SplashText = s.LoadRandomSplashText()
+
+	// Load config.json file.
+
+	var err error
+	s.Config, err = s.LoadConfigFile()
+	if err != nil {
+		panic(err)
+	}
+	println("servers:", len(s.Config.Servers))
+	for _, srv := range s.Config.Servers {
+		println("server:", srv.Host)
+	}
+
 	s.ScreenJoinServer.Arena = mem.NewArena(s.ScreenJoinServer.Buf[:])
 	s.ScreenJoinServer.TextField = strings.NewBuilder(&s.ScreenJoinServer.Arena)
 }

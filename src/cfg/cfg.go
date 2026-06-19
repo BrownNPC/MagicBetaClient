@@ -2,19 +2,17 @@ package cfg
 
 import (
 	"mbc/json"
-	"mbc/sdl"
 
-	"solod.dev/so/io"
 	"solod.dev/so/mem"
 )
 
 var __GlobalMemoryForConfigFiles [1024 * 100]byte
 var Arena mem.Arena
 
-func FreeFn(a any) { /* no-op */ }
+func freeFn(a any) { /* no-op */ }
 
-func MallocFn(s json.Size_t) any {
-	a, err := Arena.Alloc(int(s), 16)
+func mallocFn(s json.Size_t) any {
+	a, err := Arena.Alloc(int(s), 8)
 	if err != nil {
 		panic(err)
 	}
@@ -23,23 +21,7 @@ func MallocFn(s json.Size_t) any {
 
 func init() {
 	Arena = mem.NewArena(__GlobalMemoryForConfigFiles[:])
-	json.InitHooks(MallocFn, FreeFn)
-}
-
-type ServerConfig struct {
-	Host string // ip + port combo eg. localhost:25565
-	Cmd  string // command to run after joining the server
-}
-
-func (c ServerConfig) Encode() *json.JSON {
-	return json.CreateObject().
-		AddString("host", c.Host).
-		AddString("cmd", c.Cmd)
-}
-
-func (c *ServerConfig) Decode(j *json.JSON) {
-	c.Host = j.Item("host").String()
-	c.Cmd = j.Item("cmd").String()
+	json.InitHooks(mallocFn, freeFn)
 }
 
 /*
@@ -49,15 +31,30 @@ func (c *ServerConfig) Decode(j *json.JSON) {
 		]
 	}
 */
+// Configuration file struct
 type Config struct {
-	Servers []ServerConfig
+	Servers []ServerCfg
 }
 
-func Parse(r io.Reader) (Config, error) {
-	b, err := io.ReadAll(&Arena, r)
-	if err != nil {
-		return Config{}, err
-	}
+type ServerCfg struct {
+	Host string // ip + port combo eg. localhost:25565
+	Cmd  string // command to run after joining the server
+}
+
+func (c ServerCfg) Encode() *json.JSON {
+	o := json.CreateObject()
+
+	o.AddString("host", c.Host)
+	o.AddString("cmd", c.Cmd)
+	return o
+}
+
+func (c *ServerCfg) Decode(j *json.JSON) {
+	c.Host = j.Item("host").String()
+	c.Cmd = j.Item("cmd").String()
+}
+func Parse(b []byte) (Config, error) {
+	Arena.Reset()
 	j, err := json.Parse(b)
 	if err != nil {
 		return Config{}, err
@@ -67,11 +64,8 @@ func Parse(r io.Reader) (Config, error) {
 	return c, nil
 }
 
-func Marshal(c Config, w io.Writer) error {
-	encoded := c.Encode().Marshal()
-	defer Arena.Free(encoded, len(encoded), 16)
-	_, err := w.Write([]byte(encoded))
-	return err
+func (c Config) Marshal() []byte {
+	return c.Encode().Marshal()
 }
 
 func (c *Config) Encode() *json.JSON {
@@ -79,7 +73,9 @@ func (c *Config) Encode() *json.JSON {
 
 	servers := parent.AddArray("servers")
 	for _, s := range c.Servers {
-		servers.AddItem(s.Encode())
+		if !servers.AddItem(s.Encode()) {
+			panic(json.GetError())
+		}
 	}
 
 	return parent
@@ -89,7 +85,7 @@ func (c *Config) Decode(j *json.JSON) {
 	servers := j.Item("servers")
 	length := servers.Len()
 
-	c.Servers = mem.AllocSlice[ServerConfig](&Arena, length, length)
+	c.Servers = mem.AllocSlice[ServerCfg](&Arena, length, length)
 
 	for i := range length {
 		c.Servers[i].
@@ -98,26 +94,7 @@ func (c *Config) Decode(j *json.JSON) {
 }
 
 var DefaultConfig = Config{
-	Servers: []ServerConfig{
+	Servers: []ServerCfg{
 		{Host: "localhost:25565", Cmd: ""},
 	},
-}
-
-// This will invalidate previously loaded config files.
-func Load(path string) (Config, error) {
-	Arena.Reset()
-	f := sdl.IOFromFile(path, "rb")
-	if f == nil {
-		err := Save(path, DefaultConfig)
-		return DefaultConfig, err
-	}
-	defer f.Close()
-	return Parse(f)
-}
-func Save(path string, c Config) error {
-	f := sdl.IOFromFile(path, "w")
-	if f == nil {
-		return sdl.GetError()
-	}
-	return Marshal(DefaultConfig, f)
 }
