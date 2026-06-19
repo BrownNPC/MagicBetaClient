@@ -7,9 +7,9 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/bufio"
+	"solod.dev/so/bytes"
 	"solod.dev/so/math/rand"
 	"solod.dev/so/mem"
-	"solod.dev/so/path"
 	"solod.dev/so/strings"
 )
 
@@ -67,14 +67,35 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 
 func (s *State) LoadRandomSplashText() string {
 	s.Scratch.Reset()
-	f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, "title/splashes.txt"), "r")
-	if f == nil {
-		panic(sdl.GetError())
+	storage := sdl.OpenTitleStorage("", 0)
+	if storage == nil {
+		err := sdl.GetError().Error()
+		sdl.LogError(1, "Failed to open title storage %s", err)
+		return err // 90000 IQ move 
 	}
+
+	for !storage.Ready() {
+		// hang while not ready
+	}
+
+	size, ok := storage.FileSize("assets/title/splashes.txt")
+	if !ok {
+		err := sdl.GetError().Error()
+		sdl.LogError(1, "Failed to open splashes.txt %s", err)
+		return err
+	}
+	file := mem.AllocSlice[byte](&s.Scratch, size, size)
+	if !storage.ReadFile("assets/title/splashes.txt", file) {
+		err := sdl.GetError().Error()
+		sdl.LogError(1, "Failed to read splashes.txt %s", err)
+		return err
+	}
+	defer storage.Close()
 
 	var __Rbuf [1024 * 10]byte
 	rArena := mem.NewArena(__Rbuf[:])
-	r := bufio.NewReader(&rArena, f)
+	rd := bytes.NewReader(file)
+	r := bufio.NewReader(&rArena, &rd)
 
 	const TotalSplashes = 226
 	n := rand.IntN(TotalSplashes - 1)
