@@ -213,3 +213,26 @@ func (camera *Camera) Update(movement Vector3, rotation Vector3, zoom float32) {
 	// Zoom target distance
 	camera.MoveToTarget(zoom)
 }
+func GetCameraMatrix2D(cam Camera2D) Matrix {
+	// The camera in world-space is set by
+	//   1. Move it to target
+	//   2. Rotate by -rotation and scale by (1/zoom)
+	//      When setting higher scale, it's more intuitive for the world to become bigger (= camera become smaller),
+	//      not for the camera getting bigger, hence the invert. Same deal with rotation
+	//   3. Move it by (-offset);
+	//      Offset defines target transform relative to screen, but since effectively "moving" screen (camera)
+	//      it needs to be moved into opposite direction (inverse transform)
+
+	// Having camera transform in world-space, inverse of it gives the modelview transform
+	// Since (A*B*C)' = C'*B'*A', the modelview is
+	//   1. Move to offset
+	//   2. Rotate and Scale
+	//   3. Move by -target
+	matOrigin := MatrixTranslate(-cam.Target.X, -cam.Target.Y, 0)
+	matRotation := MatrixRotate(Vector3{0.0, 0.0, 1.0}, cam.Rotation*Deg2rad)
+	matScale := MatrixScale(cam.Zoom, cam.Zoom, 1.0)
+	matTranslation := MatrixTranslate(cam.Offset.X, cam.Offset.Y, 0.0)
+
+	matTransform := MatrixMultiply(MatrixMultiply(matOrigin, MatrixMultiply(matScale, matRotation)), matTranslation)
+	return matTransform
+}

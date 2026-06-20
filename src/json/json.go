@@ -5,9 +5,6 @@ import "solod.dev/so/c"
 //so:embed cjson.h
 var _ string
 
-//so:embed cjson.c
-var _ string
-
 //so:extern cJSON
 type JSON struct {
 	string *c.Char

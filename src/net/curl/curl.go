@@ -3,8 +3,6 @@ package curl
 //so:embed curl.h
 var _ string
 
-//so:embed curl.c
-var _ string
 
 //so:extern CURL
 type CURL struct{}

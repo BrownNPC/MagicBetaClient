@@ -60,6 +60,9 @@ func GLCreateContext(*Window)
 //so:extern SDL_GetWindowSizeInPixels
 func GetWindowSizeInPixels(win *Window, w, h *c.Int)
 
+//so:extern SDL_GL_GetProcAddress
+func GLGetProcAddress(proc string) any
+
 //so:extern SDL_GL_SwapWindow
 func GLSwapWindow(*Window)
 

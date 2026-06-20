@@ -38,6 +38,7 @@
 #pragma warning(disable : 4001)
 #endif
 
+#include "json/cjson.h"
 #include <ctype.h>
 #include <float.h>
 #include <limits.h>

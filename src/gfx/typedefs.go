@@ -2,7 +2,6 @@ package gfx
 
 import (
 	"mbc/gfx/assets"
-	"mbc/gfx/gl"
 )
 
 // Vector2 type
@@ -171,7 +170,7 @@ type Camera2D struct {
 
 type Texture struct {
 	Width, Height int
-	ID            gl.GLuint
+	ID            int
 }
 
 func (t Texture) Size() Vector2 {
