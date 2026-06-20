@@ -30,6 +30,7 @@ const (
 
 type InputType uint32
 type Input struct {
+	Type      InputType
 	Pressed   bool
 	Released  bool
 	Text      rune // for text input
@@ -56,6 +57,8 @@ type ScreenJoinServerState struct {
 	Buf   [4 * 120]byte
 	Arena mem.Arena
 
+	PageIndex int //page number
+
 	TextField        strings.Builder // text field on screen Join Server
 	TextFieldFocused bool
 }
@@ -66,7 +69,7 @@ const SCRATCH_SIZE = 1024 * 100 // size of the scratch memory arena in State
 
 const ORG = "io.github.brownnpc"
 const APP = "MagicBetaClient"
-const CONFIG_FILE_NAME="config.json"
+const CONFIG_FILE_NAME = "config.json"
 
 // Game state
 type State struct {
@@ -80,8 +83,8 @@ type State struct {
 
 	___scratchBuf [SCRATCH_SIZE]byte
 	// Lifetime of Scratch allocated objects should be the same as stack allocated objects.
-	Scratch       mem.Arena 
-	Storage       *sdl.Storage // Title storage
+	Scratch mem.Arena
+	Storage *sdl.Storage // Title storage
 
 	Cursor         gfx.Vector2
 	ShowCursor     bool

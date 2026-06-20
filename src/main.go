@@ -40,7 +40,7 @@ func AppInit(appState *any, argc c.Int, argv **c.Char) sdl.AppResult {
 	state.game.TargetFPS = 60
 	state.game.Init()
 	state.lastTime = time.Now()
-	
+
 	return sdl.APP_CONTINUE
 }
 
@@ -88,18 +88,26 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		m := e.MouseMotion()
 		state.game.Cursor = gfx.Vector2{X: m.X, Y: m.Y}
 		state.game.CursorDelta = gfx.Vector2{X: m.Xrel, Y: m.Yrel}
-		state.game.Inputs[game.InputLook].Direction = state.game.CursorDelta
+
+		typ := game.InputLook
+		// store the input
+		state.game.Inputs[typ] =
+			game.Input{
+				Type:      typ,
+				Direction: state.game.CursorDelta.Normalize(),
+			}
 
 	case sdl.EVENT_MOUSE_BUTTON_UP, sdl.EVENT_MOUSE_BUTTON_DOWN:
 		m := e.MouseButton()
-		i := game.InputLeftClick
+		typ := game.InputLeftClick
 		switch m.Button {
 		case sdl.BUTTON_LEFT:
-			i = game.InputLeftClick
+			typ = game.InputLeftClick
 		case sdl.BUTTON_RIGHT:
-			i = game.InputRightClick
+			typ = game.InputRightClick
 		}
-		state.game.Inputs[i] = game.Input{
+		state.game.Inputs[typ] = game.Input{
+			Type:     typ,
 			Pressed:  m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN,
 			Released: m.Type == sdl.EVENT_MOUSE_BUTTON_UP,
 		}
@@ -116,6 +124,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		key := e.Keyboard()
 		if key.Scancode == sdl.SCANCODE_ESCAPE {
 			state.game.Inputs[game.InputClose] = game.Input{
+				Type:     game.InputClose,
 				Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
 				Released: key.Type == sdl.EVENT_KEY_UP,
 			}

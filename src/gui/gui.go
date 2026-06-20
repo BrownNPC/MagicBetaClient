@@ -4,10 +4,7 @@ import "mbc/gfx"
 
 const MaxAutoScale = 3
 
-const (
-	BaseWidth  float32 = 320
-	BaseHeight float32 = 180
-)
+var Base = gfx.Rectangle{W: 320, H: 180}
 
 var (
 	ActivePack gfx.TexturePack
@@ -20,12 +17,11 @@ func Update(screenW, screenH float32, pack gfx.TexturePack) {
 	ActivePack = pack
 
 	var scale int
-	sx := screenW / BaseWidth
-	sy := screenH / BaseHeight
+	sx := screenW / Base.W
+	sy := screenH / Base.H
 
 	scale = int(min(sx, sy))
 
 	scale = max(1, scale)
-
 	Scale = min(float32(scale), MaxAutoScale)
 }

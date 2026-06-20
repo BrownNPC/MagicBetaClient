@@ -196,6 +196,6 @@ type TexturePack interface {
 	// You should not store the texture recieved from this for more than 1 frame.
 	GetTexture(asset assets.ID) Texture // will return zero value if not found.
 	Font() *Font                        // should always return a valid font.
-	Unload()                            // unloads all textures that are currently
+	Unload()                            // unloads all textures that are currently loaded
 	Destroy()                           // free all textures and memory.
 }

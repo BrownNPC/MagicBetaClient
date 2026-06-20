@@ -14,6 +14,7 @@ import (
 func (s *State) Init() {
 	// init scratch arena
 	s.Scratch = mem.NewArena(s.___scratchBuf[:])
+	s.TargetFPS = 60
 	// init title storage, opened once.
 	s.Storage = sdl.OpenTitleStorage("", 0)
 	if s.Storage == nil {
@@ -49,19 +50,17 @@ func (s *State) Init() {
 	s.SplashText = s.LoadRandomSplashText()
 
 	// Load config.json file.
-
 	var err error
 	s.Config, err = s.LoadConfigFile()
 	if err != nil {
 		panic(err)
 	}
-	println("servers:", len(s.Config.Servers))
-	for _, srv := range s.Config.Servers {
-		println("server:", srv.Host)
-	}
 
 	s.ScreenJoinServer.Arena = mem.NewArena(s.ScreenJoinServer.Buf[:])
 	s.ScreenJoinServer.TextField = strings.NewBuilder(&s.ScreenJoinServer.Arena)
+
+	// for debugging
+	s.CurrentScreeen = SCREEN_MENU_JOIN_SERVER
 }
 
 // return false to quit.
@@ -76,7 +75,7 @@ func (s *State) Update() bool {
 	case SCREEN_MENU_MAIN:
 		s.Screen_MenuMain(screen)
 	case SCREEN_MENU_JOIN_SERVER:
-		s.Screen_JoinServer(screen, &s.ScreenJoinServer)
+		s.Screen_JoinServer(&s.ScreenJoinServer, screen)
 	}
 	gfx.EndDrawing()
 

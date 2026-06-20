@@ -21,19 +21,21 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 		gui.Scale*2,
 		gfx.White.Tint(gfx.Black, 75),
 	)
-
-	menuScreen := gfx.Rectangle{H: gui.BaseWidth * .75, W: 200}.
+	// bounding box that contains title screen and buttons
+	menuScreen := gfx.Rectangle{H: gui.Base.W * .75, W: 200}.
 		Scale(gui.Scale).
 		Anchor(screen, .5, .1)
-	{ // Draw Minecraft logo
-		logo := gui.MinecraftLogoSize.
-			Scale(gui.Scale).
-			Anchor(menuScreen, .50, .1)
-		gui.MinecraftLogo(
-			s.SplashText,
-			logo,
-		)
-	}
+
+	// Draw Minecraft logo
+	logo := gui.MinecraftLogoSize.
+		Scale(gui.Scale).
+		Anchor(menuScreen, .50, .1)
+	gui.MinecraftLogo(
+		s.SplashText,
+		logo,
+	)
+
+	// Draw buttons
 	const Nbuttons = 3
 	ButtonTitles := [Nbuttons]string{
 		"Join Server",
@@ -44,12 +46,11 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 	buttonSet := gfx.Rectangle{W: gui.ButtonSize.W, H: (gui.ButtonSize.H + 2) * 4}.
 		Scale(gui.Scale).
 		Anchor(menuScreen, .5, .70)
-	btn := gui.ButtonSize.Scale(gui.Scale)
-	btn.X = btn.Anchor(buttonSet, .5, 0).X
-	btn.Y = buttonSet.Y
+	btn := gui.ButtonSize.Scale(gui.Scale).
+		Anchor(buttonSet, .5, 0)
 	for i := range Nbuttons {
-		btn.Y += btn.H
 		if i != 0 {
+			btn.Y += btn.H
 			btn.Y += 2 * gui.Scale //padding
 		}
 		hovered := btn.Contains(s.Cursor)
