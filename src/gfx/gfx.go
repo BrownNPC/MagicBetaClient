@@ -64,8 +64,9 @@ func Init(win *sdl.Window) {
 	Window = win
 	sdl.GLCreateContext(win)
 	width, height := GetWindowSize()
-	rlglInit(width, height)
 	rlLoadExtensions(sdl.GLGetProcAddress)
+
+	rlglInit(width, height)
 
 	// initGLDefaultState()
 	SetupViewport(width, height)
@@ -83,7 +84,7 @@ func GetWindowSize() (int, int) {
 }
 
 func BeginDrawing() { rlLoadIdentity() }
-func EndDrawing()   { sdl.GLSwapWindow(Window) }
+func EndDrawing()   { rlDrawRenderBatchActive(); sdl.GLSwapWindow(Window) }
 
 func ClearBackground(c Color) {
 	rlClearColor(float32(c.R)/255, float32(c.G)/255, float32(c.B)/255, float32(c.A)/255)

@@ -49,12 +49,13 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 			btn.Y += 2 * gui.Scale //padding
 		}
 
+		hovered := btn.Contains(s.Cursor)
 		if idx >= len(s.Config.Servers) {
-			gui.Button("", btn, false, false)
+			gui.Button("[EMPTY]", btn, hovered, true)
 			continue
 		}
 		srv := s.Config.Servers[idx]
-		gui.Button(srv.Host, btn, btn.Contains(s.Cursor), true)
+		gui.Button(srv.Host, btn, hovered, true)
 	}
 
 	// next/prev buttons + pager bounding box
