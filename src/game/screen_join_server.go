@@ -51,6 +51,9 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 
 		hovered := btn.Contains(s.Cursor)
 		if idx >= len(s.Config.Servers) {
+			panic("screen_join_server: how is this possible?")
+		}
+		if s.Config.Servers[idx].Host == "" {
 			gui.Button("[EMPTY]", btn, hovered, true)
 			continue
 		}
