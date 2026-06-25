@@ -54,13 +54,14 @@ const (
 const RollMusicEvery = time.Minute * 5
 
 type ScreenJoinServerState struct {
-	Buf   [4 * 120]byte
-	Arena mem.Arena
-
+	Buf       [4 * 120]byte
+	Arena     mem.Arena
 	PageIndex int //page number
 
 	TextField        strings.Builder // text field on screen Join Server
 	TextFieldFocused bool
+
+	SelectedServer *cfg.ServerCfg
 }
 
 // Max number of sound effects that can be loaded at a time.
@@ -69,7 +70,7 @@ const SCRATCH_SIZE = 1024 * 100 // size of the scratch memory arena in State
 
 const ORG = "io.github.brownnpc"
 const APP = "MagicBetaClient"
-const CONFIG_FILE_NAME = "config.json"
+const CONFIG_FILE_PATH = "config.json"
 
 // Game state
 type State struct {

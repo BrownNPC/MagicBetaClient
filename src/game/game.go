@@ -1,6 +1,7 @@
 package game
 
 import (
+	"mbc/cfg"
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/gui"
@@ -51,7 +52,7 @@ func (s *State) Init() {
 
 	// Load config.json file.
 	var err error
-	s.Config, err = s.LoadConfigFile()
+	s.Config, err = cfg.LoadConfigFile(ORG, APP, CONFIG_FILE_PATH)
 	if err != nil {
 		panic(err)
 	}

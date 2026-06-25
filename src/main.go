@@ -45,30 +45,31 @@ func AppInit(appState *any, argc c.Int, argv **c.Char) sdl.AppResult {
 }
 
 func AppIterate(appState any) sdl.AppResult {
-	now := time.Now()
-
-	// Delta time
-	state.game.Dt = float32(now.Sub(state.lastTime).Seconds())
-	state.lastTime = now
-
+	// Enable/ disable text input events.
 	if state.game.TextInput && !sdl.TextInputActive(gfx.Window) {
 		sdl.StartTextInput(gfx.Window)
 	} else if !state.game.TextInput && sdl.TextInputActive(gfx.Window) {
 		sdl.StopTextInput(gfx.Window)
 	}
 
+	now := time.Now()
 	// Update/render
 	if !state.game.Update() {
 		return sdl.APP_SUCCESS
 	}
+
+	// Delta time
+	frameTime := now.Sub(state.lastTime)
+	state.game.Dt = float32(frameTime.Seconds())
+	state.lastTime = now
 	state.game.Inputs = [game.TotalInputs]game.Input{} // clear inputs after they're used.
+	
 	// FPS cap
-	targetFrameTime := 1.0 / float32(state.game.TargetFPS)
-	frameTime := float32(state.game.Dt)
+	targetFrameTime := time.Second / time.Duration(state.game.TargetFPS)
 
 	if state.game.TargetFPS != 0 && frameTime < targetFrameTime {
-		sleepSeconds := targetFrameTime - frameTime
-		sdl.Delay(time.Duration(sleepSeconds * float32(time.Second)))
+		timeToSleep := targetFrameTime - frameTime
+		sdl.Delay(timeToSleep)
 	}
 
 	return sdl.APP_CONTINUE

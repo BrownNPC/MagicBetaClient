@@ -179,6 +179,7 @@ func (storage *Storage) FileSize(path string) (int, error) {
 	return int(size), GetError()
 }
 
+// Returns nil byte slice if there's an error
 func (storage *Storage) ReadFile(a mem.Allocator, path string) ([]byte, error) {
 	size, err := storage.FileSize(path)
 	if err != nil {

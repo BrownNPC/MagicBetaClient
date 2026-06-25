@@ -1,6 +1,8 @@
 package json
 
-import "solod.dev/so/c"
+import (
+	"solod.dev/so/c"
+)
 
 //so:embed cjson.h
 var _ string
@@ -13,33 +15,10 @@ type JSON struct {
 //so:extern size_t
 type Size_t int
 
-//so:extern cJSON_Hooks
-type cJSON_Hooks struct {
-	malloc_fn func(Size_t) any
-	free_fn   func(any)
-}
-
-//so:extern cJSON_InitHooks
-func cJSON_InitHooks(*cJSON_Hooks)
-
-var hooks cJSON_Hooks
-
-type MallocFN func(Size_t) any
-type FreeFN func(any)
-
-func InitHooks(
-	malloc_fn MallocFN,
-	free_fn func(any),
-) {
-	hooks.malloc_fn = malloc_fn
-	hooks.free_fn = free_fn
-	cJSON_InitHooks(&hooks)
-}
-
 func (j *JSON) Name() string { return c.String(j.string) }
 
-//so:extern cJSON_free
-func Free(any)
+//so:extern cJSON_Delete
+func Delete(*JSON)
 
 //so:extern cJSON_GetStringValue
 func stringValue(*JSON) *c.ConstChar
