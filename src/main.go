@@ -4,7 +4,6 @@ import (
 	"mbc/game"
 	"mbc/gfx"
 	"mbc/mix"
-	"mbc/net/curl"
 	"mbc/sdl"
 
 	"solod.dev/so/c"
@@ -143,5 +142,4 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 }
 
 func AppQuit(appState any, result sdl.AppResult) {
-	curl.DeInit()
 }

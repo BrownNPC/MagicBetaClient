@@ -25,7 +25,11 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 		state.HaveInitialized = true
 	}
 	// go back if close input
-	if s.Inputs[InputClose].Pressed || state.ShouldGoBack {
+	if s.Inputs[InputClose].Pressed {
+		state.ShouldTransition = true
+		state.switchToScreen = SCREEN_MENU_SELECT_SERVER
+	}
+	if state.ShouldTransition {
 		if srv.Host != state.TextFields[1].String() {
 			srv.Host = state.TextFields[1].String()
 			*srv = srv.Clone()
@@ -37,9 +41,9 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 		cfg.SaveConfigFile(ORG, APP, CONFIG_FILE_PATH, s.Config)
 		s.TextInputActive = false
 		// reset state on switch
+		s.CurrentScreeen = state.switchToScreen
 		*state = ScreenJoinServerState{}
-		s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
-
+		return
 	}
 
 	// content bbox for this screen.
@@ -81,13 +85,23 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 		gui.Button("Back", backButton, hovered, true)
 		if hovered && clicked {
 			s.PlaySoundEffect(assets.Newsound_random_click)
-			state.ShouldGoBack = true
+			state.ShouldTransition = true
+			state.switchToScreen = SCREEN_MENU_SELECT_SERVER
 		}
 	}
-
-	connectButton := gui.ButtonSize.Scale(gui.Scale).
-		Anchor(actionButtons, .5, 0)
-	gui.Button("Connect", connectButton, connectButton.Contains(s.Cursor), state.TextFields[1].String() != "")
+	// connect button
+	{
+		clicked := s.Inputs[InputLeftClick].Released
+		connectButton := gui.ButtonSize.Scale(gui.Scale).
+			Anchor(actionButtons, .5, 0)
+		hovered := connectButton.Contains(s.Cursor)
+		if hovered && clicked {
+			s.PlaySoundEffect(assets.Newsound_random_click)
+			state.ShouldTransition = true
+			state.switchToScreen = SCREEN_CONNECT_SERVER
+		}
+		gui.Button("Connect", connectButton, hovered, state.TextFields[1].String() != "")
+	}
 
 	if clicked && hostname.Contains(s.Cursor) {
 		state.TextFieldFocused = 1

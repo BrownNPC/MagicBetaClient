@@ -55,9 +55,6 @@ func (s *State) Init() {
 	if err != nil {
 		panic(err)
 	}
-
-	// for debugging
-	s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
 }
 
 // return false to quit.
@@ -78,6 +75,8 @@ func (s *State) Update() bool {
 		s.CurrentScreeen = SCREEN_MENU_MAIN
 	case SCREEN_MENU_OPTIONS:
 		s.CurrentScreeen = SCREEN_MENU_MAIN
+	case SCREEN_CONNECT_SERVER:
+		s.Screen_ConnectServer(&s.ScreenConnectServerState, screen)
 	}
 	gfx.EndDrawing()
 

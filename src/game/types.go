@@ -5,6 +5,7 @@ import (
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/mix"
+	"mbc/net"
 	"mbc/sdl"
 
 	"solod.dev/so/maps"
@@ -69,6 +70,7 @@ const (
 
 	// Inside of SCREEN_MENU_SELECT_SERVER
 	SCREEN_JOIN_SERVER
+	SCREEN_CONNECT_SERVER
 )
 
 type InputType uint32
@@ -102,16 +104,23 @@ type ScreenSelectServerState struct {
 }
 type ScreenJoinServerState struct {
 	HaveInitialized bool
-	ShouldGoBack bool
+	ShouldTransition    bool
+	switchToScreen int
 	// Text field
 	// 0: nil text field
 	// 1: Hostname text field
 	// 2: Cmd text field
-	TextFields    [3]TextInputBuffer
+	TextFields [3]TextInputBuffer
 	// 0: none focused
 	// 1: Hostname text field
 	// 2: Cmd text field
 	TextFieldFocused uint
+}
+type ScreenConnectServerState struct {
+	ShouldTransision bool
+	TransisionTo int
+	Dialed      bool
+	Error error
 }
 
 // Max number of sound effects that can be loaded at a time.
@@ -121,6 +130,7 @@ const SCRATCH_SIZE = 1024 * 100 // size of the scratch memory arena in State
 const ORG = "io.github.brownnpc"
 const APP = "MagicBetaClient"
 const CONFIG_FILE_PATH = "config.json"
+
 
 // Game state
 type State struct {
@@ -153,7 +163,10 @@ type State struct {
 	Audios     maps.Map[assets.ID, *mix.Audio]
 	TracksPool [10]*mix.Track
 
-	SelectedServer          uint // index into Config.Servers
-	ScreenSelectServerState ScreenSelectServerState
-	ScreenJoinServerState   ScreenJoinServerState
+	SelectedServer           uint // index into Config.Servers
+	ScreenSelectServerState  ScreenSelectServerState
+	ScreenJoinServerState    ScreenJoinServerState
+	ScreenConnectServerState ScreenConnectServerState
+
+	Conn               net.Conn
 }

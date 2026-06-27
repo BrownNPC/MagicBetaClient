@@ -75,6 +75,7 @@ type Conn struct {
 func Dial(host string) (Conn, error) {
 	host = "http://" + host
 	conn := Conn{}
-	err := curl.CreateSocket(host, &conn.sock)
+	var err error
+	conn.sock, err = curl.CreateSocket(host)
 	return conn, err
 }
