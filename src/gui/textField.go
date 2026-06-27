@@ -26,8 +26,8 @@ func TextField(Text string, placeholder string, bbox gfx.Rectangle, Enabled bool
 	tBB := gfx.Rectangle{
 		W: float32(font.TextWidth(runes)) * Scale,
 		H: float32(font.TextHeight()) * Scale,
-	}.Anchor(bbox, 0.025, .5)
-
+	}.Anchor(bbox, 0, .5)
+	tBB.X += 4 * Scale
 	// draw placeholder
 	if !Enabled && len(Text) == 0 {
 		font.DrawRunes([]rune(placeholder), tBB.Position(), Scale, 0, gfx.Gray, false)

@@ -638,6 +638,22 @@ func DrawRectangle(rectangle Rectangle, color Color) {
 	DrawRectanglePro(rectangle, Vector2{}, 0, color)
 }
 
+var texShapes = Texture{ID: 1, Width: 1, Height: 1}
+
+// OpenGL version
+const (
+	RL_OPENGL_SOFTWARE = iota // Software rendering
+	RL_OPENGL_11              // OpenGL 1.1
+	RL_OPENGL_21              // OpenGL 2.1 (GLSL 120)
+	RL_OPENGL_33              // OpenGL 3.3 (GLSL 330)
+	RL_OPENGL_43              // OpenGL 4.3 (using GLSL 330)
+	RL_OPENGL_ES_20           // OpenGL ES 2.0 (GLSL 100)
+	RL_OPENGL_ES_30           // OpenGL ES 3.0 (GLSL 300 es)
+)
+
+//so:extern
+func rlGetVersion() int
+
 // Draw a color-filled rectangle with pro parameters
 // DrawRectanglePro draws a color-filled rectangle with rotation and origin.
 //
@@ -692,15 +708,17 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 
 	DisableTexture()
 
-	rlBegin(rlQUADS)
+	rlBegin(rlTRIANGLES)
 
 	rlColor4ub(color.R, color.G, color.B, color.A)
-	rlNormal3f(0, 0, 1)
 
 	rlVertex2f(topLeft.X, topLeft.Y)
 	rlVertex2f(bottomLeft.X, bottomLeft.Y)
-	rlVertex2f(bottomRight.X, bottomRight.Y)
 	rlVertex2f(topRight.X, topRight.Y)
+
+	rlVertex2f(topRight.X, topRight.Y)
+	rlVertex2f(bottomLeft.X, bottomLeft.Y)
+	rlVertex2f(bottomRight.X, bottomRight.Y)
 
 	rlEnd()
 }

@@ -123,6 +123,7 @@ func decodeConfig(c *Config, j *json.JSON) {
 
 // Loads a config file from SDL user storage.
 func LoadConfigFile(ORG, APP string, filePath string) (Config, error) {
+	Arena.Reset()
 	user := sdl.OpenUserStorage(ORG, APP, 0)
 	if user == nil {
 		return Config{}, sdl.GetError()
@@ -137,6 +138,7 @@ func LoadConfigFile(ORG, APP string, filePath string) (Config, error) {
 	defer mem.FreeSlice(mem.System, cfgFileMem)
 	return Parse(cfgFileMem)
 }
+
 // Save a config file to SDL user storage
 func SaveConfigFile(ORG, APP string, filePath string, c Config) error {
 	user := sdl.OpenUserStorage(ORG, APP, 0)

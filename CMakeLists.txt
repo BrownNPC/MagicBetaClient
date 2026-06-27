@@ -27,6 +27,18 @@ set(SDLMIXER_MP3_MPG123 OFF)
 set(SDLMIXER_VORBIS_VORBISFILE OFF)
 set(SDLMIXER_FLAC_LIBFLAC OFF)
 set(SDLMIXER_VENDORED ON)   # tell SDL_mixer to build its own dependencies
+
+# if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     add_compile_options(
+#         -g -O0
+#         -fno-omit-frame-pointer
+#         -fsanitize=address,undefined
+#     )
+#     add_link_options(
+#         -fsanitize=address,undefined
+#     )
+# endif()
+
 # add sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS _build/transpiled/*.c src/*.c)
 if(ANDROID)
@@ -64,8 +76,8 @@ else()
 endif()
 
 set(GL_TARGET)
-if (PSP)
 find_package(OpenGL REQUIRED)
+if (PSP)
 set(GL_TARGET OpenGL::GL)
 endif()
 

@@ -18,6 +18,15 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 	}
 	// go back if close input
 	if s.Inputs[InputClose].Pressed {
+		if srv.Host != state.TextFields[1].String() {
+			srv.Host = state.TextFields[1].String()
+			*srv = srv.Clone()
+		}
+		if srv.Cmd != state.TextFields[2].String() {
+			srv.Cmd = state.TextFields[2].String()
+			*srv = srv.Clone()
+		}
+		cfg.SaveConfigFile(ORG, APP, CONFIG_FILE_PATH, s.Config)
 		// reset state on switch
 		*state = ScreenJoinServerState{}
 		s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
@@ -41,14 +50,34 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 	}.Scale(gui.Scale).
 		Anchor(screen, .5, .45)
 
+	vertical := gfx.Vector2{X: content.X, Y: content.Y}
+	fnt := gui.ActivePack.Font()
+
+	// Hostname text field header text
+	vertical.Y += 10 * gui.Scale
+	fnt.DrawRunes([]rune("Hostname including port:"),
+		vertical, gui.Scale, 0, gfx.White, false)
+	vertical.Y += float32(fnt.TextHeight())*gui.Scale + 2*gui.Scale
 	// hostname text field
-	hostname := gui.ButtonSize.Scale(gui.Scale).
-		Anchor(content, .5, 2/content.H) // y offset 2px in gui units.
+	hostname := gui.ButtonSize.Scale(gui.Scale).SetPosition(vertical)
+	gui.TextField(state.TextFields[1].String(), "example.com:25565", hostname, state.TextFieldFocused == 1)
+	vertical.Y += hostname.H
+	// cmd text field header text
+	vertical.Y += +10 * gui.Scale
+	fnt.DrawRunes([]rune("Command to run on join:"),
+		vertical, gui.Scale, 0, gfx.White, false)
+	vertical.Y += float32(fnt.TextHeight())*gui.Scale + 2*gui.Scale
+	//cmd text field
+	cmd := gui.ButtonSize.Scale(gui.Scale).SetPosition(vertical)
+	gui.TextField(state.TextFields[2].String(), "eg. /login password123", cmd, state.TextFieldFocused == 2)
 
 	// there was a click this frame
 	clicked := s.Inputs[InputLeftClick].Released
 	if clicked && hostname.Contains(s.Cursor) {
 		state.TextFieldFocused = 1
+		s.TextInputActive = true
+	} else if clicked && cmd.Contains(s.Cursor) {
+		state.TextFieldFocused = 2
 		s.TextInputActive = true
 	} else if clicked {
 		s.TextInputActive = false
@@ -56,13 +85,12 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 	}
 	input := s.Inputs[InputTextInput].Text
 	tf := &state.TextFields[state.TextFieldFocused]
-	if input != 0 && tf.Len < 128 {
+
+	if input != 0 && tf.Len < 70 {
 		tf.Add(input)
 	}
 	if s.Inputs[InputBackspace].Pressed {
 		tf.Pop()
 	}
 
-	// hostname text field
-	gui.TextField(state.TextFields[1].String(), "example.com:25565", hostname, state.TextFieldFocused == 1)
 }
