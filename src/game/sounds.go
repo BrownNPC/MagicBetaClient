@@ -20,15 +20,21 @@ func (s *State) RollBackgroundMusic() {
 	}
 	s.TimeSinceLastBackgroundMusicRoll = time.Now()
 	musics := [...]assets.ID{
-		assets.Music_calm1, /* /music/calm1.ogg */
-		assets.Music_calm2,
-		assets.Music_calm3,
+		assets.Newmusic_hal1,
+		assets.Newmusic_hal2,
+		assets.Newmusic_hal3,
+		assets.Newmusic_hal4,
+		assets.Newmusic_hal4,
+		assets.Newmusic_nuance1,
+		assets.Newmusic_nuance2,
+		assets.Newmusic_piano1,
+		assets.Newmusic_piano2,
+		assets.Newmusic_piano3,
 	}
-	n := rand.IntN(4)
-	if n == 0 {
+	n := rand.IntN(len(musics) * 2)
+	if n > len(musics)-1 {
 		return
 	}
-	n -= 1
 	s.Scratch.Reset()
 	f := sdl.IOFromFile(path.Join(&s.Scratch, gfx.AssetsPath, musics[n].String()), "rb")
 	if f == nil {

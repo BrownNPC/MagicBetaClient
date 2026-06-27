@@ -339,7 +339,6 @@ func DrawTextureTiled(
 
 	rlEnd()
 	DisableTexture()
-	rlDrawRenderBatchActive()
 }
 
 // DrawTexturePro draws a portion of a texture into a destination rectangle,

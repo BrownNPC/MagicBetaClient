@@ -102,6 +102,7 @@ type ScreenSelectServerState struct {
 }
 type ScreenJoinServerState struct {
 	HaveInitialized bool
+	ShouldGoBack bool
 	// Text field
 	// 0: nil text field
 	// 1: Hostname text field

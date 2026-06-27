@@ -8,6 +8,14 @@ import (
 )
 
 func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Rectangle) {
+	// Draw dirt background
+	bg := s.Pack.GetTexture(assets.Gui_background)
+	gfx.DrawTextureTiled(bg,
+		gfx.NewRectangle(0, 0, float32(s.ScreenWidth), float32(s.ScreenHeight)),
+		gui.Scale*2,
+		gfx.White.Tint(gfx.Black, 75),
+	)
+
 	// get selected server from config file
 	var srv *cfg.ServerCfg = &s.Config.Servers[min(s.SelectedServer, cfg.MAX_SERVERS-1)]
 	// init
@@ -17,7 +25,7 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 		state.HaveInitialized = true
 	}
 	// go back if close input
-	if s.Inputs[InputClose].Pressed {
+	if s.Inputs[InputClose].Pressed || state.ShouldGoBack {
 		if srv.Host != state.TextFields[1].String() {
 			srv.Host = state.TextFields[1].String()
 			*srv = srv.Clone()
@@ -27,21 +35,12 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 			*srv = srv.Clone()
 		}
 		cfg.SaveConfigFile(ORG, APP, CONFIG_FILE_PATH, s.Config)
+		s.TextInputActive = false
 		// reset state on switch
 		*state = ScreenJoinServerState{}
 		s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
-		return
+
 	}
-
-	// draw background
-	bg := s.Pack.GetTexture(assets.Gui_background)
-
-	// Draw dirt background
-	gfx.DrawTextureTiled(bg,
-		gfx.NewRectangle(0, 0, float32(s.ScreenWidth), float32(s.ScreenHeight)),
-		gui.Scale*2,
-		gfx.White.Tint(gfx.Black, 75),
-	)
 
 	// content bbox for this screen.
 	content := gfx.Rectangle{
@@ -73,6 +72,23 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 
 	// there was a click this frame
 	clicked := s.Inputs[InputLeftClick].Released
+	actionButtons := gfx.Rectangle{W: gui.ButtonSize.W, H: gui.ButtonSize.H*2 + 2}.Scale(gui.Scale).
+		Anchor(content, .5, 1)
+	{
+		backButton := gui.ButtonSize.Scale(gui.Scale).
+			Anchor(actionButtons, .5, 1)
+		hovered := backButton.Contains(s.Cursor)
+		gui.Button("Back", backButton, hovered, true)
+		if hovered && clicked {
+			s.PlaySoundEffect(assets.Newsound_random_click)
+			state.ShouldGoBack = true
+		}
+	}
+
+	connectButton := gui.ButtonSize.Scale(gui.Scale).
+		Anchor(actionButtons, .5, 0)
+	gui.Button("Connect", connectButton, connectButton.Contains(s.Cursor), state.TextFields[1].String() != "")
+
 	if clicked && hostname.Contains(s.Cursor) {
 		state.TextFieldFocused = 1
 		s.TextInputActive = true

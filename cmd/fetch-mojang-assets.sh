@@ -1,6 +1,6 @@
 #!/bin/sh -eu
 VERSIONS_URL=https://piston-meta.mojang.com/mc/game/version_manifest_v2.json
-VERSION=b1.7.3
+VERSION=b1.8.1
 
 mkdir -p assets
 
