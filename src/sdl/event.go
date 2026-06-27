@@ -113,8 +113,8 @@ type TextInputEvent struct {
 	text      *c.ConstChar
 }
 
-func (e TextInputEvent) Text() string {
-	return c.String(e.text)
+func (e TextInputEvent) Rune() rune {
+	return []rune(c.String(e.text))[0]
 }
 
 type TextEditingEvent struct {

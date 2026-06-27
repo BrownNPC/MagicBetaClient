@@ -326,7 +326,6 @@ func DrawTextureTiled(
 	rlTexCoord2f(0, 0)
 	rlVertex2f(dest.X, dest.Y)
 
-	DisableTexture()
 	rlTexCoord2f(0, v)
 	rlVertex2f(dest.X, dest.Y+dest.H)
 
@@ -339,8 +338,8 @@ func DrawTextureTiled(
 	rlVertex2f(dest.X+dest.W, dest.Y)
 
 	rlEnd()
-
 	DisableTexture()
+	rlDrawRenderBatchActive()
 }
 
 // DrawTexturePro draws a portion of a texture into a destination rectangle,
@@ -548,7 +547,6 @@ func (fnt *Font) Destroy() {
 	UnloadTexture(fnt.Atlas)
 	*fnt = Font{}
 }
-
 func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float32, color Color, darken bool) {
 	if len(text) == 0 {
 		return
@@ -563,7 +561,6 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 	cellSize := float32(fnt.TextHeight())
 	textSize := fnt.TextSize(text).Scale(scale)
 
-	// use drawTextureProUnsafe to avoid state switching per character.
 	// Pivot at center of the whole text block.
 	pivot := position.Add(textSize.Half())
 	rlPushMatrix()
@@ -575,6 +572,7 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 	rlTranslatef(-textSize.X*0.5, -textSize.Y*0.5, 0)
 
 	textOffsetX := float32(0)
+	textOffsetY := float32(0) // newlines
 	for i := 0; i < len(text); i++ {
 		for len(text) > i+1 && text[i] == SectionSign { // colored text using format strings
 			colorCode := slices.Index(
@@ -609,6 +607,11 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 		}
 
 		charCode := text[i]
+		if charCode == '\n' {
+			textOffsetX = 0
+			textOffsetY = +textSize.Y
+			continue
+		}
 		col := charCode % glyphsPerRow
 		row := charCode / glyphsPerRow
 
@@ -621,7 +624,7 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 
 		dst := Rectangle{
 			X: textOffsetX,
-			Y: 0,
+			Y: 0 + textOffsetY,
 			W: cellSize * float32(scale),
 			H: cellSize * float32(scale),
 		}

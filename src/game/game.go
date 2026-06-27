@@ -9,7 +9,6 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/mem"
-	"solod.dev/so/strings"
 )
 
 func (s *State) Init() {
@@ -57,11 +56,8 @@ func (s *State) Init() {
 		panic(err)
 	}
 
-	s.ScreenJoinServer.Arena = mem.NewArena(s.ScreenJoinServer.Buf[:])
-	s.ScreenJoinServer.TextField = strings.NewBuilder(&s.ScreenJoinServer.Arena)
-
 	// for debugging
-	s.CurrentScreeen = SCREEN_MENU_JOIN_SERVER
+	s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
 }
 
 // return false to quit.
@@ -71,12 +67,17 @@ func (s *State) Update() bool {
 	s.RollBackgroundMusic()
 	gfx.BeginDrawing()
 	gfx.ClearBackground(gfx.Black)
-
 	switch s.CurrentScreeen {
 	case SCREEN_MENU_MAIN:
 		s.Screen_MenuMain(screen)
-	case SCREEN_MENU_JOIN_SERVER:
-		s.Screen_JoinServer(&s.ScreenJoinServer, screen)
+	case SCREEN_MENU_SELECT_SERVER:
+		s.Screen_SelectServer(&s.ScreenSelectServerState, screen)
+	case SCREEN_JOIN_SERVER:
+		s.Screen_JoinServer(&s.ScreenJoinServerState, screen)
+	case SCREEN_MENU_TEXTURE_PACKS:
+		s.CurrentScreeen = SCREEN_MENU_MAIN
+	case SCREEN_MENU_OPTIONS:
+		s.CurrentScreeen = SCREEN_MENU_MAIN
 	}
 	gfx.EndDrawing()
 

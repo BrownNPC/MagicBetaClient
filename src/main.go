@@ -8,7 +8,6 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/c"
-	"solod.dev/so/fmt"
 	"solod.dev/so/time"
 )
 
@@ -46,9 +45,9 @@ func AppInit(appState *any, argc c.Int, argv **c.Char) sdl.AppResult {
 
 func AppIterate(appState any) sdl.AppResult {
 	// Enable/ disable text input events.
-	if state.game.TextInput && !sdl.TextInputActive(gfx.Window) {
+	if state.game.TextInputActive && !sdl.TextInputActive(gfx.Window) {
 		sdl.StartTextInput(gfx.Window)
-	} else if !state.game.TextInput && sdl.TextInputActive(gfx.Window) {
+	} else if !state.game.TextInputActive && sdl.TextInputActive(gfx.Window) {
 		sdl.StopTextInput(gfx.Window)
 	}
 
@@ -63,7 +62,7 @@ func AppIterate(appState any) sdl.AppResult {
 	state.game.Dt = float32(frameTime.Seconds())
 	state.lastTime = now
 	state.game.Inputs = [game.TotalInputs]game.Input{} // clear inputs after they're used.
-	
+
 	// FPS cap
 	targetFrameTime := time.Second / time.Duration(state.game.TargetFPS)
 
@@ -113,18 +112,26 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			Released: m.Type == sdl.EVENT_MOUSE_BUTTON_UP,
 		}
 
-	case sdl.EVENT_TEXT_EDITING:
-		t := e.TextEditing()
-		println(t.Start, t.End, t.Text())
-
 	case sdl.EVENT_TEXT_INPUT:
 		t := e.TextInput()
-		fmt.Println(t.Text())
+		typ := game.InputTextInput
+		state.game.Inputs[typ] = game.Input{
+			Type:    typ,
+			Text:    t.Rune(),
+			Pressed: true,
+		}
 
 	case sdl.EVENT_KEY_DOWN, sdl.EVENT_KEY_UP:
 		key := e.Keyboard()
-		if key.Scancode == sdl.SCANCODE_ESCAPE {
+		if key.Key == sdl.KeyESCAPE {
 			state.game.Inputs[game.InputClose] = game.Input{
+				Type:     game.InputClose,
+				Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
+				Released: key.Type == sdl.EVENT_KEY_UP,
+			}
+		}
+		if key.Key == sdl.KeyBACKSPACE {
+			state.game.Inputs[game.InputBackspace] = game.Input{
 				Type:     game.InputClose,
 				Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
 				Released: key.Type == sdl.EVENT_KEY_UP,

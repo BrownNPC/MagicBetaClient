@@ -36,6 +36,24 @@ func (r Rectangle) SetPosition(v Vector2) Rectangle {
 	r.Y = v.Y
 	return r
 }
+
+// Grow equally on all sides (anchored to center).
+func (r Rectangle) Grow(v float32) Rectangle {
+	r.X -= v
+	r.Y -= v
+	r.W += 2 * v
+	r.H += 2 * v
+	return r
+}
+// Shrink equally on all sides (anchored to center).
+func (r Rectangle) Shrink(v float32) Rectangle {
+	r.X += v
+	r.Y += v
+	r.W -= 2 * v
+	r.H -= 2 * v
+	return r
+}
+
 func (r Rectangle) SetSize(v Vector2) Rectangle {
 	r.W = v.X
 	r.H = v.Y

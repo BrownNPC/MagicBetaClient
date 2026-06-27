@@ -1,124 +1,68 @@
 package game
 
 import (
+	"mbc/cfg"
 	"mbc/gfx"
 	"mbc/gfx/assets"
 	"mbc/gui"
-
-	"solod.dev/so/strconv"
-	"solod.dev/so/strings"
 )
 
 func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Rectangle) {
+	// get selected server from config file
+	var srv *cfg.ServerCfg = &s.Config.Servers[min(s.SelectedServer, cfg.MAX_SERVERS-1)]
+	// init
+	if state.HaveInitialized == false {
+		state.TextFields[1].Init(srv.Host)
+		state.TextFields[2].Init(srv.Cmd)
+		state.HaveInitialized = true
+	}
+	// go back if close input
+	if s.Inputs[InputClose].Pressed {
+		// reset state on switch
+		*state = ScreenJoinServerState{}
+		s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
+		return
+	}
+
 	// draw background
 	bg := s.Pack.GetTexture(assets.Gui_background)
+
 	// Draw dirt background
 	gfx.DrawTextureTiled(bg,
 		gfx.NewRectangle(0, 0, float32(s.ScreenWidth), float32(s.ScreenHeight)),
 		gui.Scale*2,
 		gfx.White.Tint(gfx.Black, 75),
 	)
-	// go to main menu if close input
-	if s.Inputs[InputClose].Released {
-		s.CurrentScreeen = SCREEN_MENU_MAIN
-		return
-	}
 
-	list := gfx.Rectangle{
+	// content bbox for this screen.
+	content := gfx.Rectangle{
 		W: gui.ButtonSize.W,
 		H: 160,
 	}.Scale(gui.Scale).
 		Anchor(screen, .5, .45)
 
-	btn := gui.ButtonSize.Scale(gui.Scale).
-		Anchor(list, .5, 0)
-	const MaxPerScreen = 5
+	// hostname text field
+	hostname := gui.ButtonSize.Scale(gui.Scale).
+		Anchor(content, .5, 2/content.H) // y offset 2px in gui units.
 
-	pageCount := len(s.Config.Servers) / MaxPerScreen // rounds down
-	// always round up the number of pages if needed.
-	if len(s.Config.Servers)%MaxPerScreen != 0 {
-		pageCount++
-	}
-
-	maxPage := max(0, pageCount-1)
-
-	for i := range MaxPerScreen {
-		idx := state.PageIndex*MaxPerScreen + i
-		if i != 0 {
-			btn.Y += btn.H
-			btn.Y += 2 * gui.Scale //padding
-		}
-
-		hovered := btn.Contains(s.Cursor)
-		if idx >= len(s.Config.Servers) {
-			panic("screen_join_server: how is this possible?")
-		}
-		if s.Config.Servers[idx].Host == "" {
-			gui.Button("[EMPTY]", btn, hovered, true)
-			continue
-		}
-		srv := s.Config.Servers[idx]
-		gui.Button(srv.Host, btn, hovered, true)
-	}
-
-	// next/prev buttons + pager bounding box
-	navGroup := gfx.Rectangle{W: gui.ButtonSize.W, H: gui.ButtonSize.H * 2}.Scale(gui.Scale).
-		Anchor(list, .5, .95)
-
-	// half width button
-	halfBtn :=
-		gfx.Rectangle{W: gui.ButtonSize.W/2 - 1, H: gui.ButtonSize.H}.Scale(gui.Scale)
-	// anchored left
-	prevBtn := halfBtn.Anchor(navGroup, 0, 1)
-	// anchored right
-	nextBtn := halfBtn.Anchor(navGroup, 1, 1)
-
-	// Page number
-	tmp := make([]byte, strconv.MaxIntBase10Len*10)
-
-	s.Scratch.Reset()
-	// Page n/pageCount
-	sb := strings.NewBuilder(&s.Scratch)
-	sb.WriteString("Page ")
-	sb.WriteString(strconv.Itoa(tmp, state.PageIndex+1))
-	sb.WriteRune('/')
-	sb.WriteString(strconv.Itoa(tmp, pageCount))
-
-	gui.Button(sb.String(),
-		gui.ButtonSize.Scale(gui.Scale).Anchor(navGroup, .5, 0),
-		false, false,
-	)
-	{ // previous button click
-		contains := prevBtn.Contains(s.Cursor)
-		enabled := state.PageIndex != 0
-		clicked := s.Inputs[InputLeftClick].Released
-		if enabled && contains && clicked {
-			state.PageIndex = max(state.PageIndex-1, 0)
-			s.PlaySoundEffect(assets.Newsound_random_click)
-		}
-		gui.Button("Prev", prevBtn, contains, enabled)
-	}
-	{ // next button click
-		contains := nextBtn.Contains(s.Cursor)
-		enabled := state.PageIndex != maxPage
-		clicked := s.Inputs[InputLeftClick].Released
-		if enabled && contains && clicked {
-			state.PageIndex = min(state.PageIndex+1, maxPage)
-			s.PlaySoundEffect(assets.Newsound_random_click)
-		}
-		gui.Button("Next", nextBtn, contains, enabled)
-	}
-	backButton := gui.ButtonSize.Scale(gui.Scale)
-	backButton.X = btn.X
-	backButton.Y = nextBtn.Y + nextBtn.H
-
-	backButton.Y += nextBtn.H
-	contains := backButton.Contains(s.Cursor)
+	// there was a click this frame
 	clicked := s.Inputs[InputLeftClick].Released
-	if contains && clicked {
-		s.CurrentScreeen = SCREEN_MENU_MAIN
-		s.PlaySoundEffect(assets.Newsound_random_click)
-		return
+	if clicked && hostname.Contains(s.Cursor) {
+		state.TextFieldFocused = 1
+		s.TextInputActive = true
+	} else if clicked {
+		s.TextInputActive = false
+		state.TextFieldFocused = 0
 	}
-	gui.Button("Back", backButton, contains, true)
+	input := s.Inputs[InputTextInput].Text
+	tf := &state.TextFields[state.TextFieldFocused]
+	if input != 0 && tf.Len < 128 {
+		tf.Add(input)
+	}
+	if s.Inputs[InputBackspace].Pressed {
+		tf.Pop()
+	}
+
+	// hostname text field
+	gui.TextField(state.TextFields[1].String(), "example.com:25565", hostname, state.TextFieldFocused == 1)
 }

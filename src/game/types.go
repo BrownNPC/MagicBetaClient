@@ -9,7 +9,6 @@ import (
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
-	"solod.dev/so/strings"
 	"solod.dev/so/time"
 )
 
@@ -21,11 +20,55 @@ type DefaultTexturePack struct {
 	font     gfx.Font
 }
 
+// max characters that can be inputted into a text field.
+const MAX_TEXT_INPUT = 256
+
+type TextInputBuffer struct {
+	Text [MAX_TEXT_INPUT]rune
+	Len  int
+}
+
+func (t *TextInputBuffer) Init(s string) {
+	*t = TextInputBuffer{}
+
+	for _, r := range []rune(s) {
+		if t.Len == MAX_TEXT_INPUT {
+			break
+		}
+		t.Text[t.Len] = r
+		t.Len++
+	}
+}
+
+func (t *TextInputBuffer) Add(r rune) {
+	if t.Len == MAX_TEXT_INPUT {
+		return
+	}
+	t.Text[t.Len] = r
+	t.Len++
+}
+
+func (t *TextInputBuffer) Pop() {
+	if t.Len == 0 {
+		return
+	}
+	t.Len--
+	t.Text[t.Len] = 0
+}
+
+func (t TextInputBuffer) String() string {
+	return string(t.Text[:t.Len])
+}
+
 const (
 	SCREEN_MENU_MAIN = iota
-	SCREEN_MENU_JOIN_SERVER
+	// these are inside of MENU_MAIN
+	SCREEN_MENU_SELECT_SERVER
 	SCREEN_MENU_TEXTURE_PACKS
 	SCREEN_MENU_OPTIONS
+
+	// Inside of SCREEN_MENU_SELECT_SERVER
+	SCREEN_JOIN_SERVER
 )
 
 type InputType uint32
@@ -41,10 +84,11 @@ const (
 	InputNone InputType = iota
 	InputLeftClick
 	InputRightClick
+	InputBackspace
 	InputClose
 	InputLook
 	InputMove
-	InputText // Text input
+	InputTextInput // Text input
 	TotalInputs
 )
 
@@ -53,15 +97,20 @@ const (
 // without having to track if a song is already playing.
 const RollMusicEvery = time.Minute * 5
 
-type ScreenJoinServerState struct {
-	Buf       [4 * 120]byte
-	Arena     mem.Arena
+type ScreenSelectServerState struct {
 	PageIndex int //page number
-
-	TextField        strings.Builder // text field on screen Join Server
-	TextFieldFocused bool
-
-	SelectedServer *cfg.ServerCfg
+}
+type ScreenJoinServerState struct {
+	HaveInitialized bool
+	// Text field
+	// 0: nil text field
+	// 1: Hostname text field
+	// 2: Cmd text field
+	TextFields    [3]TextInputBuffer
+	// 0: none focused
+	// 1: Hostname text field
+	// 2: Cmd text field
+	TextFieldFocused uint
 }
 
 // Max number of sound effects that can be loaded at a time.
@@ -76,7 +125,7 @@ const CONFIG_FILE_PATH = "config.json"
 type State struct {
 	Dt                        float32
 	ScreenWidth, ScreenHeight float32
-	TextInput                 bool // whether text input should be enabled.
+	TextInputActive           bool // whether text input should be enabled.
 	TargetFPS                 int
 	Config                    cfg.Config
 
@@ -91,8 +140,9 @@ type State struct {
 	ShowCursor     bool
 	CursorDelta    gfx.Vector2
 	CurrentScreeen int
-	Inputs         [TotalInputs]Input
-	SplashText     string // splash text shown on main menu
+	// Inputs are parsed from SDL events in main.go
+	Inputs     [TotalInputs]Input
+	SplashText string // splash text shown on main menu
 
 	Mixer *mix.Mixer // global mixer
 
@@ -102,5 +152,7 @@ type State struct {
 	Audios     maps.Map[assets.ID, *mix.Audio]
 	TracksPool [10]*mix.Track
 
-	ScreenJoinServer ScreenJoinServerState
+	SelectedServer          uint // index into Config.Servers
+	ScreenSelectServerState ScreenSelectServerState
+	ScreenJoinServerState   ScreenJoinServerState
 }

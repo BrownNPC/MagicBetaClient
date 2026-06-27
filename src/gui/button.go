@@ -49,6 +49,6 @@ func Button(Text string, bbox gfx.Rectangle, Hovered bool, Enabled bool) {
 	} else if Hovered {
 		btnTextColor = gfx.Yellow
 	}
-	font.DrawRunes(runes, tBB.Position().AddValue(1), Scale, 0, btnTextColor, true) // shadow
+	font.DrawRunes(runes, tBB.Position().AddValue(1*Scale), Scale, 0, btnTextColor, true) // shadow
 	font.DrawRunes(runes, tBB.Position(), Scale, 0, btnTextColor, false)
 }
