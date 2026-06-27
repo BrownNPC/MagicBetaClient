@@ -1,6 +1,10 @@
 package curl
 
-import "solod.dev/so/c"
+import (
+	"mbc/sdl"
+	"solod.dev/so/c"
+	"solod.dev/so/time"
+)
 
 //so:include <curl/curl.h>
 
@@ -10,8 +14,8 @@ const CURL_GLOBAL_DEFAULT = (1 << 0) | (1 << 1)
 //so:extern CURLcode
 type CURLcode int
 
-//so:extern CURLE_AGAIN 
-const CURLE_AGAIN CURLcode = 0
+//so:extern CURLE_AGAIN
+const CURLE_AGAIN CURLcode = 1
 
 //so:extern
 func curl_global_init(int) CURLcode
@@ -40,10 +44,10 @@ func curl_easy_recv(curl *CURL, buf *byte, size int, n *size_t) CURLcode
 //so:extern
 func curl_easy_send(curl *CURL, buf *byte, size int, n *size_t) CURLcode
 
-//so:extern CURLOPT_URL 
+//so:extern CURLOPT_URL
 const CURLOPT_URL = 0
 
-//so:extern CURLOPT_CONNECT_ONLY 
+//so:extern CURLOPT_CONNECT_ONLY
 const CURLOPT_CONNECT_ONLY = 0
 
 //so:extern CURLOPT_TCP_NODELAY
@@ -90,6 +94,7 @@ func ReadFromSocket(curl *CURL, buffer *byte, size int) (int, error) {
 	code := curl_easy_recv(curl, buffer, size, &n)
 	if code == CURLE_AGAIN {
 		return int(n), nil
+	} else {
 	}
 	if code != 0 {
 		curl_easy_cleanup(curl)
@@ -99,22 +104,39 @@ func ReadFromSocket(curl *CURL, buffer *byte, size int) (int, error) {
 	return int(n), nil
 }
 
-// This is non-blocking.
-// Returns the number of bytes written. Can be 0. -1 means error.
+// WriteToSocket blocks until all bytes are written or an error occurs.
+// Returns the number of bytes written before an error, if any.
 func WriteToSocket(curl *CURL, buffer *byte, size int) (int, error) {
-	var n size_t
-	code := curl_easy_send(curl, buffer, size, &n)
-	if code == CURLE_AGAIN {
-		return int(n), nil
-	}
-	if code != 0 {
-		if code != 0 {
+	total := 0
+
+	for total < size {
+		var n size_t
+
+		code := curl_easy_send(
+			curl,
+			buffer,
+			size-total,
+			&n,
+		)
+
+		total += int(n)
+
+		switch code {
+		case 0: // no error, keep writing.
+
+		case CURLE_AGAIN:
+			// Retry until writable.
+			sdl.Delay(time.Millisecond)
+			continue
+
+		default:
 			curl_easy_cleanup(curl)
 			_Error.code = code
-			return int(n), &_Error
+			return total, &_Error
 		}
 	}
-	return int(n), nil
+
+	return total, nil
 }
 
 func init() {

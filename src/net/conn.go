@@ -5,6 +5,7 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/errors"
+	"solod.dev/so/fmt"
 	"solod.dev/so/time"
 )
 
@@ -26,6 +27,7 @@ func (conn *Conn) Read(b []byte) (int, error) {
 		return 0, ErrConnectionClosed
 	}
 	if n != 0 {
+		fmt.Println(string(b))
 		return n, nil
 	}
 	return 0, nil

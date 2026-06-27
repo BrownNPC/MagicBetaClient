@@ -6,8 +6,10 @@ import (
 	"mbc/gfx/assets"
 	"mbc/mix"
 	"mbc/net"
+	"mbc/net/mc"
 	"mbc/sdl"
 
+	"solod.dev/so/bufio"
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
@@ -103,9 +105,9 @@ type ScreenSelectServerState struct {
 	PageIndex int //page number
 }
 type ScreenJoinServerState struct {
-	HaveInitialized bool
-	ShouldTransition    bool
-	switchToScreen int
+	HaveInitialized  bool
+	ShouldTransition bool
+	switchToScreen   int
 	// Text field
 	// 0: nil text field
 	// 1: Hostname text field
@@ -118,9 +120,20 @@ type ScreenJoinServerState struct {
 }
 type ScreenConnectServerState struct {
 	ShouldTransision bool
-	TransisionTo int
-	Dialed      bool
-	Error error
+	TransisionTo     int
+	Dialed           bool
+	Text             string
+
+	__ArenaBuf [512]byte
+	Arena      mem.Arena
+
+	packetID net.SteppedReader
+
+	stage                int
+	serverbound_prelogin mc.ServerboundPreLogin
+	clientbound_prelogin mc.ClientboundPreLogin
+	serverbound_login    mc.ServerboundLogin
+	clientbound_login    mc.ClientboundLogin
 }
 
 // Max number of sound effects that can be loaded at a time.
@@ -130,7 +143,6 @@ const SCRATCH_SIZE = 1024 * 100 // size of the scratch memory arena in State
 const ORG = "io.github.brownnpc"
 const APP = "MagicBetaClient"
 const CONFIG_FILE_PATH = "config.json"
-
 
 // Game state
 type State struct {
@@ -168,5 +180,13 @@ type State struct {
 	ScreenJoinServerState    ScreenJoinServerState
 	ScreenConnectServerState ScreenConnectServerState
 
-	Conn               net.Conn
+	// SHOULD NOT BE USED FOR READ/WRITE DIRECTLY
+	Conn net.Conn
+	// Backed by Conn
+	__bufioWriterBuffer   [1024 * 10]byte
+	__bufioReaderBuffer   [1024 * 10]byte
+	__arenaForServerbound mem.Arena
+	__arenaForClientbound mem.Arena
+	ServerBound           bufio.Writer
+	ClientBound           bufio.Reader
 }

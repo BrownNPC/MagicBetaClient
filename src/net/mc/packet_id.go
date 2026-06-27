@@ -1,6 +1,6 @@
 package mc
 
-type PacketID byte
+type PacketID = byte
 
 const (
 	PKT_KeepAlive                         PacketID = 0x00

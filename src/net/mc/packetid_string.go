@@ -60,7 +60,7 @@ var packetIDStrings = [256]string{
 	0xFF: "Disconnect",
 }
 
-func (p PacketID) String() string {
+func PacketIDString(p PacketID) string {
 	if int(p) < len(packetIDStrings) {
 		if s := packetIDStrings[p]; s != "" {
 			return s
