@@ -57,7 +57,8 @@ func (s *State) getAudio(audio assets.ID) *mix.Audio {
 		s.Audios.Delete(id)
 	}
 	s.Scratch.Reset()
-	file := mix.LoadAudio(s.Mixer, path.Join(&s.Scratch, gfx.AssetsPath, audio.String()), false)
+	file := mix.LoadAudio(s.Mixer, path.Join(&s.Scratch, gfx.AssetsPath, audio.String()), true)
+	s.Audios.Set(audio, file)
 	if file == nil {
 		panic(sdl.GetError())
 	}

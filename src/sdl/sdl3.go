@@ -8,12 +8,6 @@ import (
 	"solod.dev/so/time"
 )
 
-//so:extern SDL_Window
-type Window struct{}
-
-//so:extern SDL_Renderer
-type Renderer struct{}
-
 //so:extern SDL_SetAppMetadata
 func SetAppMetadata(appname, appversion, appidentifier string)
 
@@ -66,12 +60,6 @@ func GLGetProcAddress(proc string) any
 //so:extern SDL_GL_SwapWindow
 func GLSwapWindow(*Window)
 
-//so:extern SDL_Surface
-type Surface struct {
-	w, h   int
-	pixels *uint8
-	pitch  int
-}
 
 func (s Surface) Width() int     { return s.w }
 func (s Surface) Height() int    { return s.h }
@@ -87,10 +75,6 @@ func DestroySurface(*Surface)
 //so:extern SDL_ConvertSurface
 func ConvertSurface(src *Surface, format PixelFormat) *Surface
 
-// IOStream implements io.ReadWriteCloser
-//
-//so:extern SDL_IOStream
-type IOStream struct{}
 
 func (ctx *IOStream) Read(b []byte) (int, error) {
 	if len(b) == 0 {
@@ -226,3 +210,6 @@ func (s *Storage) Close() bool {
 
 //so:extern SDL_GL_SetAttribute
 func GLSetAttribute(attr int, value int) bool
+
+//so:extern SDL_OpenGamepad
+func OpenGamepad(id uint32) *Gamepad

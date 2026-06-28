@@ -8,6 +8,7 @@ import (
 	"mbc/mix"
 	"mbc/sdl"
 
+	"solod.dev/so/maps"
 	"solod.dev/so/mem"
 )
 
@@ -27,6 +28,8 @@ func (s *State) Init() {
 	s.Pack = NewDefaultTexturePack()
 	// pack.png should apply bilinear interpolation (TODO: implement a better way to do this)
 	gfx.SetTextureConfig(s.Pack.GetTexture(assets.Pack), true, false)
+
+	s.Audios = maps.New[assets.ID, *mix.Audio](mem.System, MaxAudioLoaded)
 
 	// create mixer device
 	s.Mixer = mix.CreateMixerDevice(sdl.AUDIO_DEVICE_DEFAULT_PLAYBACK, nil)
@@ -66,7 +69,7 @@ func (s *State) Update() bool {
 	gfx.ClearBackground(gfx.Black)
 	switch s.CurrentScreeen {
 	case SCREEN_MENU_MAIN:
-		s.Screen_MenuMain(&s.ScreenMainMenuState,screen)
+		s.Screen_MenuMain(&s.ScreenMainMenuState, screen)
 	case SCREEN_MENU_SELECT_SERVER:
 		s.Screen_SelectServer(&s.ScreenSelectServerState, screen)
 	case SCREEN_JOIN_SERVER:

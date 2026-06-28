@@ -8,34 +8,18 @@ import (
 //so:extern SDL_Event
 type Event struct{}
 
-func (e *Event) Type() EventType {
-	return *any(e).(*EventType)
+func (e *Event) Type() EventType { return *any(e).(*EventType) }
 
-}
-func (e *Event) Quit() QuitEvent {
-	return *any(e).(*QuitEvent)
-}
-func (e *Event) Window() WindowEvent {
-	return *any(e).(*WindowEvent)
-}
-func (e *Event) MouseButton() MouseButtonEvent {
-	return *any(e).(*MouseButtonEvent)
-}
-func (e *Event) MouseWheel() MouseWheelEvent {
-	return *any(e).(*MouseWheelEvent)
-}
-func (e *Event) MouseMotion() MouseMotionEvent {
-	return *any(e).(*MouseMotionEvent)
-}
-func (e *Event) Keyboard() KeyboardEvent {
-	return *any(e).(*KeyboardEvent)
-}
-func (e *Event) TextInput() TextInputEvent {
-	return *any(e).(*TextInputEvent)
-}
-func (e *Event) TextEditing() TextEditingEvent {
-	return *any(e).(*TextEditingEvent)
-}
+func (e *Event) Quit() QuitEvent                   { return *any(e).(*QuitEvent) }
+func (e *Event) Window() WindowEvent               { return *any(e).(*WindowEvent) }
+func (e *Event) MouseButton() MouseButtonEvent     { return *any(e).(*MouseButtonEvent) }
+func (e *Event) MouseWheel() MouseWheelEvent       { return *any(e).(*MouseWheelEvent) }
+func (e *Event) MouseMotion() MouseMotionEvent     { return *any(e).(*MouseMotionEvent) }
+func (e *Event) Keyboard() KeyboardEvent           { return *any(e).(*KeyboardEvent) }
+func (e *Event) TextInput() TextInputEvent         { return *any(e).(*TextInputEvent) }
+func (e *Event) TextEditing() TextEditingEvent     { return *any(e).(*TextEditingEvent) }
+func (e *Event) GamepadButton() GamepadButtonEvent { return *any(e).(*GamepadButtonEvent) }
+func (e *Event) GamepadDevice() GamepadDeviceEvent { return *any(e).(*GamepadDeviceEvent) }
 
 type QuitEvent struct {
 	/**< SDL_EVENT_QUIT */
@@ -111,6 +95,24 @@ type TextInputEvent struct {
 	Timestamp time.Duration
 	WindowID  uint32
 	text      *c.ConstChar
+}
+
+type GamepadButtonEvent struct {
+	Type      EventType /**< SDL_EVENT_GAMEPAD_BUTTON_DOWN or SDL_EVENT_GAMEPAD_BUTTON_UP */
+	reserved  uint32
+	Timestamp time.Duration /**< In nanoseconds, populated using SDL_GetTicksNS() */
+	Which     uint32        /**< The joystick instance id */
+	Button    uint8         /**< The gamepad button (SDL_GamepadButton) */
+	Down      bool          /**< true if the button is pressed */
+	padding1  byte
+	padding2  byte
+}
+
+type GamepadDeviceEvent struct {
+	Type      EventType
+	reserved  uint32
+	Timestamp time.Duration
+	Which     uint32
 }
 
 func (e TextInputEvent) Rune() rune {

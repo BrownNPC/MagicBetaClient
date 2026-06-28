@@ -137,3 +137,22 @@ type AudioStream struct{}
 
 //so:extern SDL_Storage
 type Storage struct{}
+
+//so:extern SDL_Gamepad
+type Gamepad struct{}
+
+//so:extern SDL_Window
+type Window struct{}
+
+//so:extern SDL_Renderer
+type Renderer struct{}
+//so:extern SDL_Surface
+type Surface struct {
+	w, h   int
+	pixels *uint8
+	pitch  int
+}
+// IOStream implements io.ReadWriteCloser
+//
+//so:extern SDL_IOStream
+type IOStream struct{}

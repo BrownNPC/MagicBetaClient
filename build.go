@@ -34,12 +34,8 @@ func RunCmakeForTarget(target string) bool {
 
 func main() {
 	flag.Parse()
-	if *Bootstrap != "none" {
-		Command("rm", "-fr", BuildDir)
-	} else {
-		Command("rm", "-fr", TranspileDir)
-		Command("mkdir", "-p", TranspileDir)
-	}
+	Command("rm", "-fr", TranspileDir)
+	Command("mkdir", "-p", TranspileDir)
 	if !Command("so", "translate", "-o", TranspileDir, "src") {
 		return
 	}

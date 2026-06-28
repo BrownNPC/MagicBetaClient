@@ -142,6 +142,36 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
 			Released: key.Type == sdl.EVENT_KEY_UP,
 		}
+	case sdl.EVENT_GAMEPAD_ADDED:
+		added := e.GamepadDevice()
+		sdl.OpenGamepad(added.Which)
+
+	case sdl.EVENT_GAMEPAD_BUTTON_UP, sdl.EVENT_GAMEPAD_BUTTON_DOWN:
+		typ := game.InputNone
+		btn := e.GamepadButton()
+		switch btn.Button {
+		case sdl.GAMEPAD_BUTTON_DPAD_LEFT:
+			typ = game.InputLeft
+		case sdl.GAMEPAD_BUTTON_DPAD_RIGHT:
+			typ = game.InputRight
+		case sdl.GAMEPAD_BUTTON_DPAD_UP:
+			typ = game.InputUp
+		case sdl.GAMEPAD_BUTTON_DPAD_DOWN:
+			typ = game.InputDown
+		case sdl.GAMEPAD_BUTTON_SOUTH:
+			if state.game.InteractingWithUI {
+				typ = game.InputReturn
+			}
+		}
+		if state.game.InteractingWithUI {
+			state.game.UIDpadMode = true
+		} else {
+			state.game.UIDpadMode = true
+		}
+		state.game.Inputs[typ] = game.Input{
+			Pressed:  btn.Type == sdl.EVENT_GAMEPAD_BUTTON_DOWN,
+			Released: btn.Type == sdl.EVENT_GAMEPAD_BUTTON_UP,
+		}
 	}
 
 	return sdl.APP_CONTINUE
