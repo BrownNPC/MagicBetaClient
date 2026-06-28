@@ -1,4 +1,4 @@
 build/
-_build/
+_build*
 cmd/sobind
 ./lib/libGL.so.1
