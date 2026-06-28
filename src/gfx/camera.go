@@ -23,10 +23,10 @@ func (camera *Camera) GetRight() Vector3 {
 }
 
 // MoveForward - Moves the camera in its forward direction
-func (camera *Camera) MoveForward(distance float32, moveInWorldPlane uint8) {
+func (camera *Camera) MoveForward(distance float32, moveInWorldPlane bool) {
 	forward := camera.GetForward()
 
-	if moveInWorldPlane != 0 {
+	if moveInWorldPlane {
 		// Project vector onto world plane
 		forward.Y = float32(0)
 		forward = Vector3Normalize(forward)
@@ -53,10 +53,10 @@ func (camera *Camera) MoveUp(distance float32) {
 }
 
 // MoveRight - Moves the camera target in its current right direction
-func (camera *Camera) MoveRight(distance float32, moveInWorldPlane uint8) {
+func (camera *Camera) MoveRight(distance float32, moveInWorldPlane bool) {
 	right := camera.GetRight()
 
-	if moveInWorldPlane != 0 {
+	if moveInWorldPlane {
 		// Project vector onto world plane
 		right.Y = float32(0)
 		right = Vector3Normalize(right)
@@ -91,7 +91,7 @@ func (camera *Camera) MoveToTarget(delta float32) {
 // Yaw is "looking left and right"
 // If rotateAroundTarget is false, the camera rotates around its position
 // Note: angle must be provided in radians
-func (camera *Camera) Yaw(angle float32, rotateAroundTarget uint8) {
+func (camera *Camera) Yaw(angle float32, rotateAroundTarget bool) {
 	// Rotation axis
 	var up = camera.GetUp()
 
@@ -101,7 +101,7 @@ func (camera *Camera) Yaw(angle float32, rotateAroundTarget uint8) {
 	// Rotate view vector around up axis
 	targetPosition = Vector3RotateByAxisAngle(targetPosition, up, angle)
 
-	if rotateAroundTarget != 0 {
+	if rotateAroundTarget {
 		// Move position relative to target
 		camera.Position = Vector3Subtract(camera.Target, targetPosition)
 	} else {
@@ -116,14 +116,14 @@ func (camera *Camera) Yaw(angle float32, rotateAroundTarget uint8) {
 //   - rotateUp rotates the up direction as well (typically only useful in CAMERA_FREE)
 //
 // NOTE: angle must be provided in radians
-func (camera *Camera) Pitch(angle float32, lockView uint8, rotateAroundTarget uint8, rotateUp uint8) {
+func (camera *Camera) Pitch(angle float32, lockView bool, rotateAroundTarget bool, rotateUp bool) {
 	// Up direction
 	var up = camera.GetUp()
 
 	// View vector
 	var targetPosition = Vector3Subtract(camera.Target, camera.Position)
 
-	if lockView != 0 {
+	if lockView {
 		// In these camera modes we clamp the Pitch angle
 		// to allow only viewing straight up or down.
 
@@ -149,7 +149,7 @@ func (camera *Camera) Pitch(angle float32, lockView uint8, rotateAroundTarget ui
 	// Rotate view vector around right axis
 	targetPosition = Vector3RotateByAxisAngle(targetPosition, right, angle)
 
-	if rotateAroundTarget != 0 {
+	if rotateAroundTarget {
 		// Move position relative to target
 		camera.Position = Vector3Subtract(camera.Target, targetPosition)
 	} else {
@@ -157,7 +157,7 @@ func (camera *Camera) Pitch(angle float32, lockView uint8, rotateAroundTarget ui
 		camera.Target = Vector3Add(camera.Position, targetPosition)
 	}
 
-	if rotateUp != 0 {
+	if rotateUp {
 		// Rotate up direction around right axis
 		camera.Up = Vector3RotateByAxisAngle(camera.Up, right, angle)
 	}
@@ -185,20 +185,20 @@ func (camera *Camera) ProjectionMatrix(aspect float32) Matrix {
 }
 
 // Update - Update camera movement, movement/rotation values should be provided by user
+// Required values
+// movement.X - Move forward/backward
+// movement.Y - Move right/left
+// movement.Z - Move up/down
+// rotation.X - yaw
+// rotation.Y - pitch
+// rotation.Z - roll
+// zoom - Move towards target
 func (camera *Camera) Update(movement Vector3, rotation Vector3, zoom float32) {
-	// Required values
-	// movement.X - Move forward/backward
-	// movement.Y - Move right/left
-	// movement.Z - Move up/down
-	// rotation.X - yaw
-	// rotation.Y - pitch
-	// rotation.Z - roll
-	// zoom - Move towards target
 
-	lockView := uint8(1)
-	rotateAroundTarget := uint8(0)
-	rotateUp := uint8(0)
-	moveInWorldPlane := uint8(1)
+	lockView := true
+	rotateAroundTarget := false
+	rotateUp := false
+	moveInWorldPlane := true
 
 	// Camera rotation
 	camera.Pitch(-rotation.Y*(Pi/180.0), lockView, rotateAroundTarget, rotateUp)

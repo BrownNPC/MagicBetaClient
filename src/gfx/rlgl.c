@@ -4,5 +4,4 @@
 #define PLATFORM_PSP
 #define GRAPHICS_API_OPENGL_11
 #endif
-// #define GRAPHICS_API_OPENGL_11
 #include "rlgl-master.h"

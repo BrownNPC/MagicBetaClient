@@ -6,14 +6,14 @@ import (
 	"solod.dev/so/time"
 )
 
-func TextField(Text string, placeholder string, bbox gfx.Rectangle, Enabled bool) {
+func TextField(Text string, placeholder string, bbox gfx.Rectangle, Hovered, Enabled bool) {
 	runes := []rune(Text)
 	// blink every second
 	blink := (time.Now().Second())%2 == 0
 
 	const borderSize = 2
 	border := bbox.Grow(borderSize)
-	if Enabled {
+	if Hovered || Enabled {
 		gfx.DrawRectangle(border, gfx.White)
 	} else {
 		gfx.DrawRectangle(border, gfx.Gray)

@@ -52,6 +52,7 @@ func AppIterate(appState any) sdl.AppResult {
 
 	now := time.Now()
 	// Update/render
+	state.game.InteractingWithUI = false // reset before frame
 	if !state.game.Update() {
 		return sdl.APP_SUCCESS
 	}
@@ -92,21 +93,22 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		// store the input
 		state.game.Inputs[typ] =
 			game.Input{
-				Type:      typ,
 				Direction: state.game.CursorDelta.Normalize(),
 			}
 
 	case sdl.EVENT_MOUSE_BUTTON_UP, sdl.EVENT_MOUSE_BUTTON_DOWN:
 		m := e.MouseButton()
-		typ := game.InputLeftClick
+		typ := game.InputTap
 		switch m.Button {
 		case sdl.BUTTON_LEFT:
-			typ = game.InputLeftClick
+			typ = game.InputTap
+			if m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN && state.game.InteractingWithUI {
+				state.game.UIDpadMode = false
+			}
 		case sdl.BUTTON_RIGHT:
 			typ = game.InputRightClick
 		}
 		state.game.Inputs[typ] = game.Input{
-			Type:     typ,
 			Pressed:  m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN,
 			Released: m.Type == sdl.EVENT_MOUSE_BUTTON_UP,
 		}
@@ -115,26 +117,30 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		t := e.TextInput()
 		typ := game.InputTextInput
 		state.game.Inputs[typ] = game.Input{
-			Type:    typ,
 			Text:    t.Rune(),
 			Pressed: true,
 		}
 
 	case sdl.EVENT_KEY_DOWN, sdl.EVENT_KEY_UP:
 		key := e.Keyboard()
-		if key.Key == sdl.KeyESCAPE {
-			state.game.Inputs[game.InputClose] = game.Input{
-				Type:     game.InputClose,
-				Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
-				Released: key.Type == sdl.EVENT_KEY_UP,
+		typ := game.InputNone
+		switch key.Key {
+		case sdl.KeyESCAPE:
+			typ = game.InputClose
+		case sdl.KeyBACKSPACE:
+			typ = game.InputBackspace
+		case sdl.KeyRIGHT, sdl.KeyLEFT, sdl.KeyDOWN, sdl.KeyUP:
+			if state.game.InteractingWithUI {
+				state.game.UIDpadMode = true
 			}
+			typ = (game.InputRight) + game.InputType(sdl.KeyRIGHT-key.Key)
+		case sdl.KeyRETURN:
+			typ = game.InputReturn
 		}
-		if key.Key == sdl.KeyBACKSPACE {
-			state.game.Inputs[game.InputBackspace] = game.Input{
-				Type:     game.InputClose,
-				Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
-				Released: key.Type == sdl.EVENT_KEY_UP,
-			}
+
+		state.game.Inputs[typ] = game.Input{
+			Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
+			Released: key.Type == sdl.EVENT_KEY_UP,
 		}
 	}
 

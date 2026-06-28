@@ -12,7 +12,8 @@ import (
 	"solod.dev/so/strings"
 )
 
-func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
+func (s *State) Screen_MenuMain(state *ScreenMainMenuState, screen gfx.Rectangle) {
+	s.InteractingWithUI = true
 	// draw background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	// Draw dirt background
@@ -25,7 +26,6 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 	menuScreen := gfx.Rectangle{H: gui.Base.W * .75, W: 200}.
 		Scale(gui.Scale).
 		Anchor(screen, .5, .1)
-
 	// Draw Minecraft logo
 	logo := gui.MinecraftLogoSize.
 		Scale(gui.Scale).
@@ -36,11 +36,21 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 	)
 
 	// Draw buttons
-	const Nbuttons = 3
-	ButtonTitles := [Nbuttons]string{
+	ButtonTitles := [...]string{
 		"Join Server",
 		"Texture Packs",
 		"Options",
+	}
+	var NInteractables = len(ButtonTitles)
+	if s.UIDpadMode && (s.Inputs[InputDown].Released || s.Inputs[InputRight].Released) {
+		state.selected = min(state.selected+1, NInteractables-1)
+		s.PlaySoundEffect(assets.Newsound_step_stone3)
+		s.TextInputActive = false // Stop typing if focus moves
+	}
+	if s.UIDpadMode && (s.Inputs[InputUp].Released || s.Inputs[InputLeft].Released) {
+		state.selected = max(state.selected-1, 0)
+		s.PlaySoundEffect(assets.Newsound_step_stone3)
+		s.TextInputActive = false // Stop typing if focus moves
 	}
 
 	buttonSet := gfx.Rectangle{W: gui.ButtonSize.W, H: (gui.ButtonSize.H + 2) * 4}.
@@ -48,13 +58,19 @@ func (s *State) Screen_MenuMain(screen gfx.Rectangle) {
 		Anchor(menuScreen, .5, .70)
 	btn := gui.ButtonSize.Scale(gui.Scale).
 		Anchor(buttonSet, .5, 0)
-	for i := range Nbuttons {
+	for i := range len(ButtonTitles) {
 		if i != 0 {
 			btn.Y += btn.H
 			btn.Y += 2 * gui.Scale //padding
 		}
 		hovered := btn.Contains(s.Cursor)
-		if hovered && s.Inputs[InputLeftClick].Released {
+		clicked := s.Inputs[InputTap].Released
+		if s.UIDpadMode {
+			hovered = state.selected == i
+			clicked = s.Inputs[InputReturn].Released
+		}
+		// selected :=
+		if hovered && clicked {
 			s.CurrentScreeen = SCREEN_MENU_MAIN + i + 1 // Switch screen
 			s.PlaySoundEffect(assets.Newsound_random_click)
 		}

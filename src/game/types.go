@@ -77,7 +77,6 @@ const (
 
 type InputType uint32
 type Input struct {
-	Type      InputType
 	Pressed   bool
 	Released  bool
 	Text      rune // for text input
@@ -86,8 +85,16 @@ type Input struct {
 
 const (
 	InputNone InputType = iota
-	InputLeftClick
+	InputTap
+	InputReturn //enter, or X on controller
 	InputRightClick
+
+	// arrow keys or dpad
+	InputUp
+	InputDown
+	InputLeft
+	InputRight
+
 	InputBackspace
 	InputClose
 	InputLook
@@ -101,10 +108,15 @@ const (
 // without having to track if a song is already playing.
 const RollMusicEvery = time.Minute * 5
 
+type ScreenMainMenuState struct {
+	selected int
+}
 type ScreenSelectServerState struct {
+	selected  int
 	PageIndex int //page number
 }
 type ScreenJoinServerState struct {
+	selected         int
 	HaveInitialized  bool
 	ShouldTransition bool
 	switchToScreen   int
@@ -135,6 +147,56 @@ type ScreenConnectServerState struct {
 	serverbound_login    mc.ServerboundLogin
 	clientbound_login    mc.ClientboundLogin
 }
+type Kind int
+type Thing struct {
+	Kind     Kind
+	Pos      gfx.Vector3
+	Rotation gfx.Vector3
+}
+type ThingRef struct {
+	idx, gen uint
+}
+
+var NilRef = ThingRef{}
+
+const MAX_THINGS = 4096
+
+const (
+	KindNull Kind = iota
+)
+
+type ThingPool struct {
+	Things [MAX_THINGS]Thing
+	gen    [MAX_THINGS]uint
+	used   [MAX_THINGS]bool
+}
+
+func (things *ThingPool) New(kind Kind) ThingRef {
+	for i := uint(1); i < MAX_THINGS; i++ {
+		if !things.used[i] {
+			things.Things[i] = Thing{}
+			things.Things[i].Kind = kind
+			things.used[i] = true
+			return ThingRef{idx: i, gen: things.gen[i]}
+		}
+	}
+	return NilRef
+}
+func (things *ThingPool) Get(ref ThingRef) *Thing {
+	if things.gen[ref.idx] != ref.gen {
+		return &things.Things[0]
+	}
+	return &things.Things[ref.idx]
+}
+func (things *ThingPool) Delete(ref ThingRef) {
+	if ref.gen == things.gen[ref.idx] {
+		things.used[ref.idx] = false
+		things.gen[ref.idx] += 1
+	}
+}
+
+type ScreenInGameState struct {
+}
 
 // Max number of sound effects that can be loaded at a time.
 const MaxAudioLoaded = 20
@@ -151,6 +213,10 @@ type State struct {
 	TextInputActive           bool // whether text input should be enabled.
 	TargetFPS                 int
 	Config                    cfg.Config
+
+	// Moving with dpad
+	InteractingWithUI bool // is interacting with UI
+	UIDpadMode bool
 
 	Pack gfx.TexturePack
 
@@ -176,6 +242,7 @@ type State struct {
 	TracksPool [10]*mix.Track
 
 	SelectedServer           uint // index into Config.Servers
+	ScreenMainMenuState      ScreenMainMenuState
 	ScreenSelectServerState  ScreenSelectServerState
 	ScreenJoinServerState    ScreenJoinServerState
 	ScreenConnectServerState ScreenConnectServerState

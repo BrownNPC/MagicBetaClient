@@ -38,6 +38,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		conn, err := net.Dial(srv.Host)
 		if err != nil {
 			state.Text = err.Error()
+			state.stage = -1
 		} else {
 			s.Conn = conn
 			s.__arenaForServerbound = mem.NewArena(s.__bufioWriterBuffer[:])
@@ -53,6 +54,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	}
 
 	switch state.stage {
+	case -1:
 	case 0:
 		// C -> S pre login
 		state.Text = "Authenticating"
@@ -135,7 +137,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	bbox = bbox.Anchor(screen, .5, .5)
 	bbox.Y += bbox.H
 	bbox.Y += 4 * gui.Scale
-	clicked := s.Inputs[InputLeftClick].Released
+	clicked := s.Inputs[InputTap].Released
 	hovered := bbox.Contains(s.Cursor)
 	if clicked && hovered {
 		state.ShouldTransision = true

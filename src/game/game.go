@@ -66,7 +66,7 @@ func (s *State) Update() bool {
 	gfx.ClearBackground(gfx.Black)
 	switch s.CurrentScreeen {
 	case SCREEN_MENU_MAIN:
-		s.Screen_MenuMain(screen)
+		s.Screen_MenuMain(&s.ScreenMainMenuState,screen)
 	case SCREEN_MENU_SELECT_SERVER:
 		s.Screen_SelectServer(&s.ScreenSelectServerState, screen)
 	case SCREEN_JOIN_SERVER:

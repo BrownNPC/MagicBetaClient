@@ -11,6 +11,7 @@ import (
 )
 
 func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.Rectangle) {
+	s.InteractingWithUI=true
 	// draw background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	// Draw dirt background
@@ -23,6 +24,17 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 	if s.Inputs[InputClose].Pressed {
 		s.CurrentScreeen = SCREEN_MENU_MAIN
 		return
+	}
+	const NInteractables = 5 + 2 + 1
+	if s.UIDpadMode && (s.Inputs[InputDown].Released || s.Inputs[InputRight].Released) {
+		state.selected = min(state.selected+1, NInteractables-1)
+		s.PlaySoundEffect(assets.Newsound_step_stone3)
+		s.TextInputActive = false // Stop typing if focus moves
+	}
+	if s.UIDpadMode && (s.Inputs[InputUp].Released || s.Inputs[InputLeft].Released) {
+		state.selected = max(state.selected-1, 0)
+		s.PlaySoundEffect(assets.Newsound_step_stone3)
+		s.TextInputActive = false // Stop typing if focus moves
 	}
 
 	list := gfx.Rectangle{
@@ -51,6 +63,11 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		}
 
 		hovered := btn.Contains(s.Cursor)
+		clicked := s.Inputs[InputTap].Released
+		if s.UIDpadMode {
+			hovered = state.selected == i
+			clicked = s.Inputs[InputReturn].Released
+		}
 		if idx >= len(s.Config.Servers) {
 			panic("screen_join_server: how is this possible?")
 		}
@@ -62,7 +79,6 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		} else {
 			gui.Button(srv.Host, btn, hovered, true)
 		}
-		clicked := s.Inputs[InputLeftClick].Released
 		if clicked && hovered {
 			s.PlaySoundEffect(assets.Newsound_random_click)
 			s.SelectedServer = uint(idx)
@@ -99,36 +115,49 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		false, false,
 	)
 	{ // previous button click
-		contains := prevBtn.Contains(s.Cursor)
+		hovered := prevBtn.Contains(s.Cursor)
+		clicked := s.Inputs[InputTap].Released
 		enabled := state.PageIndex != 0
-		clicked := s.Inputs[InputLeftClick].Released
-		if enabled && contains && clicked {
+		if s.UIDpadMode {
+			hovered = state.selected == 5
+			clicked = s.Inputs[InputReturn].Released
+		}
+
+		if enabled && hovered && clicked {
 			state.PageIndex = max(state.PageIndex-1, 0)
 			s.PlaySoundEffect(assets.Newsound_random_click)
 		}
-		gui.Button("Prev", prevBtn, contains, enabled)
+		gui.Button("Prev", prevBtn, hovered, enabled)
 	}
 	{ // next button click
-		contains := nextBtn.Contains(s.Cursor)
+		hovered := nextBtn.Contains(s.Cursor)
+		clicked := s.Inputs[InputTap].Released
+		if s.UIDpadMode {
+			hovered = state.selected == 6
+			clicked = s.Inputs[InputReturn].Released
+		}
 		enabled := state.PageIndex != maxPage
-		clicked := s.Inputs[InputLeftClick].Released
-		if enabled && contains && clicked {
+		if enabled && hovered && clicked {
 			state.PageIndex = min(state.PageIndex+1, maxPage)
 			s.PlaySoundEffect(assets.Newsound_random_click)
 		}
-		gui.Button("Next", nextBtn, contains, enabled)
+		gui.Button("Next", nextBtn, hovered, enabled)
 	}
 	backButton := gui.ButtonSize.Scale(gui.Scale)
 	backButton.X = btn.X
 	backButton.Y = nextBtn.Y + nextBtn.H
 
 	backButton.Y += nextBtn.H
-	contains := backButton.Contains(s.Cursor)
-	clicked := s.Inputs[InputLeftClick].Released
-	if contains && clicked {
+	hovered := backButton.Contains(s.Cursor)
+	clicked := s.Inputs[InputTap].Released
+	if s.UIDpadMode {
+		hovered = state.selected == 7
+		clicked = s.Inputs[InputReturn].Released
+	}
+	if hovered && clicked {
 		s.CurrentScreeen = SCREEN_MENU_MAIN
 		s.PlaySoundEffect(assets.Newsound_random_click)
 		return
 	}
-	gui.Button("Back", backButton, contains, true)
+	gui.Button("Back", backButton, hovered, true)
 }
