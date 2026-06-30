@@ -11,7 +11,7 @@ import (
 )
 
 func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.Rectangle) {
-	s.InteractingWithUI=true
+	s.InteractingWithUI = true
 	// draw background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	// Draw dirt background
@@ -23,7 +23,6 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 	// go to main menu if close input
 	if s.Inputs[InputClose].Pressed {
 		s.CurrentScreeen = SCREEN_MENU_MAIN
-		return
 	}
 	const NInteractables = 5 + 2 + 1
 	if s.UIDpadMode && (s.Inputs[InputDown].Pressed || s.Inputs[InputRight].Pressed) {
@@ -73,7 +72,6 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		}
 		// Set selected server
 		srv := s.Config.Servers[idx]
-
 		if s.Config.Servers[idx].Host == "" {
 			gui.Button("[EMPTY]", btn, hovered, true)
 		} else {
@@ -83,7 +81,6 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 			s.PlaySoundEffect(assets.Newsound_random_click)
 			s.SelectedServer = uint(idx)
 			s.CurrentScreeen = SCREEN_JOIN_SERVER
-			return
 		}
 	}
 
