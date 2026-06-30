@@ -11,22 +11,29 @@ import (
 var TranspileDir = File("./_build/transpiled/")
 var BuildDir = File("./_build/")
 
-var Bootstrap = flag.String("bootstrap", "none", " -bootstrap=<psp,native>")
+var Target = flag.String("target", "none", " -target=<psp,psp-vendored,native,native-vendored>")
 
 func RunCmakeForTarget(target string) bool {
 	switch target {
 	case "psp":
 		BuildDir = "./_build-psp"
 		return Command("psp-cmake",
-			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=ON", "-DUSE_GL4ES=OFF",
+			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=ON",
+			"-B", BuildDir, "-G", "Ninja")
+	case "psp-vendored":
+		BuildDir = "./_build-psp-vendored"
+		return Command("psp-cmake",
+			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON",
 			"-B", BuildDir, "-G", "Ninja")
 	case "native":
+		BuildDir = "./_build-native"
 		return Command("cmake",
-			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF", "-DUSE_GL4ES=OFF",
+			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF",
 			"-B", BuildDir, "-G", "Ninja")
 	case "native-vendored":
+		BuildDir = "./_build-native-vendored"
 		return Command("cmake",
-			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON", "-DUSE_GL4ES=OFF",
+			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON",
 			"-B", BuildDir, "-G", "Ninja")
 	}
 	return false
@@ -39,7 +46,7 @@ func main() {
 	if !Command("so", "translate", "-o", TranspileDir, "src") {
 		return
 	}
-	RunCmakeForTarget(*Bootstrap)
+	RunCmakeForTarget(*Target)
 	Command("cmake", "--build", BuildDir, "--parallel")
 }
 

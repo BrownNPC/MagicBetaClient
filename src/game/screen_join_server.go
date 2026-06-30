@@ -50,12 +50,12 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 
 	// Dpad Navigation (0: Hostname, 1: Cmd, 2: Connect, 3: Back)
 	const NInteractables = 3
-	if s.UIDpadMode && (s.Inputs[InputDown].Released || s.Inputs[InputRight].Released) {
+	if s.UIDpadMode && (s.Inputs[InputDown].Pressed || s.Inputs[InputRight].Pressed) {
 		state.selected = min(state.selected+1, NInteractables-1)
 		s.PlaySoundEffect(assets.Newsound_step_stone3)
 		s.TextInputActive = false // Stop typing if focus moves
 	}
-	if s.UIDpadMode && (s.Inputs[InputUp].Released || s.Inputs[InputLeft].Released) {
+	if s.UIDpadMode && (s.Inputs[InputUp].Pressed || s.Inputs[InputLeft].Pressed) {
 		state.selected = max(state.selected-1, 0)
 		s.PlaySoundEffect(assets.Newsound_step_stone3)
 		s.TextInputActive = false // Stop typing if focus moves
