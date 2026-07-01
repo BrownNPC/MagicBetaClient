@@ -80,6 +80,8 @@ func (s *State) Update() bool {
 		s.CurrentScreeen = SCREEN_MENU_MAIN
 	case SCREEN_CONNECT_SERVER:
 		s.Screen_ConnectServer(&s.ScreenConnectServerState, screen)
+	case SCREEN_INGAME:
+		s.Screen_InGame(&s.ScreenInGameState, screen)
 	}
 	gfx.EndDrawing()
 

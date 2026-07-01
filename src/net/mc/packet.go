@@ -31,7 +31,7 @@ type String16Reader struct {
 	length    int
 	lenReader net.SteppedReader16
 
-	runeReader net.SteppedReader16
+	ucs2Reader net.SteppedReader16
 
 	runesIndex int
 	Runes      []rune
@@ -94,8 +94,10 @@ func (p *ClientboundLogin) Step(r io.Reader) (bool, error) {
 		}
 		p.Dimension = p.dimension.Buf[0]
 		p.step++ //step
+	case 4:
+		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 type ServerboundLogin struct {
@@ -128,7 +130,7 @@ type ClientboundPreLogin struct {
 
 func (p *ClientboundPreLogin) Step(a mem.Allocator, rd io.Reader) (bool, error) {
 	if ok, err := p.connectionHash.Step(a, rd); !ok {
-		return false, err
+		return ok, err
 	}
 	p.ConnectionHash = p.connectionHash.Runes
 	return true, nil
@@ -649,7 +651,7 @@ type ClientboundSpawnPainting struct {
 	EntityID int32
 	Title    String16
 
-titleReader String16Reader
+	titleReader String16Reader
 	entityID    net.SteppedReader32
 }
 
@@ -667,7 +669,7 @@ func (p *ClientboundSpawnPainting) Step(a mem.Allocator, rd io.Reader) (bool, er
 
 // Clientbound: Entity Velocity (0x1C)
 type ClientboundEntityVelocity struct {
-	EntityID int32
+	EntityID   int32
 	XV, YV, ZV int16
 
 	entityID net.SteppedReader32
@@ -744,7 +746,7 @@ func (p *ClientboundEntityPosition) Step(rd io.Reader) (bool, error) {
 
 // Clientbound: Entity Rotation (0x20)
 type ClientboundEntityRotation struct {
-	EntityID int32
+	EntityID   int32
 	Yaw, Pitch byte
 
 	entityID net.SteppedReader32
@@ -770,8 +772,8 @@ func (p *ClientboundEntityRotation) Step(rd io.Reader) (bool, error) {
 
 // Clientbound: Entity Position and Rotation (0x21)
 type ClientboundEntityPositionAndRotation struct {
-	EntityID int32
-	X, Y, Z  float32
+	EntityID   int32
+	X, Y, Z    float32
 	Yaw, Pitch byte
 
 	entityID net.SteppedReader32
@@ -812,8 +814,8 @@ func (p *ClientboundEntityPositionAndRotation) Step(rd io.Reader) (bool, error) 
 
 // Clientbound: Teleport Entity (0x22)
 type ClientboundTeleportEntity struct {
-	EntityID int32
-	X, Y, Z  int32
+	EntityID   int32
+	X, Y, Z    int32
 	Yaw, Pitch byte
 
 	entityID net.SteppedReader32
@@ -938,17 +940,17 @@ func (p *ClientboundSetChunkVisibility) Step(rd io.Reader) (bool, error) {
 
 // Clientbound: Set Block (0x35)
 type ClientboundSetBlock struct {
-	X int32
-	Y int16
-	Z int32
-	Type byte
+	X        int32
+	Y        int16
+	Z        int32
+	Type     byte
 	Metadata byte
 
-	x net.SteppedReader32
-	y net.SteppedReader16
-	z net.SteppedReader32
+	x     net.SteppedReader32
+	y     net.SteppedReader16
+	z     net.SteppedReader32
 	typeR net.SteppedReader
-	meta net.SteppedReader
+	meta  net.SteppedReader
 }
 
 func (p *ClientboundSetBlock) Step(rd io.Reader) (bool, error) {
@@ -1017,16 +1019,16 @@ func (p *ClientboundBlockEvent) Step(rd io.Reader) (bool, error) {
 // Clientbound: World Event (0x3D)
 type ClientboundWorldEvent struct {
 	EffectID int32
-	X int32
-	Y byte
-	Z int32
-	Data int32
+	X        int32
+	Y        byte
+	Z        int32
+	Data     int32
 
 	effectID net.SteppedReader32
-	x net.SteppedReader32
-	y net.SteppedReader
-	z net.SteppedReader32
-	data net.SteppedReader32
+	x        net.SteppedReader32
+	y        net.SteppedReader
+	z        net.SteppedReader32
+	data     net.SteppedReader32
 }
 
 func (p *ClientboundWorldEvent) Step(rd io.Reader) (bool, error) {
@@ -1055,7 +1057,7 @@ func (p *ClientboundWorldEvent) Step(rd io.Reader) (bool, error) {
 
 // Clientbound: Game Event (0x46)
 type ClientboundGameEvent struct {
-	Type byte
+	Type  byte
 	typeR net.SteppedReader
 }
 
@@ -1069,17 +1071,17 @@ func (p *ClientboundGameEvent) Step(rd io.Reader) (bool, error) {
 
 // Clientbound: Lightning Bolt (0x47)
 type ClientboundLightningBolt struct {
-	EntityID int32
+	EntityID   int32
 	EntityType byte
-	X int32
-	Y int32
-	Z int32
+	X          int32
+	Y          int32
+	Z          int32
 
-	entityID net.SteppedReader32
+	entityID   net.SteppedReader32
 	entityType net.SteppedReader
-	x net.SteppedReader32
-	y net.SteppedReader32
-	z net.SteppedReader32
+	x          net.SteppedReader32
+	y          net.SteppedReader32
+	z          net.SteppedReader32
 }
 
 func (p *ClientboundLightningBolt) Step(rd io.Reader) (bool, error) {

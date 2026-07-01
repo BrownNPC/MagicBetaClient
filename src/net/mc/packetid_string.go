@@ -1,5 +1,9 @@
 package mc
 
+import (
+	"solod.dev/so/fmt"
+)
+
 var packetIDStrings = [256]string{
 	0x00: "KeepAlive",
 	0x01: "Login",
@@ -60,11 +64,14 @@ var packetIDStrings = [256]string{
 	0xFF: "Disconnect",
 }
 
+var __PacketIDStringbuf [50]byte
+
 func PacketIDString(p PacketID) string {
 	if int(p) < len(packetIDStrings) {
 		if s := packetIDStrings[p]; s != "" {
 			return s
 		}
 	}
-	return "PacketID(unknown)"
+	buf := fmt.BufferFrom(__PacketIDStringbuf[:])
+	return fmt.Sprintf(buf, "PacketID(%d)", p)
 }

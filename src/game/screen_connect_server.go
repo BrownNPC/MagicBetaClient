@@ -80,9 +80,14 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		if ok {
 			ok, err := state.clientbound_prelogin.Step(&state.Arena, &s.ClientBound)
 			if ok {
-				state.stage++
-				state.Text = "Logging in"
-				state.packetID.Reset()
+				if state.clientbound_prelogin.ConnectionHash[0] != '-' {
+					state.Text = "Only offline mode servers are supported"
+					state.stage = -1
+				} else {
+					state.stage++
+					state.Text = "Logging in"
+					state.packetID.Reset()
+				}
 			}
 			if err != nil {
 				state.Text = err.Error()
@@ -120,6 +125,9 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		}
 	case 4:
 		state.Text = "Connected"
+		// dont do the "Sould Transition" thing yet.
+		s.CurrentScreeen = SCREEN_INGAME
+		return
 	}
 
 	// Drawing code

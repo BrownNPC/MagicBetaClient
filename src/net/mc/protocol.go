@@ -3,8 +3,8 @@ package mc
 import (
 	"solod.dev/so/encoding/binary"
 	"solod.dev/so/io"
-	"solod.dev/so/mem"
 	"solod.dev/so/math"
+	"solod.dev/so/mem"
 )
 
 // -------------------- BYTE --------------------
@@ -123,8 +123,10 @@ func (r *String8Reader) Step(a mem.Allocator, rd io.Reader) (bool, error) {
 			r.bytesIndex++
 		}
 		r.step++ //step
+	case 2:
+		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 // -------------------- STRING16 (UCS-2 / UTF-16 subset) --------------------
@@ -149,20 +151,22 @@ func (r *String16Reader) Step(a mem.Allocator, rd io.Reader) (bool, error) {
 
 		r.step++ //step
 	case 1:
-		for r.runesIndex < r.length {
-			if ok, err := r.runeReader.Step(rd); !ok {
+		for !(r.runesIndex >= r.length) {
+			if ok, err := r.ucs2Reader.Step(rd); !ok {
 				return ok, err
 			}
 
-			v := binary.BigEndian.Uint16(r.runeReader.Buf[:])
-			r.runeReader.Reset()
-
+			v := binary.BigEndian.Uint16(r.ucs2Reader.Buf[:])
 			r.Runes[r.runesIndex] = rune(v)
 			r.runesIndex++
+			r.ucs2Reader.Reset()
 		}
-		r.step++ //step
+		r.step++ // Move to finished state
+		return true, nil
+	case 2:
+		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 func WriteString16(w io.Writer, s String16) error {

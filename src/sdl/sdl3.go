@@ -38,6 +38,9 @@ func Delay(t time.Duration)
 //so:decay
 func getError() *c.ConstChar
 
+//so:extern SDL_assert
+func Assert(cond bool)
+
 type sdlError struct{ str *c.ConstChar }
 
 func (e *sdlError) Error() string { return c.String(e.str) }
@@ -60,7 +63,6 @@ func GLGetProcAddress(proc string) any
 //so:extern SDL_GL_SwapWindow
 func GLSwapWindow(*Window)
 
-
 func (s Surface) Width() int     { return s.w }
 func (s Surface) Height() int    { return s.h }
 func (s Surface) Pitch() int     { return s.pitch }
@@ -74,7 +76,6 @@ func DestroySurface(*Surface)
 
 //so:extern SDL_ConvertSurface
 func ConvertSurface(src *Surface, format PixelFormat) *Surface
-
 
 func (ctx *IOStream) Read(b []byte) (int, error) {
 	if len(b) == 0 {

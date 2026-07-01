@@ -10,6 +10,7 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/bufio"
+	"solod.dev/so/fmt"
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
@@ -73,6 +74,7 @@ const (
 	// Inside of SCREEN_MENU_SELECT_SERVER
 	SCREEN_JOIN_SERVER
 	SCREEN_CONNECT_SERVER
+	SCREEN_INGAME
 )
 
 type InputType uint32
@@ -196,6 +198,12 @@ func (things *ThingPool) Delete(ref ThingRef) {
 }
 
 type ScreenInGameState struct {
+	Initialized  bool
+	Disconnected bool
+
+	__ErrorMessageBufMemory [100]byte
+	ErrMsgBuf               fmt.Buffer
+	ErrorMessage            string
 }
 
 // Max number of sound effects that can be loaded at a time.
@@ -216,7 +224,7 @@ type State struct {
 
 	// Moving with dpad
 	InteractingWithUI bool // is interacting with UI
-	UIDpadMode bool
+	UIDpadMode        bool
 
 	Pack gfx.TexturePack
 
@@ -246,6 +254,7 @@ type State struct {
 	ScreenSelectServerState  ScreenSelectServerState
 	ScreenJoinServerState    ScreenJoinServerState
 	ScreenConnectServerState ScreenConnectServerState
+	ScreenInGameState        ScreenInGameState
 
 	// SHOULD NOT BE USED FOR READ/WRITE DIRECTLY
 	Conn net.Conn

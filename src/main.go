@@ -7,6 +7,7 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/c"
+	"solod.dev/so/fmt"
 	"solod.dev/so/time"
 )
 
@@ -125,6 +126,8 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		key := e.Keyboard()
 		typ := game.InputNone
 		switch key.Key {
+		case sdl.KeyF3:
+			fmt.Printf("CurrentScreen=%d", state.game.CurrentScreeen)
 		case sdl.KeyESCAPE:
 			typ = game.InputClose
 		case sdl.KeyBACKSPACE:
