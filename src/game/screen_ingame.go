@@ -12,11 +12,6 @@ import (
 	"solod.dev/so/mem"
 )
 
-func (state *ScreenInGameState) OnSetSpawnPosition(data mc.Decoder) {
-	pkt := data.(*mc.ClientboundSetSpawnPosition)
-	state.SpawnPosition = gfx.NewVector3(float32(pkt.X), float32(pkt.Y), float32(pkt.Z))
-}
-
 func (state *ScreenInGameState) Init(s *State) {
 	state.Cam = gfx.Camera{
 		Position: gfx.Vector3{Y: 2},
@@ -42,6 +37,8 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 	switch id {
 	case mc.PKT_SetSpawnPosition:
 		state.OnSetSpawnPosition(data)
+	case mc.PKT_SetTime:
+		state.OnSetTime(data)
 	default:
 		state.DecodeState = DECODE_HANDLING
 		sdl.Log("No handler registered for %s", mc.PacketIDString(state.PacketID))

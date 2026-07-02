@@ -250,22 +250,25 @@ type ScreenInGameState struct {
 
 	Things ThingPool
 
+	// game state
 	Cam gfx.Camera
 	// Player spawn position
 	SpawnPosition gfx.Vector3
+	Time          int64 // game time in ticks.
 
+	// Networking related fields
 	__PacketDecodeArenaMemory [100 * 1024]byte
 	PacketDecodeArena         mem.Arena
+
+	PacketID    mc.PacketID
+	DecodeState DecodeState
+	Decoder     mc.Decoder
+	// will be used when https://github.com/solod-dev/solod/issues/83 is fixed
+	PacketHandlers [mc.MAX_PACKETS]PacketHandler
 
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.
 	PersistentArena mem.Arena
-
-	PacketID       mc.PacketID
-	DecodeState    DecodeState
-	Decoder        mc.Decoder
-	// will be used when https://github.com/solod-dev/solod/issues/83 is fixed
-	PacketHandlers [mc.MAX_PACKETS]PacketHandler
 }
 
 // Max number of sound effects that can be loaded at a time.

@@ -1196,6 +1196,8 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 	switch packetID {
 	case PKT_SetSpawnPosition:
 		return mem.Alloc[ClientboundSetSpawnPosition](a)
+	case PKT_SetTime:
+		return mem.Alloc[ClientboundSetTime](a)
 	}
 	return nil
 }
