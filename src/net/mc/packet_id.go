@@ -2,6 +2,7 @@ package mc
 
 type PacketID = byte
 
+const MAX_PACKETS = 255
 const (
 	PKT_KeepAlive                         PacketID = 0x00
 	PKT_Login                             PacketID = 0x01

@@ -10,7 +10,6 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/bufio"
-	"solod.dev/so/fmt"
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
@@ -233,17 +232,40 @@ func (things *ThingPool) Iter() ThingsIter {
 	return ThingsIter{p: things}
 }
 
+// PacketHandler is called whenever a new packet arrives
+type PacketHandler func(data mc.Decoder)
+type DecodeState int
+
+const (
+	DECODE_WAITING DecodeState = iota
+	DECODE_DECODING
+	DECODE_HANDLING
+)
+
 type ScreenInGameState struct {
 	Initialized  bool
 	Disconnected bool
 
-	__ErrorMessageBufMemory [100]byte
-	ErrMsgBuf               fmt.Buffer
-	ErrorMessage            string
+	Error error
 
 	Things ThingPool
 
 	Cam gfx.Camera
+	// Player spawn position
+	SpawnPosition gfx.Vector3
+
+	__PacketDecodeArenaMemory [100 * 1024]byte
+	PacketDecodeArena         mem.Arena
+
+	__PersistentMemory [2 * 1024 * 1024]byte
+	// PersistentArena lives for as long as the user is on this screen.
+	PersistentArena mem.Arena
+
+	PacketID       mc.PacketID
+	DecodeState    DecodeState
+	Decoder        mc.Decoder
+	// will be used when https://github.com/solod-dev/solod/issues/83 is fixed
+	PacketHandlers [mc.MAX_PACKETS]PacketHandler
 }
 
 // Max number of sound effects that can be loaded at a time.
