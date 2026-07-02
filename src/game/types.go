@@ -168,33 +168,69 @@ const (
 )
 
 type ThingPool struct {
+	// Index 0 is a nil Thing
 	Things [MAX_THINGS]Thing
 	gen    [MAX_THINGS]uint
 	used   [MAX_THINGS]bool
+
+	FreeListMemory [MAX_THINGS]uint
+	FreeListCursor uint
+	FreeListLen    int
+	SlotsUsed      uint
 }
 
 func (things *ThingPool) New(kind Kind) ThingRef {
-	for i := uint(1); i < MAX_THINGS; i++ {
-		if !things.used[i] {
-			things.Things[i] = Thing{}
-			things.Things[i].Kind = kind
-			things.used[i] = true
-			return ThingRef{idx: i, gen: things.gen[i]}
-		}
+	var i uint = 0
+	if things.FreeListLen > 0 {
+		things.FreeListCursor--
+		things.FreeListLen--
+		i = things.FreeListMemory[things.FreeListCursor]
+	} else {
+		i = things.SlotsUsed + 1
 	}
-	return NilRef
-}
-func (things *ThingPool) Get(ref ThingRef) *Thing {
-	if things.gen[ref.idx] != ref.gen {
-		return &things.Things[0]
-	}
-	return &things.Things[ref.idx]
+	things.Things[i] = Thing{}
+	things.Things[i].Kind = kind
+	things.used[i] = true
+	things.SlotsUsed++
+	return ThingRef{idx: i, gen: things.gen[i]}
 }
 func (things *ThingPool) Delete(ref ThingRef) {
 	if ref.gen == things.gen[ref.idx] {
 		things.used[ref.idx] = false
 		things.gen[ref.idx] += 1
+		things.SlotsUsed--
+		things.FreeListMemory[things.FreeListCursor] = ref.idx
+		things.FreeListCursor++
+		things.FreeListLen++
 	}
+}
+
+type ThingsIter struct {
+	p   *ThingPool
+	idx uint
+}
+
+func (it *ThingsIter) Thing() *Thing {
+	return &it.p.Things[it.idx]
+}
+func (it *ThingsIter) Ref() ThingRef {
+	return ThingRef{idx: it.idx, gen: it.p.gen[it.idx]}
+}
+
+func (it *ThingsIter) Next() bool {
+	it.idx++
+	// Find the next valid item
+	for it.idx < MAX_THINGS {
+		if it.p.used[it.idx] {
+			return true
+		}
+		it.idx++
+	}
+	return false
+}
+
+func (things *ThingPool) Iter() ThingsIter {
+	return ThingsIter{p: things}
 }
 
 type ScreenInGameState struct {
@@ -204,6 +240,10 @@ type ScreenInGameState struct {
 	__ErrorMessageBufMemory [100]byte
 	ErrMsgBuf               fmt.Buffer
 	ErrorMessage            string
+
+	Things ThingPool
+
+	Cam gfx.Camera
 }
 
 // Max number of sound effects that can be loaded at a time.

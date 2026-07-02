@@ -73,5 +73,5 @@ func PacketIDString(p PacketID) string {
 		}
 	}
 	buf := fmt.BufferFrom(__PacketIDStringbuf[:])
-	return fmt.Sprintf(buf, "PacketID(%d)", p)
+	return fmt.Sprintf(buf, "PacketID(0x%X)", p)
 }

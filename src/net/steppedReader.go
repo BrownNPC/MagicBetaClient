@@ -98,6 +98,8 @@ type SteppedReader64 struct {
 	n   int
 }
 
+func (s SteppedReader64) N() int { return s.n }
+
 // Will read sizeof(T) bytes.
 // Step is a no-op if the reading has completed.
 func (r *SteppedReader64) Step(rd io.Reader) (bool, error) {

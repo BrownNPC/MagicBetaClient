@@ -51,6 +51,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	if s.Inputs[InputClose].Pressed {
 		state.ShouldTransision = true
 		state.TransisionTo = SCREEN_JOIN_SERVER
+		return
 	}
 
 	switch state.stage {
@@ -95,7 +96,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		}
 	case 2:
 		// C -> S login
-		s.ServerBound.WriteByte(byte(mc.PKT_Login))
+		s.ServerBound.WriteByte(mc.PKT_Login)
 		// prep payload
 		state.serverbound_login.ProtocolVersion = 14
 		state.serverbound_login.Username = []rune("magicbeta")
@@ -115,18 +116,20 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 			state.Text = err.Error()
 		}
 		if ok {
-			ok, err = state.packetID.Step(&s.ClientBound)
-			if err != nil {
-				state.Text = err.Error()
-			} else {
+			ok, err = state.clientbound_login.Step(&s.ClientBound)
+			if ok {
 				state.stage++
 				state.packetID.Reset()
+			}
+			if err != nil {
+				state.Text = err.Error()
 			}
 		}
 	case 4:
 		state.Text = "Connected"
 		// dont do the "Sould Transition" thing yet.
-		s.CurrentScreeen = SCREEN_INGAME
+		state.ShouldTransision = true
+		state.TransisionTo = SCREEN_INGAME
 		return
 	}
 
@@ -151,6 +154,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		state.ShouldTransision = true
 		state.TransisionTo = SCREEN_MENU_SELECT_SERVER
 		s.PlaySoundEffect(assets.Newsound_random_click)
+		return
 	}
 	gui.Button("Back", bbox, hovered, true)
 }

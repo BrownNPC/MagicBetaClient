@@ -58,13 +58,14 @@ type ClientboundLogin struct {
 	entityID net.SteppedReader32
 	EntityID int32
 
-	unused net.SteppedReader16 // unused string16
+	Unused String16
+	unused String16Reader // unused string16
 
 	WorldSeed int64
 	worldSeed net.SteppedReader64
 
 	Dimension uint8
-	dimension net.SteppedReader64
+	dimension net.SteppedReader
 
 	step int
 }
@@ -76,11 +77,12 @@ func (p *ClientboundLogin) Step(r io.Reader) (bool, error) {
 			return false, err
 		}
 		p.EntityID = int32(binary.BigEndian.Uint32(p.entityID.Buf[:]))
-		p.step++ //step
+		p.step = 1 //step
 	case 1:
-		if ok, err := p.unused.Step(r); !ok {
+		if ok, err := p.unused.Step(mem.NoAlloc, r); !ok {
 			return false, err
 		}
+		p.Unused = p.unused.Runes
 		p.step++ //step
 	case 2:
 		if ok, err := p.worldSeed.Step(r); !ok {

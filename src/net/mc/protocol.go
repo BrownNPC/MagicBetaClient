@@ -175,7 +175,7 @@ func WriteString16(w io.Writer, s String16) error {
 	}
 	runes := []rune(s)
 
-	if err := WriteShort(w, int16(len(runes))); err != nil {
+	if err := WriteUnsignedShort(w, uint16(len(runes))); err != nil {
 		return err
 	}
 
