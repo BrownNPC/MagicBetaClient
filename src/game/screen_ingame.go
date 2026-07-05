@@ -40,7 +40,6 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 	case mc.PKT_SetTime:
 		state.OnSetTime(data)
 	default:
-		state.DecodeState = DECODE_HANDLING
 		sdl.Log("No handler registered for %s", mc.PacketIDString(state.PacketID))
 		return
 	}

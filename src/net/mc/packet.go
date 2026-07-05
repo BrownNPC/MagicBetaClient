@@ -3,6 +3,7 @@ package mc
 import (
 	"mbc/net"
 
+	"solod.dev/so/c"
 	"solod.dev/so/encoding/binary"
 	"solod.dev/so/io"
 	"solod.dev/so/math"
@@ -44,6 +45,12 @@ type String16Reader struct {
 	Runes      []rune
 }
 
+// Reset makes the String16Reader reusable.
+// It does not de-allocate memory, or override existing memory.
+func (s *String16Reader) Reset() {
+	*s = c.Zero[String16Reader]()
+}
+
 // https://pixelbrush.dev/beta-wiki/networking/packets/000-keep-alive
 type PacketKeepAlive struct {
 	// no body
@@ -78,35 +85,23 @@ type ClientboundLogin struct {
 }
 
 func (p *ClientboundLogin) Step(r io.Reader) (bool, error) {
-	switch p.step {
-	case 0:
-		if ok, err := p.entityID.Step(r); !ok {
-			return false, err
-		}
-		p.EntityID = int32(binary.BigEndian.Uint32(p.entityID.Buf[:]))
-		p.step = 1 //step
-	case 1:
-		if ok, err := p.unused.Step(mem.NoAlloc, r); !ok {
-			return false, err
-		}
-		p.Unused = p.unused.Runes
-		p.step++ //step
-	case 2:
-		if ok, err := p.worldSeed.Step(r); !ok {
-			return false, err
-		}
-		p.WorldSeed = int64(binary.BigEndian.Uint64(p.worldSeed.Buf[:]))
-		p.step++ //step
-	case 3:
-		if ok, err := p.dimension.Step(r); !ok {
-			return false, err
-		}
-		p.Dimension = p.dimension.Buf[0]
-		p.step++ //step
-	case 4:
-		return true, nil
+	if ok, err := p.entityID.Step(r); !ok {
+		return false, err
 	}
-	return false, nil
+	p.EntityID = int32(binary.BigEndian.Uint32(p.entityID.Buf[:]))
+	if ok, err := p.unused.Step(mem.NoAlloc, r); !ok {
+		return false, err
+	}
+	p.Unused = p.unused.Runes
+	if ok, err := p.worldSeed.Step(r); !ok {
+		return false, err
+	}
+	p.WorldSeed = int64(binary.BigEndian.Uint64(p.worldSeed.Buf[:]))
+	if ok, err := p.dimension.Step(r); !ok {
+		return false, err
+	}
+	p.Dimension = p.dimension.Buf[0]
+	return true, nil
 }
 
 type ServerboundLogin struct {
@@ -194,41 +189,28 @@ type ClientboundSetEquipment struct {
 
 	ItemMetadata int16
 	itemMetadata net.SteppedReader16
-
-	step int
 }
 
 func (p *ClientboundSetEquipment) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
-	switch p.step {
-	case 0:
-		if ok, err := p.entityID.Step(rd); !ok {
-			return false, err
-		}
-		p.EntityID = int32(binary.BigEndian.Uint32(p.entityID.Buf[:]))
-		p.step++
-
-	case 1:
-		if ok, err := p.inventorySlot.Step(rd); !ok {
-			return false, err
-		}
-		p.InventorySlot = int16(binary.BigEndian.Uint16(p.inventorySlot.Buf[:]))
-		p.step++
-
-	case 2:
-		if ok, err := p.itemID.Step(rd); !ok {
-			return false, err
-		}
-		p.ItemID = int16(binary.BigEndian.Uint16(p.itemID.Buf[:]))
-		p.step++
-
-	case 3:
-		if ok, err := p.itemMetadata.Step(rd); !ok {
-			return false, err
-		}
-		p.ItemMetadata = int16(binary.BigEndian.Uint16(p.itemMetadata.Buf[:]))
-		p.step++
+	if ok, err := p.entityID.Step(rd); !ok {
+		return false, err
 	}
+	p.EntityID = int32(binary.BigEndian.Uint32(p.entityID.Buf[:]))
 
+	if ok, err := p.inventorySlot.Step(rd); !ok {
+		return false, err
+	}
+	p.InventorySlot = int16(binary.BigEndian.Uint16(p.inventorySlot.Buf[:]))
+
+	if ok, err := p.itemID.Step(rd); !ok {
+		return false, err
+	}
+	p.ItemID = int16(binary.BigEndian.Uint16(p.itemID.Buf[:]))
+
+	if ok, err := p.itemMetadata.Step(rd); !ok {
+		return false, err
+	}
+	p.ItemMetadata = int16(binary.BigEndian.Uint16(p.itemMetadata.Buf[:]))
 	return true, nil
 }
 

@@ -1,6 +1,7 @@
 package mc
 
 type EntityType = uint8
+type ObjectType = uint8
 
 const (
 	// Mobs: https://pixelbrush.dev/beta-wiki/entities/mobs
@@ -18,16 +19,18 @@ const (
 	MOB_Chicken      EntityType = 93
 	MOB_Squid        EntityType = 94
 	MOB_Wolf         EntityType = 95
+)
+const (
 	// Objects: https://pixelbrush.dev/beta-wiki/entities/objects
-	OBJECT_Boat            EntityType = 1
-	OBJECT_Minecart        EntityType = 10
-	OBJECT_StorageMinecart EntityType = 11
-	OBJECT_FurnaceMinecart EntityType = 12
-	OBJECT_LitTNT          EntityType = 50
-	OBJECT_Arrow           EntityType = 60
-	OBJECT_ThrownSnowball  EntityType = 61
-	OBJECT_ThrownEgg       EntityType = 62
-	OBJECT_FallingSand     EntityType = 70
-	OBJECT_FallingGravel   EntityType = 71
-	OBJECT_FishingBobber   EntityType = 90
+	OBJECT_Boat            ObjectType = 1
+	OBJECT_Minecart        ObjectType = 10
+	OBJECT_StorageMinecart ObjectType = 11
+	OBJECT_FurnaceMinecart ObjectType = 12
+	OBJECT_LitTNT          ObjectType = 50
+	OBJECT_Arrow           ObjectType = 60
+	OBJECT_ThrownSnowball  ObjectType = 61
+	OBJECT_ThrownEgg       ObjectType = 62
+	OBJECT_FallingSand     ObjectType = 70
+	OBJECT_FallingGravel   ObjectType = 71
+	OBJECT_FishingBobber   ObjectType = 90
 )
