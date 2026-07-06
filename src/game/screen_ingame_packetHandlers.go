@@ -3,6 +3,7 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/net/mc"
+	"mbc/sdl"
 )
 
 func (state *ScreenInGameState) OnSetSpawnPosition(data mc.Decoder) {
@@ -12,4 +13,23 @@ func (state *ScreenInGameState) OnSetSpawnPosition(data mc.Decoder) {
 func (state *ScreenInGameState) OnSetTime(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSetTime)
 	state.Time = pkt.Time
+}
+func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
+	pkt := data.(*mc.ClientBoundSpawnMob)
+	_ = pkt // nothing for now.
+}
+
+// register packet handlers here
+func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.Decoder) {
+	switch id {
+	case mc.PKT_SetSpawnPosition:
+		state.OnSetSpawnPosition(data)
+	case mc.PKT_SetTime:
+		state.OnSetTime(data)
+	case mc.PKT_SpawnMob:
+		state.OnSpawnMob(data)
+	default:
+		sdl.Log("No handler registered for %s", mc.PacketIDString(state.PacketID))
+		return
+	}
 }

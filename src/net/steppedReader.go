@@ -1,11 +1,7 @@
 package net
 
 import (
-	"mbc/net"
-
 	"solod.dev/so/io"
-	"solod.dev/so/mem"
-	"solod.dev/so/slices"
 )
 
 // A reader that reads in steps

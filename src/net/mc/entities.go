@@ -1,24 +1,24 @@
 package mc
 
-type EntityType = uint8
+type MobType = uint8
 type ObjectType = uint8
 
 const (
 	// Mobs: https://pixelbrush.dev/beta-wiki/entities/mobs
-	MOB_Creeper      EntityType = 50
-	MOB_Skeleton     EntityType = 51
-	MOB_Spider       EntityType = 52
-	MOB_GiantZombie  EntityType = 53
-	MOB_Zombie       EntityType = 54
-	MOB_Slime        EntityType = 55
-	MOB_Ghast        EntityType = 56
-	MOB_ZombiePigman EntityType = 57
-	MOB_Pig          EntityType = 90
-	MOB_Sheep        EntityType = 91
-	MOB_Cow          EntityType = 92
-	MOB_Chicken      EntityType = 93
-	MOB_Squid        EntityType = 94
-	MOB_Wolf         EntityType = 95
+	MOB_Creeper      MobType = 50
+	MOB_Skeleton     MobType = 51
+	MOB_Spider       MobType = 52
+	MOB_GiantZombie  MobType = 53
+	MOB_Zombie       MobType = 54
+	MOB_Slime        MobType = 55
+	MOB_Ghast        MobType = 56
+	MOB_ZombiePigman MobType = 57
+	MOB_Pig          MobType = 90
+	MOB_Sheep        MobType = 91
+	MOB_Cow          MobType = 92
+	MOB_Chicken      MobType = 93
+	MOB_Squid        MobType = 94
+	MOB_Wolf         MobType = 95
 )
 const (
 	// Objects: https://pixelbrush.dev/beta-wiki/entities/objects

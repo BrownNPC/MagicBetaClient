@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-var TranspileDir = File("./_build/transpiled/")
+var TranspileDir = File("./transpiled/")
 var BuildDir = File("./_build/")
 
 var Target = flag.String("target", "none", " -target=<psp,psp-vendored,native,native-vendored>")

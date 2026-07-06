@@ -27,6 +27,31 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		gfx.White.Tint(gfx.Black, 75),
 	)
 
+	// Drawing code
+
+	// draw status text
+	fnt := gui.ActivePack.Font()
+	runes := []rune(state.Text)
+	size := fnt.TextSize(runes).Scale(gui.Scale)
+	bbox := gfx.Rectangle{W: size.X, H: size.Y}.
+		Anchor(screen, .5, .5)
+	fnt.DrawRunes(runes, bbox.Position(), gui.Scale, 0, gfx.White, false)
+	// draw back button
+	bbox.W = gui.ButtonSize.W * gui.Scale
+	bbox.H = gui.ButtonSize.H * gui.Scale
+	bbox = bbox.Anchor(screen, .5, .5)
+	bbox.Y += bbox.H
+	bbox.Y += 4 * gui.Scale
+	clicked := s.Inputs[InputTap].Released
+	hovered := bbox.Contains(s.Cursor)
+	if clicked && hovered {
+		state.ShouldTransision = true
+		state.TransisionTo = SCREEN_MENU_SELECT_SERVER
+		s.PlaySoundEffect(assets.Newsound_random_click)
+		return
+	}
+	gui.Button("Back", bbox, hovered, true)
+
 	// Update logic code
 
 	// get selected server from config file
@@ -35,6 +60,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	if !state.Dialed {
 		state.Arena = mem.NewArena(state.__ArenaBuf[:])
 		state.Dialed = true
+		// blocks
 		conn, err := net.Dial(srv.Host)
 		if err != nil {
 			state.Text = err.Error()
@@ -116,7 +142,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 			state.Text = err.Error()
 		}
 		if ok {
-			ok, err = state.clientbound_login.Step(&s.ClientBound)
+			ok, err = state.clientbound_login.Step(nil, &s.ClientBound)
 			if ok {
 				state.stage++
 				state.packetID.Reset()
@@ -132,32 +158,5 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		state.TransisionTo = SCREEN_INGAME
 		return
 	}
-
-	// Drawing code
-
-	// draw status text
-	fnt := gui.ActivePack.Font()
-	runes := []rune(state.Text)
-	size := fnt.TextSize(runes).Scale(gui.Scale)
-	bbox := gfx.Rectangle{W: size.X, H: size.Y}.
-		Anchor(screen, .5, .5)
-	fnt.DrawRunes(runes, bbox.Position(), gui.Scale, 0, gfx.White, false)
-	// draw back button
-	bbox.W = gui.ButtonSize.W * gui.Scale
-	bbox.H = gui.ButtonSize.H * gui.Scale
-	bbox = bbox.Anchor(screen, .5, .5)
-	bbox.Y += bbox.H
-	bbox.Y += 4 * gui.Scale
-	clicked := s.Inputs[InputTap].Released
-	hovered := bbox.Contains(s.Cursor)
-	if clicked && hovered {
-		state.ShouldTransision = true
-		state.TransisionTo = SCREEN_MENU_SELECT_SERVER
-		s.PlaySoundEffect(assets.Newsound_random_click)
-		return
-	}
-	gui.Button("Back", bbox, hovered, true)
-}
-func (state *ScreenConnectServerState) ReadPacketID() {
 
 }

@@ -40,7 +40,7 @@ set(SDLMIXER_VENDORED ON)   # tell SDL_mixer to build its own dependencies
 # endif()
 
 # add sources
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS _build/transpiled/*.c src/*.c)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ./transpiled/*.c src/*.c)
 if(ANDROID)
   add_library(${PROJECT_NAME} SHARED ${SOURCES}) # android needs shared library.
   set_target_properties(MagicBetaClient PROPERTIES OUTPUT_NAME main)
@@ -48,7 +48,7 @@ else()
   add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
 
-target_include_directories(${PROJECT_NAME} PUBLIC _build/transpiled src/ vendored/)
+target_include_directories(${PROJECT_NAME} PUBLIC ./transpiled src/ vendored/)
 
 #pretend to be OpenBSD for PSP
 if (PSP)

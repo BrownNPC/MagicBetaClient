@@ -147,12 +147,13 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 		if s.UIDpadMode {
 			hovered = (state.selected == 2)
 		}
-		if hovered && clicked {
+		enabled := state.TextFields[1].String() != ""
+		if hovered && clicked && enabled {
 			s.PlaySoundEffect(assets.Newsound_random_click)
 			state.ShouldTransition = true
 			state.switchToScreen = SCREEN_CONNECT_SERVER
 		}
-		gui.Button("Connect", connectButton, hovered, state.TextFields[1].String() != "")
+		gui.Button("Connect", connectButton, hovered, enabled)
 	}
 
 	// Back button

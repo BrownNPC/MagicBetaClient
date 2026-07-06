@@ -234,13 +234,6 @@ func (things *ThingPool) Iter() ThingsIter {
 
 // PacketHandler is called whenever a new packet arrives
 type PacketHandler func(data mc.Decoder)
-type DecodeState int
-
-const (
-	DECODE_WAITING DecodeState = iota
-	DECODE_DECODING
-	DECODE_HANDLING
-)
 
 type ScreenInGameState struct {
 	Initialized  bool
@@ -261,10 +254,8 @@ type ScreenInGameState struct {
 	PacketDecodeArena         mem.Arena
 
 	PacketID    mc.PacketID
-	DecodeState DecodeState
+	DecodeState int // used in DecodePackets()
 	Decoder     mc.Decoder
-	// will be used when https://github.com/solod-dev/solod/issues/83 is fixed
-	PacketHandlers [mc.MAX_PACKETS]PacketHandler
 
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.

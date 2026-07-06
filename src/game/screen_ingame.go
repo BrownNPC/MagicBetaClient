@@ -21,29 +21,6 @@ func (state *ScreenInGameState) Init(s *State) {
 	}
 	state.PacketDecodeArena = mem.NewArena(state.__PacketDecodeArenaMemory[:])
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
-
-	// register packet handlers
-	// use this code when https://github.com/solod-dev/solod/issues/83 is fixed
-	// state.PacketHandlers[mc.PKT_SetSpawnPosition] = state.OnSetSpawnPosition
-}
-func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.Decoder) {
-	// use this code when https://github.com/solod-dev/solod/issues/83 is fixed
-	// if handler := state.PacketHandlers[state.PacketID]; handler != nil {
-	// 	handler(state.Decoder)
-	// 	state.DecodeState = DECODE_WAITING
-	// } else {
-	// 	sdl.Log("No handler registered for %s", mc.PacketIDString(state.PacketID))
-	// }
-	switch id {
-	case mc.PKT_SetSpawnPosition:
-		state.OnSetSpawnPosition(data)
-	case mc.PKT_SetTime:
-		state.OnSetTime(data)
-	default:
-		sdl.Log("No handler registered for %s", mc.PacketIDString(state.PacketID))
-		return
-	}
-	state.DecodeState = DECODE_WAITING
 }
 func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	if !state.Initialized {
@@ -61,20 +38,31 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	}
 }
 func (state *ScreenInGameState) DecodePackets(s *State) error {
+	const (
+		WAITING_PACKET = iota
+		DECODING_PACKET
+		HANDLING_PACKET
+	)
 	switch state.DecodeState {
-	case DECODE_WAITING:
+	case WAITING_PACKET:
 		id, err := s.ClientBound.ReadByte()
 		if err != nil {
 			return err
 		}
+		if id == 0 {
+			// The vanilla server does not send them.
+			sdl.Log("Keep alive packet detected. Is the stream corrupted?")
+			return nil
+		}
+		// Got a real packet.
 		state.PacketID = id
 		state.PacketDecodeArena.Reset()
 		state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, id)
 		if state.Decoder == nil {
 			return NoDecoderForPacketErr
 		}
-		state.DecodeState = DECODE_DECODING
-	case DECODE_DECODING:
+		state.DecodeState = DECODING_PACKET
+	case DECODING_PACKET:
 		if state.Decoder == nil {
 			panic("Decoder should not be nil at this stage")
 		}
@@ -83,11 +71,12 @@ func (state *ScreenInGameState) DecodePackets(s *State) error {
 			return err
 		}
 		if ok {
-			state.DecodeState = DECODE_HANDLING
+			state.DecodeState = HANDLING_PACKET
 			return nil
 		}
-	case DECODE_HANDLING:
+	case HANDLING_PACKET:
 		state.dispatchPacketHandler(state.PacketID, state.Decoder)
+		state.DecodeState = WAITING_PACKET
 	}
 	return nil
 }
