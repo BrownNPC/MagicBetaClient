@@ -2,10 +2,9 @@ package net
 
 import (
 	"mbc/net/curl"
-	"mbc/sdl"
+	"unsafe"
 
 	"solod.dev/so/errors"
-	"solod.dev/so/time"
 )
 
 var ErrConnectionClosed = errors.New("Connection closed.")
@@ -14,16 +13,16 @@ var ErrConnectionClosed = errors.New("Connection closed.")
 // Read never blocks.
 func (conn *Conn) Read(b []byte) (int, error) {
 	if conn.closed { // already errored.
-		return 0, ErrConnectionClosed
+		return 0, conn.err
 	}
-
 	if len(b) == 0 {
 		return 0, nil
 	}
-	n, err := curl.ReadFromSocket(conn.sock, &b[0], len(b))
+	n, err := curl.ReadFromSocket(conn.sock, unsafe.SliceData(b), len(b))
 	if err != nil {
 		conn.Close()
-		return 0, ErrConnectionClosed
+		conn.err = err
+		return n, err
 	}
 	if n != 0 {
 		return n, nil
@@ -33,27 +32,15 @@ func (conn *Conn) Read(b []byte) (int, error) {
 
 // Write blocks until all bytes from the buffer have been written.
 func (conn *Conn) Write(b []byte) (int, error) {
-	if conn.closed {
-		return 0, ErrConnectionClosed
+	if conn.closed { // already errored.
+		return 0, conn.err
 	}
 
-	total := 0
-	for total < len(b) {
-		n, err := curl.WriteToSocket(conn.sock, &b[total], len(b)-total)
-		if err != nil {
-			conn.Close()
-			return total, err
-		}
-
-		if n == 0 {
-			sdl.Delay(time.Millisecond)
-			continue
-		}
-
-		total += n
+	n, err := curl.WriteToSocket(conn.sock, &b[0], len(b))
+	if err != nil {
+		conn.Close()
 	}
-
-	return total, nil
+	return n, err
 }
 
 // Free Closes the connection and frees memory.
@@ -68,6 +55,7 @@ func (conn *Conn) Close() {
 // Conn is a TCP client connection.
 type Conn struct {
 	closed bool
+	err    error
 	sock   *curl.CURL
 }
 
@@ -75,7 +63,6 @@ type Conn struct {
 func Dial(host string) (Conn, error) {
 	host = "http://" + host
 	conn := Conn{}
-	var err error
-	conn.sock, err = curl.CreateSocket(host)
-	return conn, err
+	conn.sock, conn.err = curl.CreateSocket(host)
+	return conn, conn.err
 }

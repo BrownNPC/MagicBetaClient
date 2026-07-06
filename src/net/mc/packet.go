@@ -17,7 +17,7 @@ import (
 func UnquantizeAngle(angle byte) float32 { return (float32(int8(angle)) / 255.0) * 360 }
 
 type Decoder interface {
-	Step(a mem.Allocator, rd io.Reader) (bool, error)
+	Step(a mem.Allocator, rd *net.BufferedReader) (bool, error)
 }
 type Encoder interface {
 	Write(io.Writer) error
@@ -166,7 +166,7 @@ func (r *MetadataReader) Parse(e MobType) EntityMetadata {
 
 var IncompleteMetadataErr = errors.New("Tried parsing incomplete metadata")
 
-func (m *MetadataReader) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (m *MetadataReader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	const (
 		READING_HEADER = iota
 		// STANDARD DATATYPES
@@ -337,7 +337,7 @@ type PacketKeepAlive struct {
 }
 
 // Read implements [ClientBoundPacket].
-func (p *PacketKeepAlive) Step(mem.Allocator, io.Reader) (bool, error) {
+func (p *PacketKeepAlive) Step(mem.Allocator, *net.BufferedReader) (bool, error) {
 	return true, nil
 }
 
@@ -363,7 +363,7 @@ type ClientboundLogin struct {
 	step int
 }
 
-func (p *ClientboundLogin) Step(_ mem.Allocator, r io.Reader) (bool, error) {
+func (p *ClientboundLogin) Step(_ mem.Allocator, r *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(r); !ok {
 		return false, err
 	}
@@ -411,7 +411,7 @@ type ClientboundPreLogin struct {
 	connectionHash String16Reader
 }
 
-func (p *ClientboundPreLogin) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundPreLogin) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.connectionHash.Step(a, rd); !ok {
 		return ok, err
 	}
@@ -435,7 +435,7 @@ type PacketChatMessage struct {
 func (p *PacketChatMessage) Write(w io.Writer) error {
 	return WriteString16(w, p.Message)
 }
-func (p *PacketChatMessage) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketChatMessage) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.message.Step(a, rd); !ok {
 		return false, err
 	}
@@ -448,7 +448,7 @@ type ClientboundSetTime struct {
 	time net.SteppedReader64
 }
 
-func (p *ClientboundSetTime) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSetTime) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.time.Step(rd); !ok {
 		return false, err
 	}
@@ -470,7 +470,7 @@ type ClientboundSetEquipment struct {
 	itemMetadata net.SteppedReader16
 }
 
-func (p *ClientboundSetEquipment) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSetEquipment) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -498,7 +498,7 @@ type ClientboundSetSpawnPosition struct {
 	x, y, z net.SteppedReader32
 }
 
-func (p *ClientboundSetSpawnPosition) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSetSpawnPosition) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.x.Step(rd); !ok {
 		return false, err
 	}
@@ -524,7 +524,7 @@ type ClientboundSetHealth struct {
 	health net.SteppedReader16
 }
 
-func (p *ClientboundSetHealth) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSetHealth) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.health.Step(rd); !ok {
 		return false, err
 	}
@@ -537,7 +537,7 @@ type PacketRespawn struct {
 	world net.SteppedReader
 }
 
-func (p *PacketRespawn) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketRespawn) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.world.Step(rd); !ok {
 		return false, err
 	}
@@ -550,7 +550,7 @@ type PacketPlayerMovement struct {
 	onGround net.SteppedReader
 }
 
-func (p *PacketPlayerMovement) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketPlayerMovement) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.onGround.Step(rd); !ok {
 		return false, err
 	}
@@ -565,7 +565,7 @@ type PacketPlayerPosition struct {
 	onGround         net.SteppedReader
 }
 
-func (p *PacketPlayerPosition) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketPlayerPosition) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.x.Step(rd); !ok {
 		return false, err
 	}
@@ -596,7 +596,7 @@ type PacketPlayerRotation struct {
 	onGround   net.SteppedReader
 }
 
-func (p *PacketPlayerRotation) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketPlayerRotation) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.yaw.Step(rd); !ok {
 		return false, err
 	}
@@ -617,7 +617,7 @@ type PacketPlayerPositionAndRotation struct {
 	Rotation PacketPlayerRotation
 }
 
-func (p *PacketPlayerPositionAndRotation) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketPlayerPositionAndRotation) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.Position.Step(nil, rd); !ok {
 		return false, err
 	}
@@ -724,7 +724,7 @@ type ClientboundInteractWithBlock struct {
 	z        net.SteppedReader32
 }
 
-func (p *ClientboundInteractWithBlock) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundInteractWithBlock) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -757,7 +757,7 @@ type PacketAnimation struct {
 	animation net.SteppedReader
 }
 
-func (p *PacketAnimation) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketAnimation) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.playerID.Step(rd); !ok {
 		return false, err
 	}
@@ -802,7 +802,7 @@ type ClientboundSpawnItem struct {
 	roll     net.SteppedReader
 }
 
-func (p *ClientboundSpawnItem) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSpawnItem) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -855,7 +855,7 @@ type ClientboundCollectItem struct {
 	collectorEntityID net.SteppedReader32
 }
 
-func (p *ClientboundCollectItem) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundCollectItem) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.itemEntityID.Step(rd); !ok {
 		return false, err
 	}
@@ -884,7 +884,7 @@ type ClientboundSpawnObject struct {
 	yaw        net.SteppedReader
 }
 
-func (p *ClientboundSpawnObject) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSpawnObject) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -930,7 +930,7 @@ type ClientBoundSpawnMob struct {
 	metadata   MetadataReader
 }
 
-func (p *ClientBoundSpawnMob) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientBoundSpawnMob) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -975,7 +975,7 @@ type ClientboundSpawnPainting struct {
 	entityID    net.SteppedReader32
 }
 
-func (p *ClientboundSpawnPainting) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSpawnPainting) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -989,8 +989,10 @@ func (p *ClientboundSpawnPainting) Step(a mem.Allocator, rd io.Reader) (bool, er
 
 // Clientbound: Entity Velocity (0x1C)
 type ClientboundEntityVelocity struct {
-	EntityID   int32
-	XV, YV, ZV float32
+	EntityID int32
+	// The sent values are first clamped to +/-3.9 in any direction,
+	// then multiplied by 8000 before being sent out as a short. The client undoes this multiplication.
+	XV, YV, ZV int16
 
 	entityID net.SteppedReader32
 	xv       net.SteppedReader16
@@ -998,7 +1000,7 @@ type ClientboundEntityVelocity struct {
 	zv       net.SteppedReader16
 }
 
-func (p *ClientboundEntityVelocity) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundEntityVelocity) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1006,17 +1008,15 @@ func (p *ClientboundEntityVelocity) Step(_ mem.Allocator, rd io.Reader) (bool, e
 	if ok, err := p.xv.Step(rd); !ok {
 		return false, err
 	}
-	// The sent values are first clamped to +/-3.9 in any direction,
-	// then multiplied by 8000 before being sent out as a short. The client undoes this multiplication.
-	p.XV = float32(int16(binary.BigEndian.Uint16(p.xv.Buf[:]))) * 1.0 / 8000
+	p.XV = int16(binary.BigEndian.Uint16(p.xv.Buf[:]))
 	if ok, err := p.yv.Step(rd); !ok {
 		return false, err
 	}
-	p.YV = float32(int16(binary.BigEndian.Uint16(p.yv.Buf[:]))) * 1.0 / 8000
+	p.YV = int16(binary.BigEndian.Uint16(p.yv.Buf[:]))
 	if ok, err := p.zv.Step(rd); !ok {
 		return false, err
 	}
-	p.ZV = float32(int16(binary.BigEndian.Uint16(p.zv.Buf[:]))) * 1.0 / 8000
+	p.ZV = int16(binary.BigEndian.Uint16(p.zv.Buf[:]))
 	return true, nil
 }
 
@@ -1027,7 +1027,7 @@ type ClientboundDespawnEntity struct {
 	entityID net.SteppedReader32
 }
 
-func (p *ClientboundDespawnEntity) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundDespawnEntity) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1046,7 +1046,7 @@ type ClientboundEntityPosition struct {
 	z        net.SteppedReader32
 }
 
-func (p *ClientboundEntityPosition) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundEntityPosition) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1076,7 +1076,7 @@ type ClientboundEntityRotation struct {
 	pitch    net.SteppedReader
 }
 
-func (p *ClientboundEntityRotation) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundEntityRotation) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1106,7 +1106,7 @@ type ClientboundEntityPositionAndRotation struct {
 	pitch    net.SteppedReader
 }
 
-func (p *ClientboundEntityPositionAndRotation) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundEntityPositionAndRotation) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1148,7 +1148,7 @@ type ClientboundTeleportEntity struct {
 	pitch    net.SteppedReader
 }
 
-func (p *ClientboundTeleportEntity) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundTeleportEntity) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1185,7 +1185,7 @@ type ClientboundEntityEvent struct {
 	action   net.SteppedReader
 }
 
-func (p *ClientboundEntityEvent) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundEntityEvent) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1206,7 +1206,7 @@ type ClientboundAddPassenger struct {
 	vehicleID net.SteppedReader32
 }
 
-func (p *ClientboundAddPassenger) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundAddPassenger) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1244,7 +1244,7 @@ type ClientboundSetChunkVisibility struct {
 	l net.SteppedReader
 }
 
-func (p *ClientboundSetChunkVisibility) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSetChunkVisibility) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.x.Step(rd); !ok {
 		return false, err
 	}
@@ -1275,7 +1275,7 @@ type ClientboundSetBlock struct {
 	meta  net.SteppedReader
 }
 
-func (p *ClientboundSetBlock) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundSetBlock) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.x.Step(rd); !ok {
 		return false, err
 	}
@@ -1314,7 +1314,7 @@ type ClientboundBlockEvent struct {
 	b net.SteppedReader
 }
 
-func (p *ClientboundBlockEvent) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundBlockEvent) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.x.Step(rd); !ok {
 		return false, err
 	}
@@ -1353,7 +1353,7 @@ type ClientboundWorldEvent struct {
 	data     net.SteppedReader32
 }
 
-func (p *ClientboundWorldEvent) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundWorldEvent) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.effectID.Step(rd); !ok {
 		return false, err
 	}
@@ -1383,7 +1383,7 @@ type ClientboundGameEvent struct {
 	typeR net.SteppedReader
 }
 
-func (p *ClientboundGameEvent) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundGameEvent) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.typeR.Step(rd); !ok {
 		return false, err
 	}
@@ -1406,7 +1406,7 @@ type ClientboundLightningBolt struct {
 	z          net.SteppedReader32
 }
 
-func (p *ClientboundLightningBolt) Step(_ mem.Allocator, rd io.Reader) (bool, error) {
+func (p *ClientboundLightningBolt) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.entityID.Step(rd); !ok {
 		return false, err
 	}
@@ -1436,7 +1436,7 @@ type PacketDisconnect struct {
 	reason String16Reader
 }
 
-func (p *PacketDisconnect) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (p *PacketDisconnect) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	if ok, err := p.reason.Step(a, rd); !ok {
 		return false, err
 	}
@@ -1515,6 +1515,10 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientBoundSpawnMob](a)
 	case PKT_EntityVelocity:
 		return mem.Alloc[ClientboundEntityVelocity](a)
+	case PKT_SetChunkVisibility:
+		return mem.Alloc[ClientboundSetChunkVisibility](a)
+	case PKT_SpawnItem:
+		return mem.Alloc[ClientboundSpawnItem](a)
 	}
 	return nil
 }

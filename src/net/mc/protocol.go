@@ -1,6 +1,8 @@
 package mc
 
 import (
+	"mbc/net"
+
 	"solod.dev/so/encoding/binary"
 	"solod.dev/so/io"
 	"solod.dev/so/math"
@@ -92,7 +94,7 @@ func WriteString8(w io.Writer, s string) error {
 	return err
 }
 
-func (r *String8Reader) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (r *String8Reader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	switch r.step {
 	case 0:
 		if ok, err := r.lenReader.Step(rd); !ok {
@@ -131,7 +133,7 @@ func (r *String8Reader) Step(a mem.Allocator, rd io.Reader) (bool, error) {
 
 // -------------------- STRING16 (UCS-2 / UTF-16 subset) --------------------
 
-func (r *String16Reader) Step(a mem.Allocator, rd io.Reader) (bool, error) {
+func (r *String16Reader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	switch r.step {
 	case 0:
 		if ok, err := r.lenReader.Step(rd); !ok {

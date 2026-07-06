@@ -12,28 +12,33 @@ var TranspileDir = File("./transpiled/")
 var BuildDir = File("./_build/")
 
 var Target = flag.String("target", "none", " -target=<psp,psp-vendored,native,native-vendored>")
+var Release = flag.Bool("release", false, " --release # builds in release mode (max optimizations)")
 
-func RunCmakeForTarget(target string) bool {
+func RunCmakeForTarget(target string, buildType string) bool {
 	switch target {
 	case "psp":
 		BuildDir = "./_build-psp"
 		return Command("psp-cmake",
 			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=ON",
+			"-DCMAKE_BUILD_TYPE="+buildType,
 			"-B", BuildDir, "-G", "Ninja")
 	case "psp-vendored":
 		BuildDir = "./_build-psp-vendored"
 		return Command("psp-cmake",
 			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON",
+			"-DCMAKE_BUILD_TYPE="+buildType,
 			"-B", BuildDir, "-G", "Ninja")
 	case "native":
 		BuildDir = "./_build-native"
 		return Command("cmake",
 			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF",
+			"-DCMAKE_BUILD_TYPE="+buildType,
 			"-B", BuildDir, "-G", "Ninja")
 	case "native-vendored":
 		BuildDir = "./_build-native-vendored"
 		return Command("cmake",
 			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON",
+			"-DCMAKE_BUILD_TYPE="+buildType,
 			"-B", BuildDir, "-G", "Ninja")
 	}
 	return false
@@ -46,7 +51,11 @@ func main() {
 	if !Command("so", "translate", "-o", TranspileDir, "src") {
 		return
 	}
-	RunCmakeForTarget(*Target)
+	buildType := "Debug"
+	if *Release {
+		buildType = "Release"
+	}
+	RunCmakeForTarget(*Target, buildType)
 	Command("cmake", "--build", BuildDir, "--parallel")
 }
 

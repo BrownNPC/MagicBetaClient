@@ -34,6 +34,7 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	}
 	if state.Error = state.DecodePackets(s); state.Error != nil {
 		state.Disconnected = true
+		sdl.Log("Closing because decode error, state=%d", state.DecodeState)
 		s.Conn.Close()
 	}
 }
@@ -45,9 +46,14 @@ func (state *ScreenInGameState) DecodePackets(s *State) error {
 	)
 	switch state.DecodeState {
 	case WAITING_PACKET:
-		id, err := s.ClientBound.ReadByte()
+		var b = make([]byte, 1)
+		n, err := s.ClientBound.Read(b)
 		if err != nil {
 			return err
+		}
+		var id byte = 0
+		if n == 1 {
+			id = b[0]
 		}
 		if id == 0 {
 			// The vanilla server does not send them.
@@ -57,7 +63,12 @@ func (state *ScreenInGameState) DecodePackets(s *State) error {
 		// Got a real packet.
 		state.PacketID = id
 		state.PacketDecodeArena.Reset()
-		state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, id)
+		if id == mc.PKT_SetChunkVisibility {
+			state.scv = mc.ClientboundSetChunkVisibility{}
+			state.Decoder = &state.scv
+		} else {
+			state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, id)
+		}
 		if state.Decoder == nil {
 			return NoDecoderForPacketErr
 		}
@@ -114,6 +125,7 @@ func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
 	if clicked && hovered {
 		s.PlaySoundEffect(assets.Newsound_random_click)
 		s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
+		s.ScreenConnectServerState = ScreenConnectServerState{}
 		return
 	}
 	gui.Button("Back", bbox, hovered, true)

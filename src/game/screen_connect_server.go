@@ -70,7 +70,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 			s.__arenaForServerbound = mem.NewArena(s.__bufioWriterBuffer[:])
 			s.ServerBound = bufio.NewWriter(&s.__arenaForServerbound, &s.Conn)
 			s.__arenaForClientbound = mem.NewArena(s.__bufioReaderBuffer[:])
-			s.ClientBound = bufio.NewReader(&s.__arenaForClientbound, &s.Conn)
+			s.ClientBound = net.NewBufferedReader(&s.__arenaForClientbound, &s.Conn)
 		}
 	}
 	// go back if back is pressed
@@ -154,8 +154,9 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	case 4:
 		state.Text = "Connected"
 		// dont do the "Sould Transition" thing yet.
-		state.ShouldTransision = true
-		state.TransisionTo = SCREEN_INGAME
+		s.CurrentScreeen = SCREEN_INGAME
+		// state.ShouldTransision = true
+		// state.TransisionTo = SCREEN_INGAME
 		return
 	}
 

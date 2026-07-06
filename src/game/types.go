@@ -10,6 +10,7 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/bufio"
+
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
@@ -256,6 +257,7 @@ type ScreenInGameState struct {
 	PacketID    mc.PacketID
 	DecodeState int // used in DecodePackets()
 	Decoder     mc.Decoder
+	scv         mc.ClientboundSetChunkVisibility
 
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.
@@ -316,9 +318,9 @@ type State struct {
 	Conn net.Conn
 	// Backed by Conn
 	__bufioWriterBuffer   [1024 * 10]byte
-	__bufioReaderBuffer   [1024 * 10]byte
+	__bufioReaderBuffer   [net.DefaultBufSize + 1000]byte
 	__arenaForServerbound mem.Arena
 	__arenaForClientbound mem.Arena
 	ServerBound           bufio.Writer
-	ClientBound           bufio.Reader
+	ClientBound           net.BufferedReader
 }

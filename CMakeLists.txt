@@ -9,9 +9,6 @@ set(CMAKE_C_EXTENSIONS ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Debug)
-
 option(USE_VENDORED_SDL3 "Use vendored SDL3" ON)
 option(USE_VENDORED_MIXER "Use vendored SDL_Mixer" ON)
 
