@@ -3,7 +3,6 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/net/mc"
-	"mbc/sdl"
 )
 
 func (state *ScreenInGameState) OnSetSpawnPosition(data mc.Decoder) {
@@ -28,10 +27,7 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		state.OnSetTime(data)
 	case mc.PKT_SpawnMob:
 		state.OnSpawnMob(data)
-	case mc.PKT_SetChunkVisibility:
-
 	default:
-		sdl.Log("Not handling %s", mc.PacketIDString(state.PacketID))
 		return
 	}
 }

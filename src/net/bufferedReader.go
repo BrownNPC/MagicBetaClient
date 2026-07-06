@@ -4,6 +4,7 @@ package net
 import (
 	"solod.dev/so/errors"
 	"solod.dev/so/io"
+	"solod.dev/so/math"
 	"solod.dev/so/mem"
 )
 
@@ -306,5 +307,21 @@ func (b *BufferedReader) ReadInt64(dst *int64) bool {
 		return false
 	}
 	*dst = int64(v)
+	return true
+}
+func (b *BufferedReader) ReadFloat32(dst *float32) bool {
+	var v uint32
+	if !b.ReadUint32(&v) {
+		return false
+	}
+	*dst = math.Float32frombits(v)
+	return true
+}
+func (b *BufferedReader) ReadFloat64(dst *float64) bool {
+	var v uint64
+	if !b.ReadUint64(&v) {
+		return false
+	}
+	*dst = math.Float64frombits(v)
 	return true
 }
