@@ -82,7 +82,6 @@ func (s *String16Reader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, er
 		if !rd.ReadUint16(&s.len) {
 			return false, rd.Err()
 		}
-		println("Recieved string16 of len=", s.len)
 		s.Runes = slices.MakeCap[rune](a, 0, int(s.len))
 		s.stage++
 	}
@@ -611,6 +610,33 @@ func (p *ClientboundSpawnItem) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 		}
 		p.stage++
 	}
+}
+
+type PacketDisconnect struct {
+	Reason String16
+	s16r   String16Reader
+	stage  int
+}
+
+func (p *PacketDisconnect) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if ok, err := p.s16r.Step(a, rd); !ok {
+				return false, err
+			}
+			p.Reason = p.s16r.Runes
+		case 1:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+func (p *PacketDisconnect) Write(w io.Writer) error {
+	if err := WriteByte(w, PKT_Disconnect); err != nil {
+		return err
+	}
+	return WriteString16(w, p.Reason)
 }
 
 // Returns a decoder for the given packet id. It is the user's job to free the decoder.

@@ -235,9 +235,9 @@ func (things *ThingPool) Iter() ThingsIter {
 type PacketHandler func(data mc.Decoder)
 
 type ScreenInGameState struct {
-	Initialized              bool
-	Disconnected             bool
-	TimeSpentDecodingPackets float32
+	Initialized  bool
+	Disconnected bool
+	NetworkAccumulator time.Duration
 
 	Error error
 
@@ -273,8 +273,11 @@ const CONFIG_FILE_PATH = "config.json"
 
 // Game state
 type State struct {
-	Dt                        float32
-	TargetFrameTime           float32 // set automatically
+	Dt                float32
+	//Dt as time.Duration
+	FrameTime time.Duration
+
+	TargetFrameTime           time.Duration // set automatically
 	TargetFPS                 int
 	ScreenWidth, ScreenHeight float32
 	TextInputActive           bool // whether text input should be enabled.

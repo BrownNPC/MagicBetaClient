@@ -10,6 +10,7 @@ import (
 	"solod.dev/so/errors"
 	"solod.dev/so/fmt"
 	"solod.dev/so/mem"
+	"solod.dev/so/time"
 )
 
 func (state *ScreenInGameState) Init(s *State) {
@@ -32,19 +33,50 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 		state.OnDisconnect(s, screen)
 		return
 	}
-	// spend 30% of frame time decoding packets.
-	for state.TimeSpentDecodingPackets < s.TargetFrameTime*.30 {
-		state.TimeSpentDecodingPackets += s.Dt
-		if state.Error = state.DecodePackets(s); state.Error != nil {
-			state.Disconnected = true
-			sdl.Log("Closing because decode error, state=%d err=%s", state.DecodeState, state.Error.Error())
-			s.Conn.Close()
-			break
+	state.NetworkSystem(s)
+
+}
+func (state *ScreenInGameState) NetworkSystem(s *State) {
+	const TickDuration = time.Millisecond
+
+	state.NetworkAccumulator += s.FrameTime
+
+	for state.NetworkAccumulator >= TickDuration {
+		state.NetworkAccumulator -= TickDuration
+
+		for {
+			ok, err := state.TickPacketDecoder(s)
+			if err != nil {
+				state.Disconnected = true
+				state.Error = err
+				s.Conn.Close()
+				return
+			}
+			if !ok {
+				break
+			}
 		}
 	}
-	state.TimeSpentDecodingPackets = 0
+
+	if err := s.ServerBound.Flush(); err != nil {
+		state.Disconnected = true
+		state.Error = err
+		s.Conn.Close()
+		return
+	}
 }
-func (state *ScreenInGameState) DecodePackets(s *State) error {
+func (state *ScreenInGameState) SendDisconnect(s *State) {
+	dc := mc.PacketDisconnect{
+		Reason: []rune("Client error"),
+	}
+	dc.Write(&s.ServerBound)
+	s.ServerBound.Flush()
+	sdl.Delay(time.Second)
+	s.Conn.Close()
+}
+
+// Tick the packet decoder state machine / coroutine
+func (state *ScreenInGameState) TickPacketDecoder(s *State) (bool, error) {
 	const (
 		WAITING_PACKET = iota
 		DECODING_PACKET
@@ -52,31 +84,26 @@ func (state *ScreenInGameState) DecodePackets(s *State) error {
 	)
 	switch state.DecodeState {
 	case WAITING_PACKET:
-		var b = make([]byte, 1)
-		n, err := s.ClientBound.Read(b)
-		if err != nil {
-			return err
+		ok := s.ClientBound.ReadUint8(&state.PacketID)
+		if !ok {
+			return false, s.ClientBound.Err()
 		}
-		var id byte = 0
-		if n == 1 {
-			id = b[0]
-		}
-		if id == 0 {
+		if state.PacketID == 0 {
 			// The vanilla server does not send them.
 			sdl.Log("Keep alive packet detected. Is the stream corrupted?")
-			return nil
+			return false, nil
 		}
 		// Got a real packet.
-		state.PacketID = id
 		state.PacketDecodeArena.Reset()
-		if id == mc.PKT_SetChunkVisibility {
+		if state.PacketID == mc.PKT_SetChunkVisibility {
 			state.scv = mc.ClientboundSetChunkVisibility{}
 			state.Decoder = &state.scv
 		} else {
-			state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, id)
+			state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, state.PacketID)
 		}
 		if state.Decoder == nil {
-			return NoDecoderForPacketErr
+			state.SendDisconnect(s)
+			return false, NoDecoderForPacketErr
 		}
 		state.DecodeState = DECODING_PACKET
 	case DECODING_PACKET:
@@ -84,21 +111,20 @@ func (state *ScreenInGameState) DecodePackets(s *State) error {
 			panic("Decoder should not be nil at this stage")
 		}
 		ok, err := state.Decoder.Step(&state.PacketDecodeArena, &s.ClientBound)
-		if err != nil {
-			return err
+		if !ok {
+			return false, err
 		}
-		if ok {
-			state.DecodeState = HANDLING_PACKET
-			return nil
-		}
+		state.DecodeState = HANDLING_PACKET
+		return true, nil
 	case HANDLING_PACKET:
 		state.dispatchPacketHandler(state.PacketID, state.Decoder)
 		state.DecodeState = WAITING_PACKET
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
 
-var NoDecoderForPacketErr = errors.New("No handler implemented for packet")
+var NoDecoderForPacketErr = errors.New("No decoder implemented for packet")
 
 // Show disconnected screen.
 func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
@@ -130,8 +156,11 @@ func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
 	hovered := bbox.Contains(s.Cursor)
 	if clicked && hovered {
 		s.PlaySoundEffect(assets.Newsound_random_click)
-		s.CurrentScreeen = SCREEN_MENU_SELECT_SERVER
+		s.CurrentScreeen = SCREEN_CONNECT_SERVER
+		state.Initialized = false
 		s.ScreenConnectServerState = ScreenConnectServerState{}
+		s.ScreenConnectServerState.ShouldTransision = true
+		s.ScreenConnectServerState.TransisionTo = SCREEN_MENU_SELECT_SERVER
 		return
 	}
 	gui.Button("Back", bbox, hovered, true)

@@ -28,6 +28,7 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		state.OnSetTime(data)
 	case mc.PKT_SpawnMob:
 		state.OnSpawnMob(data)
+	// case mc.PKT_SetChunkVisibility:
 	default:
 		sdl.Log("No handler registered for %s", mc.PacketIDString(state.PacketID))
 		return

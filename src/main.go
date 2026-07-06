@@ -61,12 +61,13 @@ func AppIterate(appState any) sdl.AppResult {
 	// Delta time
 	frameTime := now.Sub(state.lastTime)
 	state.game.Dt = float32(frameTime.Seconds())
+	state.game.FrameTime = frameTime
 	state.lastTime = now
 	state.game.Inputs = [game.TotalInputs]game.Input{} // clear inputs after they're used.
 
 	// FPS cap
 	targetFrameTime := time.Second / time.Duration(state.game.TargetFPS)
-	state.game.TargetFrameTime = float32(targetFrameTime.Seconds())
+	state.game.TargetFrameTime = targetFrameTime
 
 	if state.game.TargetFPS != 0 && frameTime < targetFrameTime {
 		timeToSleep := targetFrameTime - frameTime
