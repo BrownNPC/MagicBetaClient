@@ -137,17 +137,15 @@ type ScreenConnectServerState struct {
 	TransisionTo     int
 	Dialed           bool
 	Text             string
+	Err error
 
 	__ArenaBuf [512]byte
 	Arena      mem.Arena
 
-	packetID net.SteppedReader
+	packetID byte
 
-	stage                int
-	serverbound_prelogin mc.ServerboundPreLogin
-	clientbound_prelogin mc.ClientboundPreLogin
-	serverbound_login    mc.ServerboundLogin
-	clientbound_login    mc.ClientboundLogin
+	stage   int
+	Decoder mc.Decoder
 }
 type Kind int
 type Thing struct {

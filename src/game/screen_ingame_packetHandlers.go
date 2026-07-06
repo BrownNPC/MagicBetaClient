@@ -15,7 +15,7 @@ func (state *ScreenInGameState) OnSetTime(data mc.Decoder) {
 	state.Time = pkt.Time
 }
 func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
-	pkt := data.(*mc.ClientBoundSpawnMob)
+	pkt := data.(*mc.ClientboundSpawnMob)
 	_ = pkt // nothing for now.
 }
 

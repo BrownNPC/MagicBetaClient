@@ -9,6 +9,7 @@ import (
 	"mbc/net/mc"
 
 	"solod.dev/so/bufio"
+	"solod.dev/so/errors"
 	"solod.dev/so/mem"
 )
 
@@ -79,85 +80,93 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		state.TransisionTo = SCREEN_JOIN_SERVER
 		return
 	}
-
-	switch state.stage {
-	case -1:
-	case 0:
-		// C -> S pre login
-		state.Text = "Authenticating"
-		s.ServerBound.WriteByte(mc.PKT_PreLogin)
-		// prep payload
-		state.serverbound_prelogin.Username = []rune("magicbeta")
-		// write payload
-		err := state.serverbound_prelogin.Write(&s.ServerBound)
-		if err != nil {
-			state.Text = err.Error()
-		} else {
-			state.stage++
-			s.ServerBound.Flush()
+	if state.Err == nil {
+		if state.Err = state.Connect(s); state.Err != nil {
+			state.Text = state.Err.Error()
+			state.stage = -1 // COMPLETED
+		} else if state.stage == -1 {
+			// do not go through ShouldTransition because it closes the connection.
+			s.CurrentScreeen = SCREEN_INGAME
+			return
 		}
-	case 1:
-		// S -> C pre login
-		// read packet id
-		ok, err := state.packetID.Step(&s.ClientBound)
-		if err != nil {
-			state.Text = err.Error()
-		}
-		// read payload
-		if ok {
-			ok, err := state.clientbound_prelogin.Step(&state.Arena, &s.ClientBound)
-			if ok {
-				if state.clientbound_prelogin.ConnectionHash[0] != '-' {
-					state.Text = "Only offline mode servers are supported"
-					state.stage = -1
-				} else {
-					state.stage++
-					state.Text = "Logging in"
-					state.packetID.Reset()
-				}
-			}
-			if err != nil {
-				state.Text = err.Error()
-			}
-		}
-	case 2:
-		// C -> S login
-		s.ServerBound.WriteByte(mc.PKT_Login)
-		// prep payload
-		state.serverbound_login.ProtocolVersion = 14
-		state.serverbound_login.Username = []rune("magicbeta")
-		// write payload
-		err := state.serverbound_login.Write(&s.ServerBound)
-		if err != nil {
-			state.Text = err.Error()
-		} else {
-			state.stage++
-			s.ServerBound.Flush()
-		}
-	case 3:
-		// S -> C login
-		// read packet id
-		ok, err := state.packetID.Step(&s.ClientBound)
-		if err != nil {
-			state.Text = err.Error()
-		}
-		if ok {
-			ok, err = state.clientbound_login.Step(nil, &s.ClientBound)
-			if ok {
-				state.stage++
-				state.packetID.Reset()
-			}
-			if err != nil {
-				state.Text = err.Error()
-			}
-		}
-	case 4:
-		state.Text = "Connected"
-		// dont do the "Sould Transition" thing yet.
-		s.CurrentScreeen = SCREEN_INGAME
-		// state.ShouldTransision = true
-		// state.TransisionTo = SCREEN_INGAME
-		return
 	}
+}
 
+var ErrOnlyOfflineModeSupported = errors.New("Only offline mode servers are supported for now.")
+var ErrDisconnectedByServer = errors.New("Disconnected by server.")
+
+func (state *ScreenConnectServerState) Connect(s *State) error {
+	const (
+		SEND_PRE_LOGIN = iota
+		RECV_PRE_LOGIN
+		SEND_LOGIN
+		RECV_LOGIN
+		COMPLETED = -1
+	)
+	switch state.stage {
+	case COMPLETED:
+		return state.Err
+	case SEND_PRE_LOGIN:
+		state.Text = "Authenticating"
+		p := mc.ServerboundPreLogin{
+			Username: []rune("magicbeta"),
+		}
+		if err := p.Write(&s.ServerBound); err != nil {
+			return err
+		} else {
+			s.ServerBound.Flush()
+			state.stage = RECV_PRE_LOGIN
+			state.Arena.Reset()
+			state.Decoder = mc.NewDecoder(&state.Arena, mc.PKT_PreLogin)
+		}
+	case RECV_PRE_LOGIN:
+		if state.packetID == mc.PKT_Disconnect {
+			return ErrDisconnectedByServer
+		}
+		if state.packetID == mc.PKT_PreLogin {
+			if ok, err := state.Decoder.Step(&state.Arena, &s.ClientBound); !ok {
+				return err
+			}
+			pkt := state.Decoder.(*mc.ClientboundPreLogin)
+			if pkt.ConnectionHash[0] != '-' {
+				return ErrOnlyOfflineModeSupported
+			}
+			state.stage = SEND_LOGIN
+			state.Text = "Logging in"
+		} else { // read packet id
+			if !s.ClientBound.ReadUint8(&state.packetID) {
+				return s.ClientBound.Err()
+			}
+		}
+	case SEND_LOGIN:
+		pkt := mc.ServerboundLogin{
+			ProtocolVersion: 14,
+			Username:        mc.String16("magicbeta"),
+		}
+		if err := pkt.Write(&s.ServerBound); err != nil {
+			return err
+		} else {
+			s.ServerBound.Flush()
+			state.stage = RECV_LOGIN
+			state.Arena.Reset()
+			state.Decoder = mc.NewDecoder(&state.Arena, mc.PKT_Login)
+		}
+	case RECV_LOGIN:
+		if state.packetID == mc.PKT_Disconnect {
+			return ErrDisconnectedByServer
+		}
+		if state.packetID == mc.PKT_Login {
+			if ok, err := state.Decoder.Step(&state.Arena, &s.ClientBound); !ok {
+				return err
+			}
+			pkt := state.Decoder.(*mc.ClientboundLogin)
+			_ = pkt // TODO: spawn the player entity
+			state.stage = COMPLETED
+		} else { // read packet id
+			if !s.ClientBound.ReadUint8(&state.packetID) {
+				return s.ClientBound.Err()
+			}
+		}
+	}
+	return state.Err
 }

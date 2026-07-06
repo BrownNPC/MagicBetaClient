@@ -1,12 +1,9 @@
 package mc
 
 import (
-	"mbc/net"
-
 	"solod.dev/so/encoding/binary"
 	"solod.dev/so/io"
 	"solod.dev/so/math"
-	"solod.dev/so/mem"
 )
 
 // -------------------- BYTE --------------------
@@ -92,83 +89,6 @@ func WriteString8(w io.Writer, s string) error {
 	}
 	_, err := w.Write([]byte(s))
 	return err
-}
-
-func (r *String8Reader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
-	switch r.step {
-	case 0:
-		if ok, err := r.lenReader.Step(rd); !ok {
-			return ok, err
-		}
-		r.length = int(binary.BigEndian.Uint16(r.lenReader.Buf[:]))
-
-		if r.length == 0 {
-			return true, nil
-		}
-
-		bytes, err := mem.TryAllocSlice[byte](a, int(r.length), int(r.length))
-		if err != nil {
-			return false, err
-		}
-		r.bytes = bytes
-
-		r.step++ //step
-	case 1:
-		for r.bytesIndex < r.length {
-			if ok, err := r.byteReader.Step(rd); !ok {
-				return ok, err
-			}
-
-			r.bytes[r.bytesIndex] = r.byteReader.Buf[0]
-			r.byteReader.Reset()
-
-			r.bytesIndex++
-		}
-		r.step++ //step
-	case 2:
-		return true, nil
-	}
-	return false, nil
-}
-
-// -------------------- STRING16 (UCS-2 / UTF-16 subset) --------------------
-
-func (r *String16Reader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
-	switch r.step {
-	case 0:
-		if ok, err := r.lenReader.Step(rd); !ok {
-			return ok, err
-		}
-		r.length = int(binary.BigEndian.Uint16(r.lenReader.Buf[:]))
-
-		if r.length == 0 {
-			return true, nil
-		}
-
-		runes, err := mem.TryAllocSlice[rune](a, int(r.length), int(r.length))
-		if err != nil {
-			return false, err
-		}
-		r.Runes = runes
-
-		r.step++ //step
-	case 1:
-		for !(r.runesIndex >= r.length) {
-			if ok, err := r.ucs2Reader.Step(rd); !ok {
-				return ok, err
-			}
-
-			v := binary.BigEndian.Uint16(r.ucs2Reader.Buf[:])
-			r.Runes[r.runesIndex] = rune(v)
-			r.runesIndex++
-			r.ucs2Reader.Reset()
-		}
-		r.step++ // Move to finished state
-		return true, nil
-	case 2:
-		return true, nil
-	}
-	return false, nil
 }
 
 func WriteString16(w io.Writer, s String16) error {
