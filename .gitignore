@@ -2,4 +2,4 @@ build/
 _build*
 cmd/sobind
 ./lib/libGL.so.1
-./transpiled/
+transpiled/

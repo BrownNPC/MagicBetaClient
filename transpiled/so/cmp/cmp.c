@@ -1,3 +1,0 @@
-#include "cmp.h"
-
-// -- Implementation --
