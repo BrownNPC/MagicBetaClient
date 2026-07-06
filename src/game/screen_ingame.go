@@ -10,7 +10,6 @@ import (
 	"solod.dev/so/errors"
 	"solod.dev/so/fmt"
 	"solod.dev/so/mem"
-	"solod.dev/so/time"
 )
 
 func (state *ScreenInGameState) Init(s *State) {
@@ -64,7 +63,6 @@ func (state *ScreenInGameState) SendDisconnect(s *State) {
 	}
 	dc.Write(&s.ServerBound)
 	s.ServerBound.Flush()
-	sdl.Delay(time.Second)
 	s.Conn.Close()
 }
 
