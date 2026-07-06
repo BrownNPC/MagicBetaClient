@@ -66,6 +66,7 @@ func AppIterate(appState any) sdl.AppResult {
 
 	// FPS cap
 	targetFrameTime := time.Second / time.Duration(state.game.TargetFPS)
+	state.game.TargetFrameTime = float32(targetFrameTime.Seconds())
 
 	if state.game.TargetFPS != 0 && frameTime < targetFrameTime {
 		timeToSleep := targetFrameTime - frameTime

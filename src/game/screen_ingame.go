@@ -32,11 +32,17 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 		state.OnDisconnect(s, screen)
 		return
 	}
-	if state.Error = state.DecodePackets(s); state.Error != nil {
-		state.Disconnected = true
-		sdl.Log("Closing because decode error, state=%d", state.DecodeState)
-		s.Conn.Close()
+	// spend 30% of frame time decoding packets.
+	for state.TimeSpentDecodingPackets < s.TargetFrameTime*.30 {
+		state.TimeSpentDecodingPackets += s.Dt
+		if state.Error = state.DecodePackets(s); state.Error != nil {
+			state.Disconnected = true
+			sdl.Log("Closing because decode error, state=%d err=%s", state.DecodeState, state.Error.Error())
+			s.Conn.Close()
+			break
+		}
 	}
+	state.TimeSpentDecodingPackets = 0
 }
 func (state *ScreenInGameState) DecodePackets(s *State) error {
 	const (
