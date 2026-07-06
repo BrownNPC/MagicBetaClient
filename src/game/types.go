@@ -237,7 +237,6 @@ type PacketHandler func(data mc.Decoder)
 type ScreenInGameState struct {
 	Initialized  bool
 	Disconnected bool
-	NetworkAccumulator time.Duration
 
 	Error error
 

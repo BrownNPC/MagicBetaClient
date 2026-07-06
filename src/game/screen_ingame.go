@@ -35,34 +35,27 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	}
 	state.NetworkSystem(s)
 
-}
-func (state *ScreenInGameState) NetworkSystem(s *State) {
-	const TickDuration = time.Millisecond
-
-	state.NetworkAccumulator += s.FrameTime
-
-	for state.NetworkAccumulator >= TickDuration {
-		state.NetworkAccumulator -= TickDuration
-
-		for {
-			ok, err := state.TickPacketDecoder(s)
-			if err != nil {
-				state.Disconnected = true
-				state.Error = err
-				s.Conn.Close()
-				return
-			}
-			if !ok {
-				break
-			}
-		}
-	}
-
 	if err := s.ServerBound.Flush(); err != nil {
 		state.Disconnected = true
 		state.Error = err
 		s.Conn.Close()
 		return
+	}
+
+}
+func (state *ScreenInGameState) NetworkSystem(s *State) {
+	// drain packets from buffer
+	for {
+		ok, err := state.TickPacketDecoder(s)
+		if err != nil {
+			state.Disconnected = true
+			state.Error = err
+			s.Conn.Close()
+			return
+		}
+		if !ok {
+			return
+		}
 	}
 }
 func (state *ScreenInGameState) SendDisconnect(s *State) {
@@ -115,13 +108,11 @@ func (state *ScreenInGameState) TickPacketDecoder(s *State) (bool, error) {
 			return false, err
 		}
 		state.DecodeState = HANDLING_PACKET
-		return true, nil
 	case HANDLING_PACKET:
 		state.dispatchPacketHandler(state.PacketID, state.Decoder)
 		state.DecodeState = WAITING_PACKET
-		return true, nil
 	}
-	return false, nil
+	return true, nil
 }
 
 var NoDecoderForPacketErr = errors.New("No decoder implemented for packet")
