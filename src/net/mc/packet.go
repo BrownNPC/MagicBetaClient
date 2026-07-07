@@ -791,6 +791,84 @@ func (p *PacketPlayerPositionAndRotation) Write(w io.Writer) error {
 	return nil
 }
 
+type ItemStack struct {
+	ID       int16
+	Amount   int8
+	Metadata uint16
+
+	stage int
+}
+
+func (p *ItemStack) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt16(&p.ID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if p.ID != -1 {
+				if !rd.ReadInt8(&p.Amount) {
+					return false, rd.Err()
+				}
+			}
+		case 2:
+			if p.ID != -1 {
+				if !rd.ReadUint16(&p.Metadata) {
+					return false, rd.Err()
+				}
+			}
+		case 3:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+// Used to set inventory values.
+type ClientboundFillContainer struct {
+	WindowID int8 // The incremental ID of the window. Ranges from 0 to 99
+
+	totalSlots int16 // Number of slots in the inventory
+	Slots      []ItemStack
+
+	currentItem ItemStack // current item being read.
+
+	stage int
+}
+
+func (p *ClientboundFillContainer) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt8(&p.WindowID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt16(&p.totalSlots) {
+				return false, rd.Err()
+			}
+			p.Slots = slices.MakeCap[ItemStack](a, 0, int(p.totalSlots))
+		case 2:
+			for len(p.Slots) < int(p.totalSlots) {
+				ok, err := p.currentItem.Step(a, rd)
+				if !ok {
+					return false, err
+				}
+				p.Slots = slices.Append(mem.NoAlloc, p.Slots, p.currentItem)
+				p.currentItem.stage = 0
+			}
+		case 3:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundSetSlot struct {
+	WindowID int16
+}
+
 // Returns a decoder for the given packet id. It is the user's job to free the decoder.
 // Returns nil if packetID is invalid.
 func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
@@ -819,6 +897,8 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[PacketPlayerPositionAndRotation](a)
 	case PKT_Disconnect:
 		return mem.Alloc[PacketDisconnect](a)
+	case PKT_FillContainer:
+		return mem.Alloc[ClientboundFillContainer](a)
 	}
 	return nil
 }

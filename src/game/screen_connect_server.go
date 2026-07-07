@@ -14,12 +14,6 @@ import (
 )
 
 func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx.Rectangle) {
-	if state.ShouldTransision {
-		s.CurrentScreeen = state.TransisionTo
-		s.Conn.Close()
-		*state = ScreenConnectServerState{}
-		return
-	}
 	// Draw dirt background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	gfx.DrawTextureTiled(bg,
@@ -27,12 +21,23 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		gui.Scale*2,
 		gfx.White.Tint(gfx.Black, 75),
 	)
+	if state.ShouldTransision {
+		s.CurrentScreeen = state.TransisionTo
+		s.Conn.Close()
+		*state = ScreenConnectServerState{}
+		return
+	}
 
 	// Drawing code
 
 	// draw status text
 	fnt := gui.ActivePack.Font()
-	runes := []rune(state.Text)
+	var runes []rune
+	if state.Err == nil {
+		runes = []rune("Connecting")
+	} else {
+		runes = []rune(state.Err.Error())
+	}
 	size := fnt.TextSize(runes).Scale(gui.Scale)
 	bbox := gfx.Rectangle{W: size.X, H: size.Y}.
 		Anchor(screen, .5, .5)
@@ -62,12 +67,12 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		state.Arena = mem.NewArena(state.__ArenaBuf[:])
 		state.Dialed = true
 		// blocks
-		conn, err := net.Dial(srv.Host)
-		if err != nil {
-			state.Text = err.Error()
+		s.Conn, state.Err = net.Dial(srv.Host)
+		if state.Err != nil {
+			print("Failed to dial")
 			state.stage = -1
+			return
 		} else {
-			s.Conn = conn
 			s.__arenaForServerbound = mem.NewArena(s.__bufioWriterBuffer[:])
 			s.ServerBound = bufio.NewWriter(&s.__arenaForServerbound, &s.Conn)
 			s.__arenaForClientbound = mem.NewArena(s.__bufioReaderBuffer[:])
@@ -82,7 +87,6 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	}
 	if state.Err == nil {
 		if state.Err = state.Connect(s); state.Err != nil {
-			state.Text = state.Err.Error()
 			state.stage = -1 // COMPLETED
 		} else if state.stage == -1 {
 			// do not go through ShouldTransition because it closes the connection.
@@ -107,7 +111,6 @@ func (state *ScreenConnectServerState) Connect(s *State) error {
 	case COMPLETED:
 		return state.Err
 	case SEND_PRE_LOGIN:
-		state.Text = "Authenticating"
 		p := mc.ServerboundPreLogin{
 			Username: []rune("magicbeta"),
 		}
@@ -132,7 +135,6 @@ func (state *ScreenConnectServerState) Connect(s *State) error {
 				return ErrOnlyOfflineModeSupported
 			}
 			state.stage = SEND_LOGIN
-			state.Text = "Logging in"
 		} else { // read packet id
 			if !s.ClientBound.ReadUint8(&state.packetID) {
 				return s.ClientBound.Err()

@@ -136,7 +136,6 @@ type ScreenConnectServerState struct {
 	ShouldTransision bool
 	TransisionTo     int
 	Dialed           bool
-	Text             string
 	Err              error
 
 	__ArenaBuf [512]byte
