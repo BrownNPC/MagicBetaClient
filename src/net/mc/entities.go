@@ -34,3 +34,10 @@ const (
 	OBJECT_FallingGravel   ObjectType = 71
 	OBJECT_FishingBobber   ObjectType = 90
 )
+
+type ItemID = int16
+
+const (
+	ITEM_INVALID ItemID = -1
+	ITEM_NONE    ItemID = 0
+)

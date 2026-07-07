@@ -733,10 +733,8 @@ func (p *PacketPlayerRotation) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 }
 func (p *PacketPlayerRotation) Write(w io.Writer) error {
 	if !p.nested {
-		if !p.nested {
-			if err := WriteByte(w, PKT_PlayerRotation); err != nil {
-				return err
-			}
+		if err := WriteByte(w, PKT_PlayerRotation); err != nil {
+			return err
 		}
 	}
 	if err := WriteFloat32(w, p.Yaw); err != nil {
@@ -792,11 +790,10 @@ func (p *PacketPlayerPositionAndRotation) Write(w io.Writer) error {
 }
 
 type ItemStack struct {
-	ID       int16
+	ID       ItemID
 	Amount   int8
-	Metadata uint16
-
-	stage int
+	Metadata int16
+	stage    int
 }
 
 func (p *ItemStack) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) {
@@ -807,14 +804,14 @@ func (p *ItemStack) Step(_ mem.Allocator, rd *net.BufferedReader) (bool, error) 
 				return false, rd.Err()
 			}
 		case 1:
-			if p.ID != -1 {
+			if p.ID != ITEM_INVALID {
 				if !rd.ReadInt8(&p.Amount) {
 					return false, rd.Err()
 				}
 			}
 		case 2:
-			if p.ID != -1 {
-				if !rd.ReadUint16(&p.Metadata) {
+			if p.ID != ITEM_INVALID {
+				if !rd.ReadInt16(&p.Metadata) {
 					return false, rd.Err()
 				}
 			}
@@ -850,7 +847,7 @@ func (p *ClientboundFillContainer) Step(a mem.Allocator, rd *net.BufferedReader)
 			}
 			p.Slots = slices.MakeCap[ItemStack](a, 0, int(p.totalSlots))
 		case 2:
-			for len(p.Slots) < int(p.totalSlots) {
+			for int(p.totalSlots) > len(p.Slots) {
 				ok, err := p.currentItem.Step(a, rd)
 				if !ok {
 					return false, err
@@ -865,8 +862,36 @@ func (p *ClientboundFillContainer) Step(a mem.Allocator, rd *net.BufferedReader)
 	}
 }
 
+// If both the window ID and slot ID are -1, then the item that's currently held by the mouse is affected.
+// If window ID is 0, then inventory is affected.
 type ClientboundSetSlot struct {
-	WindowID int16
+	WindowID int8
+	Slot     int16
+	Item     ItemStack
+	stage    int
+}
+
+func (p *ClientboundSetSlot) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt8(&p.WindowID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt16(&p.Slot) {
+				return false, rd.Err()
+			}
+		case 2:
+			if ok, err := p.Item.Step(a, rd); !ok {
+				return false, err
+			}
+			println("ItemID=", p.Item.ID)
+		case 3:
+			return true, nil
+		}
+		p.stage++
+	}
 }
 
 // Returns a decoder for the given packet id. It is the user's job to free the decoder.
@@ -899,6 +924,8 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[PacketDisconnect](a)
 	case PKT_FillContainer:
 		return mem.Alloc[ClientboundFillContainer](a)
+	case PKT_SetSlot:
+		return mem.Alloc[ClientboundSetSlot](a)
 	}
 	return nil
 }
