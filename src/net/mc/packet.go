@@ -1332,6 +1332,7 @@ func (p *ClientboundChunk) Step(a mem.Allocator, rd *net.BufferedReader) (bool, 
 // Returns nil if packetID is invalid.
 func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 	switch packetID {
+	// Bare minimum packets needed to join the game: 26
 	case PKT_PreLogin:
 		return mem.Alloc[ClientboundPreLogin](a)
 	case PKT_Login:
@@ -1384,7 +1385,7 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientboundEntityMetadata](a)
 	case PKT_Chunk:
 		return mem.Alloc[ClientboundChunk](a)
-
+	// end of bare minimum packets
 	}
 	return nil
 }

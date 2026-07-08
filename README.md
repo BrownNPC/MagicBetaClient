@@ -17,22 +17,18 @@ You must have Go installed. Why? Because the codebase is written in [Solod](http
 a variant of Go that compiles to readable C code.
 
 
-
-
 ```
 go install solod.dev/cmd/so@main
 go run build.go --bootstrap=native-vendored
 
-
+```
 You will need `libcurl` findable by CMake. Just look up "how to install libcurl devel {distro name}"
 
 
-The output binary will be at `_build/MagicBetaClient`
-```
+The output binary will be at `_build-native-vendored/MagicBetaClient`
 
 # Dependencies
 
 - SDL3 (vendored)
 - SDL3_Mixer (vendored)
 - libcurl
-- gl4es (optional, vendored)
