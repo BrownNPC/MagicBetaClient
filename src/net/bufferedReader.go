@@ -325,3 +325,12 @@ func (b *BufferedReader) ReadFloat64(dst *float64) bool {
 	*dst = math.Float64frombits(v)
 	return true
 }
+
+// Read a byte without advancing reader.
+func (b *BufferedReader) PeekByte(dst *byte) bool {
+	if !b.ReadUint8(dst) {
+		return false
+	}
+	b.r-- // do not advance reader.
+	return true
+}

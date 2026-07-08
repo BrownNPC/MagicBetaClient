@@ -79,10 +79,9 @@ func (state *ScreenInGameState) TickPacketDecoder(s *State) (bool, error) {
 		if !ok {
 			return false, s.ClientBound.Err()
 		}
-		if state.PacketID == 0 {
-			// The vanilla server does not send them.
-			sdl.Log("Keep alive packet detected. Is the stream corrupted?")
-			return false, nil
+		if !mc.IsValidClientboundPacket(state.PacketID) {
+			sdl.Log("invalid packet %s", mc.PacketIDString(state.PacketID))
+			panic("The clientbound stream is corrupted.")
 		}
 		// Got a real packet.
 		state.PacketDecodeArena.Reset()

@@ -138,7 +138,7 @@ type MetadataValue struct {
 }
 
 type MetadataReader struct {
-	values []MetadataValue
+	Values []MetadataValue
 
 	dataType   uint8 // from header
 	metadataID uint8 // from header
@@ -151,7 +151,7 @@ type MetadataReader struct {
 
 func (r *MetadataReader) Parse(e MobType) EntityMetadata {
 	var m EntityMetadata
-	for _, value := range r.values {
+	for _, value := range r.Values {
 		switch value.ID {
 		case 0: // base flags
 			m.Burning = value.Byte&0x01 != 0
@@ -233,20 +233,20 @@ func (m *MetadataReader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, er
 			if !rd.ReadUint8(&m.metadata.Byte) {
 				return false, rd.Err()
 			}
-			m.values = slices.Append(a, m.values, m.metadata)
+			m.Values = slices.Append(a, m.Values, m.metadata)
 			m.state = READING_HEADER
 		case READING_INTEGER:
 			if !rd.ReadInt32(&m.metadata.Integer) {
 				return false, rd.Err()
 			}
-			m.values = slices.Append(a, m.values, m.metadata)
+			m.Values = slices.Append(a, m.Values, m.metadata)
 			m.state = READING_HEADER
 		case READING_STRING:
 			if ok, err := m.metadata.stringReader.Step(a, rd); !ok {
 				return false, err
 			}
 			m.metadata.String = m.metadata.stringReader.Runes
-			m.values = slices.Append(a, m.values, m.metadata)
+			m.Values = slices.Append(a, m.Values, m.metadata)
 			m.state = READING_HEADER
 		}
 	}
@@ -886,8 +886,442 @@ func (p *ClientboundSetSlot) Step(a mem.Allocator, rd *net.BufferedReader) (bool
 			if ok, err := p.Item.Step(a, rd); !ok {
 				return false, err
 			}
-			println("ItemID=", p.Item.ID)
 		case 3:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+// This is sent by the server to control precipitation or to notify that their bed is missing or obstructed. The game state is 0 for an invalid bed, 1 to start raining, and 2 to stop raining.
+type ClientboundGameEvent struct {
+	Type  int8
+	stage int
+}
+
+func (p *ClientboundGameEvent) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt8(&p.Type) {
+				return false, rd.Err()
+			}
+		case 1:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundEntityPosition struct {
+	EntityID int32
+	X, Y, Z  float32 // relative to last PlayerPostion sent by server
+	nested   bool
+	stage    int
+}
+
+func (p *ClientboundEntityPosition) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !p.nested {
+				if !rd.ReadInt32(&p.EntityID) {
+					return false, rd.Err()
+				}
+			}
+		case 1:
+			var coord int8
+			if !rd.ReadInt8(&coord) {
+				return false, rd.Err()
+			}
+			p.X = UnquantizeCoordinate(int32(coord))
+		case 2:
+			var coord int8
+			if !rd.ReadInt8(&coord) {
+				return false, rd.Err()
+			}
+			p.Y = UnquantizeCoordinate(int32(coord))
+		case 3:
+			var coord int8
+			if !rd.ReadInt8(&coord) {
+				return false, rd.Err()
+			}
+			p.Z = UnquantizeCoordinate(int32(coord))
+		case 4:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundEntityRotation struct {
+	EntityID int32
+	Yaw      float32
+	Pitch    float32
+	nested   bool
+	stage    int
+}
+
+func (p *ClientboundEntityRotation) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !p.nested {
+				if !rd.ReadInt32(&p.EntityID) {
+					return false, rd.Err()
+				}
+			}
+		case 1:
+			var angle int8
+			if !rd.ReadInt8(&angle) {
+				return false, rd.Err()
+			}
+			p.Yaw = UnquantizeAngle(angle)
+		case 2:
+			var angle int8
+			if !rd.ReadInt8(&angle) {
+				return false, rd.Err()
+			}
+			p.Pitch = UnquantizeAngle(angle)
+		case 3:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundEntityPositionAndRotation struct {
+	EntityID int32
+	Pos      ClientboundEntityPosition
+	Rot      ClientboundEntityRotation
+	stage    int
+}
+
+func (p *ClientboundEntityPositionAndRotation) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	p.Pos.nested = true
+	p.Rot.nested = true
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if ok, err := p.Pos.Step(a, rd); !ok {
+				return false, err
+			}
+		case 2:
+			if ok, err := p.Rot.Step(a, rd); !ok {
+				return false, err
+			}
+		case 3:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundDespawnEntity struct {
+	EntityID int32
+	stage    int
+}
+
+func (p *ClientboundDespawnEntity) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundEntityEvent struct {
+	EntityID int32
+	Action   int8
+	stage    int
+}
+
+func (p *ClientboundEntityEvent) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt8(&p.Action) {
+				return false, rd.Err()
+			}
+		case 2:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type PacketPlayerMovment struct {
+	OnGround bool
+	stage    int
+}
+
+func (p *PacketPlayerMovment) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadBool(&p.OnGround) {
+				return false, rd.Err()
+			}
+		case 1:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundTeleportEntity struct {
+	EntityID   int32
+	X, Y, Z    float32
+	Yaw, Pitch float32
+	stage      int
+}
+
+func (p *ClientboundTeleportEntity) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			var coord int32
+			if !rd.ReadInt32(&coord) {
+				return false, rd.Err()
+			}
+			p.X = UnquantizeCoordinate(coord)
+		case 2:
+			var coord int32
+			if !rd.ReadInt32(&coord) {
+				return false, rd.Err()
+			}
+			p.Y = UnquantizeCoordinate(coord)
+		case 3:
+			var coord int32
+			if !rd.ReadInt32(&coord) {
+				return false, rd.Err()
+			}
+			p.Z = UnquantizeCoordinate(coord)
+		case 4:
+			var angle int8
+			if !rd.ReadInt8(&angle) {
+				return false, rd.Err()
+			}
+			p.Yaw = UnquantizeAngle(angle)
+		case 5:
+			var angle int8
+			if !rd.ReadInt8(&angle) {
+				return false, rd.Err()
+			}
+			p.Pitch = UnquantizeAngle(angle)
+		case 6:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundSetBlock struct {
+	X        int32
+	Y        int8
+	Z        int32
+	Type     BlockID
+	Metadata int8
+
+	stage int
+}
+
+func (p *ClientboundSetBlock) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.X) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt8(&p.Y) {
+				return false, rd.Err()
+			}
+		case 2:
+			if !rd.ReadInt32(&p.Z) {
+				return false, rd.Err()
+			}
+		case 3:
+			if !rd.ReadUint8(&p.Type) {
+				return false, rd.Err()
+			}
+		case 4:
+			if !rd.ReadInt8(&p.Metadata) {
+				return false, rd.Err()
+			}
+		case 5:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type PackedCoordinate int16
+
+func (p PackedCoordinate) Unpack(x, y, z *int8) {
+	*x = int8((p >> 12) & 0x0F)
+	*z = int8((p >> 8) & 0x0F)
+	*y = int8((p) & 0x0F)
+}
+
+type ClientboundSetMultipleBlocks struct {
+	X, Z        int32 // chunk position
+	TotalBlocks int
+
+	BlockPosition []PackedCoordinate
+	Block         []BlockID
+	Metadata      []int8
+	stage         int
+}
+
+func (p *ClientboundSetMultipleBlocks) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.X) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt32(&p.Z) {
+				return false, rd.Err()
+			}
+		case 2:
+			var l int16
+			if !rd.ReadInt16(&l) {
+				return false, rd.Err()
+			}
+			p.TotalBlocks = int(l)
+
+			p.Block = slices.MakeCap[BlockID](a, 0, p.TotalBlocks)
+			p.BlockPosition = slices.MakeCap[PackedCoordinate](a, 0, p.TotalBlocks)
+			p.Metadata = slices.MakeCap[int8](a, 0, p.TotalBlocks)
+		case 3:
+			for len(p.BlockPosition) < p.TotalBlocks {
+				var pos int16
+				if !rd.ReadInt16(&pos) {
+					return false, rd.Err()
+				}
+				p.BlockPosition = append(p.BlockPosition, PackedCoordinate(pos))
+			}
+		case 4:
+			for len(p.Block) < p.TotalBlocks {
+				var id BlockID
+				if !rd.ReadUint8(&id) {
+					return false, rd.Err()
+				}
+				p.Block = append(p.Block, id)
+			}
+		case 5:
+			for len(p.Metadata) < p.TotalBlocks {
+				var metadata int8
+				if !rd.ReadInt8(&metadata) {
+					return false, rd.Err()
+				}
+				p.Metadata = append(p.Metadata, metadata)
+			}
+		case 6:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundEntityMetadata struct {
+	EntityID int32
+	Metadata MetadataReader // NOTE: call .Parse()
+	stage    int
+}
+
+func (p *ClientboundEntityMetadata) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if ok, err := p.Metadata.Step(a, rd); !ok {
+				return false, err
+			}
+		case 2:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundChunk struct {
+	X int32
+	Y int16
+	Z int32
+
+	Width, Height, Length int8
+
+	compressedSize int32
+	CompressedData []byte // Zlib compressed data.
+
+	stage int
+}
+
+func (p *ClientboundChunk) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.X) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt16(&p.Y) {
+				return false, rd.Err()
+			}
+		case 2:
+			if !rd.ReadInt32(&p.Z) {
+				return false, rd.Err()
+			}
+		case 3:
+			if !rd.ReadInt8(&p.Width) {
+				return false, rd.Err()
+			}
+		case 4:
+			if !rd.ReadInt8(&p.Height) {
+				return false, rd.Err()
+			}
+		case 5:
+			if !rd.ReadInt8(&p.Length) {
+				return false, rd.Err()
+			}
+		case 6:
+			if !rd.ReadInt32(&p.compressedSize) {
+				return false, rd.Err()
+			}
+			p.CompressedData = slices.MakeCap[byte](a, 0, int(p.compressedSize))
+		case 7:
+			for len(p.CompressedData) < int(p.compressedSize) {
+				var b byte
+				if !rd.ReadUint8(&b) {
+					return false, rd.Err()
+				}
+				p.CompressedData = append(p.CompressedData, b)
+			}
+		case 8:
 			return true, nil
 		}
 		p.stage++
@@ -926,6 +1360,31 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientboundFillContainer](a)
 	case PKT_SetSlot:
 		return mem.Alloc[ClientboundSetSlot](a)
+	case PKT_GameEvent:
+		return mem.Alloc[ClientboundGameEvent](a)
+	case PKT_EntityPosition:
+		return mem.Alloc[ClientboundEntityPosition](a)
+	case PKT_EntityRotation:
+		return mem.Alloc[ClientboundEntityRotation](a)
+	case PKT_EntityPositionAndRotation:
+		return mem.Alloc[ClientboundEntityPositionAndRotation](a)
+	case PKT_DespawnEntity:
+		return mem.Alloc[ClientboundDespawnEntity](a)
+	case PKT_EntityEvent:
+		return mem.Alloc[ClientboundEntityEvent](a)
+	case PKT_PlayerMovement:
+		return mem.Alloc[PacketPlayerMovment](a)
+	case PKT_TeleportEntity:
+		return mem.Alloc[ClientboundTeleportEntity](a)
+	case PKT_SetBlock:
+		return mem.Alloc[ClientboundSetBlock](a)
+	case PKT_SetMultipleBlocks:
+		return mem.Alloc[ClientboundSetMultipleBlocks](a)
+	case PKT_EntityMetadata:
+		return mem.Alloc[ClientboundEntityMetadata](a)
+	case PKT_Chunk:
+		return mem.Alloc[ClientboundChunk](a)
+
 	}
 	return nil
 }

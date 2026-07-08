@@ -245,16 +245,16 @@ type ScreenInGameState struct {
 	Cam gfx.Camera
 	// Player spawn position
 	SpawnPosition gfx.Vector3
-	Time          int64 // game time in ticks.
+	InGameTime          int64 // game time in ticks.
 
 	// Networking related fields
 	__PacketDecodeArenaMemory [100 * 1024]byte
 	PacketDecodeArena         mem.Arena
 
-	PacketID    mc.PacketID
-	DecodeState int // used in DecodePackets()
-	Decoder     mc.Decoder
-	scv         mc.ClientboundSetChunkVisibility
+	PacketID     mc.PacketID
+	DecodeState  int // used in DecodePackets()
+	Decoder      mc.Decoder
+	scv          mc.ClientboundSetChunkVisibility
 
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.
@@ -271,7 +271,7 @@ const CONFIG_FILE_PATH = "config.json"
 
 // Game state
 type State struct {
-	Dt                float32
+	Dt float32
 	//Dt as time.Duration
 	FrameTime time.Duration
 
