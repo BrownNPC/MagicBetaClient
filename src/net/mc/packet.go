@@ -29,9 +29,18 @@ func UnclampVelocity(vel int16) float32 {
 	return (float32(vel) / 8000)
 }
 
+// everything implements the Decoder interface.
+// It reads in a non-blocking fashion.
+// returns (false,err) if there's an error.
+// or (false,nil) if reading is still in progress.
+//
+// It returns (true,nil) if reading has finished.
 type Decoder interface {
 	Step(a mem.Allocator, rd *net.BufferedReader) (bool, error)
 }
+
+// An encoder should block until everything has been written.
+// It should also write the packet id.
 type Encoder interface {
 	Write(io.Writer) error
 }
@@ -44,62 +53,58 @@ type String8Reader struct {
 	stage uint8
 }
 
-func (s *String8Reader) Reset()        { *s = String8Reader{} }
 func (s String8Reader) String() string { return string(s.buf) }
 
 func (s *String8Reader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
-	if s.stage == 0 {
-		if !rd.ReadUint16(&s.len) {
-			return false, rd.Err()
+	for {
+		switch s.stage {
+		case 0:
+			if !rd.ReadUint16(&s.len) {
+				return false, rd.Err()
+			}
+			s.buf = slices.Make[byte](a, int(s.len))
+			s.stage++
+		case 1:
+			if !rd.ReadFull(s.buf) {
+				return false, rd.Err()
+			}
+		case 2:
+			return true, rd.Err()
 		}
-		s.buf = slices.Make[byte](a, int(s.len))
 		s.stage++
 	}
-	if s.stage == 1 {
-		if !rd.ReadFull(s.buf) {
-			return false, rd.Err()
-		}
-		s.stage++
-	}
-	if s.stage == 2 {
-		return true, rd.Err()
-	}
-	return false, rd.Err()
 }
 
 type String16Reader struct {
-	len uint16
+	totalCharacters uint16
+	Runes           []rune
 
-	Runes []rune
-	n     int
 	stage uint8
 }
 
 func (s *String16Reader) Reset() { *s = String16Reader{} }
 
 func (s *String16Reader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
-	if s.stage == 0 {
-		if !rd.ReadUint16(&s.len) {
-			return false, rd.Err()
-		}
-		s.Runes = slices.MakeCap[rune](a, 0, int(s.len))
-		s.stage++
-	}
-	if s.stage == 1 {
-		for s.n < int(s.len) {
-			var u uint16
-			if !rd.ReadUint16(&u) {
+	for {
+		switch s.stage {
+		case 0:
+			if !rd.ReadUint16(&s.totalCharacters) {
 				return false, rd.Err()
 			}
-			s.Runes = slices.Append(mem.NoAlloc, s.Runes, rune(u))
-			s.n += 1
+			s.Runes = slices.MakeCap[rune](a, 0, int(s.totalCharacters))
+		case 1:
+			for len(s.Runes) < int(s.totalCharacters) {
+				var u uint16
+				if !rd.ReadUint16(&u) {
+					return false, rd.Err()
+				}
+				s.Runes = slices.Append(mem.NoAlloc, s.Runes, rune(u))
+			}
+		case 3:
+			return true, nil
 		}
 		s.stage++
 	}
-	if s.stage == 2 {
-		return true, rd.Err()
-	}
-	return false, rd.Err()
 }
 
 type EntityMetadata struct {
@@ -283,34 +288,31 @@ type ClientboundLogin struct {
 }
 
 func (p *ClientboundLogin) Step(_ mem.Allocator, r *net.BufferedReader) (bool, error) {
-	if p.stage == 0 {
-		if !r.ReadInt32(&p.EntityID) {
-			return false, r.Err()
+	for {
+		switch p.stage {
+		case 0:
+			if !r.ReadInt32(&p.EntityID) {
+				return false, r.Err()
+			}
+		case 1:
+			if ok, err := p.unused.Step(mem.NoAlloc, r); !ok {
+				return false, err
+			}
+			p.stage++
+		case 2:
+			if !r.ReadInt64(&p.WorldSeed) {
+				return false, r.Err()
+			}
+		case 3:
+			if !r.ReadUint8(&p.Dimension) {
+				return false, r.Err()
+			}
+		case 4:
+			return true, nil
+
 		}
 		p.stage++
 	}
-	if p.stage == 1 {
-		if ok, err := p.unused.Step(mem.NoAlloc, r); !ok {
-			return false, err
-		}
-		p.stage++
-	}
-	if p.stage == 2 {
-		if !r.ReadInt64(&p.WorldSeed) {
-			return false, r.Err()
-		}
-		p.stage++
-	}
-	if p.stage == 3 {
-		if !r.ReadUint8(&p.Dimension) {
-			return false, r.Err()
-		}
-		p.stage++
-	}
-	if p.stage == 4 {
-		return true, nil
-	}
-	return false, nil
 }
 
 type ServerboundLogin struct {
@@ -324,7 +326,6 @@ func (p ServerboundLogin) Write(w io.Writer) error {
 	if err := WriteByte(w, PKT_Login); err != nil {
 		return err
 	}
-
 	if err := WriteInteger(w, p.ProtocolVersion); err != nil {
 		return err
 	}
@@ -1385,7 +1386,7 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientboundEntityMetadata](a)
 	case PKT_Chunk:
 		return mem.Alloc[ClientboundChunk](a)
-	// end of bare minimum packets
+		// end of bare minimum packets
 	}
 	return nil
 }
