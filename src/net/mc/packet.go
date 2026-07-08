@@ -193,8 +193,6 @@ func (r *MetadataReader) Parse(e MobType) EntityMetadata {
 	return m
 }
 
-var IncompleteMetadataErr = errors.New("Tried parsing incomplete metadata")
-
 func (m *MetadataReader) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	const (
 		READING_HEADER = iota
@@ -298,7 +296,6 @@ func (p *ClientboundLogin) Step(_ mem.Allocator, r *net.BufferedReader) (bool, e
 			if ok, err := p.unused.Step(mem.NoAlloc, r); !ok {
 				return false, err
 			}
-			p.stage++
 		case 2:
 			if !r.ReadInt64(&p.WorldSeed) {
 				return false, r.Err()
