@@ -90,14 +90,13 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 	case sdl.EVENT_MOUSE_MOTION:
 		m := e.MouseMotion()
 		state.game.Cursor = gfx.Vector2{X: m.X, Y: m.Y}
-		state.game.CursorDelta = gfx.Vector2{X: m.Xrel, Y: m.Yrel}
 
 		typ := game.InputLook
 		// store the input
-		state.game.Inputs[typ] =
-			game.Input{
-				Direction: state.game.CursorDelta.Normalize(),
-			}
+		state.game.Inputs[typ] = game.Input{
+			Direction: gfx.Vector2{X: m.Xrel, Y: m.Yrel},
+			Pressed:   true,
+		}
 
 	case sdl.EVENT_MOUSE_BUTTON_UP, sdl.EVENT_MOUSE_BUTTON_DOWN:
 		m := e.MouseButton()

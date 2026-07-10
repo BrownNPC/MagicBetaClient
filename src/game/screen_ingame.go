@@ -15,12 +15,13 @@ import (
 func (state *ScreenInGameState) Init(s *State) {
 	state.Cam = gfx.Camera{
 		Position: gfx.Vector3{Y: 2},
-		Target:   gfx.Vector3{Z: 1},
+		Target:   gfx.Vector3{Y: 2, Z: -1},
 		Up:       gfx.Vector3{Y: 1},
 		Fovy:     70,
 	}
 	state.PacketDecodeArena = mem.NewArena(state.__PacketDecodeArenaMemory[:])
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
+	state.Player = state.Things.New(KindPlayer)
 }
 func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	if !state.Initialized {
@@ -40,7 +41,24 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 		s.Conn.Close()
 		return
 	}
+	// println(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
+	// println(state.Cam.Target.X, state.Cam.Target.Y, state.Cam.Target.Z)
+	// fwd := state.Cam.GetForward()
+	// println(fwd.X, fwd.Y, fwd.Z)
+	if s.Inputs[InputLook].Pressed {
+		state.ProcessLook(s.Inputs[InputLook].Direction)
+	}
+	gfx.BeginMode3D(state.Cam)
+	box := state.Cam.GetUp().Scale(-20).Add(state.Cam.Position)
+	gfx.DrawCube3D(box, 200, 2, 200, gfx.Blue)
+	gfx.EndMode3D()
+}
 
+// delta is mouse delta movement.
+func (state *ScreenInGameState) ProcessLook(delta gfx.Vector2) {
+	delta.Scale(-1)
+	state.Cam.Yaw(delta.X*0.003, false)
+	state.Cam.Pitch(delta.Y*0.003, true, false, false)
 }
 func (state *ScreenInGameState) NetworkSystem(s *State) {
 	// drain packets from buffer

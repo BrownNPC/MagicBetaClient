@@ -91,12 +91,11 @@ func ClearBackground(c Color) {
 	rlClearScreenBuffers()
 }
 func BeginMode3D(cam Camera) {
-	var w, h c.Int
-	sdl.GetWindowSizeInPixels(Window, &w, &h)
+	rlDrawRenderBatchActive()
+	w, h := GetWindowSize()
 
 	rlMatrixMode(rlPROJECTION)
 	rlPushMatrix()
-
 	rlLoadIdentity()
 
 	aspect := float32(w) / float32(h)
@@ -114,10 +113,101 @@ func BeginMode3D(cam Camera) {
 	// modelview * projection
 	mv := matView.ToFloat()
 	rlMultMatrixf(&mv.V[0])
+
 	rlEnableDepthTest()
 }
+func DrawCircle3D(center Vector3, radius float32, color Color) {
+	rlPushMatrix()
 
+	rlTranslatef(center.X, center.Y, center.Z)
+
+	rlBegin(rlLINES)
+	for i := float32(0); i < 360; i += 10 {
+		rlColor4ub(color.R, color.G, color.B, color.A)
+
+		sin, cos := Sincos(Deg2rad * i)
+		rlVertex3f(sin*radius, cos*radius, 0)
+		sin, cos = Sincos(Deg2rad * (i + 10))
+		rlVertex3f(sin*radius, cos*radius, 0)
+	}
+	rlEnd()
+	rlPopMatrix()
+}
+func DrawCube3D(position Vector3, width, height, length float32, color Color) {
+	var x, y, z float32
+	rlPushMatrix()
+	{
+		rlTranslatef(position.X, position.Y, position.Z)
+		rlBegin(rlTRIANGLES)
+		{
+			rlColor4ub(color.R, color.G, color.B, color.A)
+			// Front face
+			rlNormal3f(0.0, 0.0, 1.0)
+			rlVertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
+			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+
+			rlVertex3f(x+width/2, y+height/2, z+length/2) // Top Right
+			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+
+			// Back face
+			rlNormal3f(0.0, 0.0, -1.0)
+			rlVertex3f(x-width/2, y-height/2, z-length/2) // Bottom Left
+			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+
+			rlVertex3f(x+width/2, y+height/2, z-length/2) // Top Right
+			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+
+			// Top face
+			rlNormal3f(0.0, 1.0, 0.0)
+			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+			rlVertex3f(x-width/2, y+height/2, z+length/2) // Bottom Left
+			rlVertex3f(x+width/2, y+height/2, z+length/2) // Bottom Right
+
+			rlVertex3f(x+width/2, y+height/2, z-length/2) // Top Right
+			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+			rlVertex3f(x+width/2, y+height/2, z+length/2) // Bottom Right
+
+			// Bottom face
+			rlNormal3f(0.0, -1.0, 0.0)
+			rlVertex3f(x-width/2, y-height/2, z-length/2) // Top Left
+			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+			rlVertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
+
+			rlVertex3f(x+width/2, y-height/2, z-length/2) // Top Right
+			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+			rlVertex3f(x-width/2, y-height/2, z-length/2) // Top Left
+
+			// Right face
+			rlNormal3f(1.0, 0.0, 0.0)
+			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+			rlVertex3f(x+width/2, y+height/2, z-length/2) // Top Right
+			rlVertex3f(x+width/2, y+height/2, z+length/2) // Top Left
+
+			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Left
+			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+			rlVertex3f(x+width/2, y+height/2, z+length/2) // Top Left
+
+			// Left face
+			rlNormal3f(-1.0, 0.0, 0.0)
+			rlVertex3f(x-width/2, y-height/2, z-length/2) // Bottom Right
+			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Right
+
+			rlVertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
+			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+			rlVertex3f(x-width/2, y-height/2, z-length/2) // Bottom Right
+		}
+		rlEnd()
+	}
+	rlPopMatrix()
+}
 func EndMode3D() {
+	rlDrawRenderBatchActive()
+
 	rlMatrixMode(rlPROJECTION) // Switch to projection matrix
 	rlPopMatrix()              // Restore previous matrix (projection) from matrix stack
 
@@ -786,6 +876,9 @@ func rlTexCoord2f(s float32, t float32)
 //so:extern
 func rlVertex2f(x float32, y float32)
 
+//so:extern
+func rlVertex3f(x float32, y float32, z float32)
+
 //so:extern rlClearColor
 func rlClearColor(red float32, green float32, blue float32, alpha float32)
 
@@ -797,6 +890,12 @@ func rlClearScreenBuffers()
 
 //so:extern rlDisableDepthTest
 func rlDisableDepthTest()
+
+//so:extern
+func rlDisableBackfaceCulling()
+
+//so:extern
+func rlEnableBackfaceCulling()
 
 //so:extern rlPopMatrix
 func rlPopMatrix() {}

@@ -3,7 +3,6 @@ package mc
 import (
 	"mbc/net"
 
-	"solod.dev/so/errors"
 	"solod.dev/so/io"
 	"solod.dev/so/mem"
 	"solod.dev/so/slices"

@@ -26,9 +26,6 @@ func (s *State) Init() {
 	}
 	// init default texture pack
 	s.Pack = NewDefaultTexturePack()
-	// pack.png should apply bilinear interpolation (TODO: implement a better way to do this)
-	gfx.SetTextureConfig(s.Pack.GetTexture(assets.Pack), true, false)
-
 	s.Audios = maps.New[assets.ID, *mix.Audio](mem.System, MaxAudioLoaded)
 
 	// create mixer device

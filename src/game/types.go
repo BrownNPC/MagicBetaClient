@@ -79,10 +79,12 @@ const (
 
 type InputType uint32
 type Input struct {
-	Pressed   bool
-	Released  bool
-	Text      rune // for text input
-	Direction gfx.Vector2
+	Pressed  bool
+	Released bool
+	Text     rune // for text input
+	// Direction is delta mouse movment in InputLook
+	// and movement vector in InputMove
+	Direction gfx.Vector2 // input look and move
 }
 
 const (
@@ -148,9 +150,9 @@ type ScreenConnectServerState struct {
 }
 type Kind int
 type Thing struct {
-	Kind     Kind
-	Pos      gfx.Vector3
-	Rotation gfx.Vector3
+	Kind Kind
+
+	Position gfx.Vector3
 }
 type ThingRef struct {
 	idx, gen uint
@@ -158,10 +160,11 @@ type ThingRef struct {
 
 var NilRef = ThingRef{}
 
-const MAX_THINGS = 4096
+const MAX_THINGS = 1024
 
 const (
 	KindNull Kind = iota
+	KindPlayer
 )
 
 type ThingPool struct {
@@ -172,15 +175,13 @@ type ThingPool struct {
 
 	FreeListMemory [MAX_THINGS]uint
 	FreeListCursor uint
-	FreeListLen    int
 	SlotsUsed      uint
 }
 
 func (things *ThingPool) New(kind Kind) ThingRef {
 	var i uint = 0
-	if things.FreeListLen > 0 {
+	if things.FreeListCursor > 0 {
 		things.FreeListCursor--
-		things.FreeListLen--
 		i = things.FreeListMemory[things.FreeListCursor]
 	} else {
 		i = things.SlotsUsed + 1
@@ -198,8 +199,15 @@ func (things *ThingPool) Delete(ref ThingRef) {
 		things.SlotsUsed--
 		things.FreeListMemory[things.FreeListCursor] = ref.idx
 		things.FreeListCursor++
-		things.FreeListLen++
 	}
+}
+func (things *ThingPool) Get(ref ThingRef) *Thing {
+	if !things.used[ref.idx] || ref.gen != things.gen[ref.idx] {
+		ref.idx = 0
+		things.Things[0] = Thing{}
+	}
+
+	return &things.Things[ref.idx]
 }
 
 type ThingsIter struct {
@@ -243,18 +251,25 @@ type ScreenInGameState struct {
 
 	// game state
 	Cam gfx.Camera
+
+	Player ThingRef
+	// Last player position and rotation sent by server.
+	// Used to calculate relative coordinates for entity position packets.
+	LastPlayerPosition             gfx.Vector3
+	LastPlayerYaw, LastPlayerPitch float32
+
 	// Player spawn position
 	SpawnPosition gfx.Vector3
-	InGameTime          int64 // game time in ticks.
+	InGameTime    int64 // game time in ticks.
 
 	// Networking related fields
 	__PacketDecodeArenaMemory [100 * 1024]byte
 	PacketDecodeArena         mem.Arena
 
-	PacketID     mc.PacketID
-	DecodeState  int // used in DecodePackets()
-	Decoder      mc.Decoder
-	scv          mc.ClientboundSetChunkVisibility
+	PacketID    mc.PacketID
+	DecodeState int // used in DecodePackets()
+	Decoder     mc.Decoder
+	scv         mc.ClientboundSetChunkVisibility
 
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.
@@ -294,7 +309,6 @@ type State struct {
 
 	Cursor         gfx.Vector2
 	ShowCursor     bool
-	CursorDelta    gfx.Vector2
 	CurrentScreeen int
 	// Inputs are parsed from SDL events in main.go
 	Inputs     [TotalInputs]Input
