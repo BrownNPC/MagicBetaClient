@@ -42,16 +42,7 @@ func (s *State) Screen_MenuMain(state *ScreenMainMenuState, screen gfx.Rectangle
 		"Options",
 	}
 	var NInteractables = len(ButtonTitles)
-	if s.UIDpadMode && (s.Inputs[InputDown].Pressed || s.Inputs[InputRight].Pressed) {
-		state.selected = min(state.selected+1, NInteractables-1)
-		s.PlaySoundEffect(assets.Newsound_step_stone3)
-		s.TextInputActive = false // Stop typing if focus moves
-	}
-	if s.UIDpadMode && (s.Inputs[InputUp].Pressed || s.Inputs[InputLeft].Pressed) {
-		state.selected = max(state.selected-1, 0)
-		s.PlaySoundEffect(assets.Newsound_step_stone3)
-		s.TextInputActive = false // Stop typing if focus moves
-	}
+	s.ProcessDpadUIInput(NInteractables, &state.selected)
 
 	buttonSet := gfx.Rectangle{W: gui.ButtonSize.W, H: (gui.ButtonSize.H + 2) * 4}.
 		Scale(gui.Scale).

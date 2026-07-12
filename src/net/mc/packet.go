@@ -1325,6 +1325,154 @@ func (p *ClientboundChunk) Step(a mem.Allocator, rd *net.BufferedReader) (bool, 
 	}
 }
 
+type ClientboundIncrementStatistic struct {
+	StatisticID int32
+	Amount      int8
+	stage       int
+}
+
+func (p *ClientboundIncrementStatistic) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.StatisticID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt8(&p.Amount) {
+				return false, rd.Err()
+			}
+		case 2:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundSpawnPlayer struct {
+	EntityID   int32
+	Username   String16
+	username   String16Reader
+	X, Y, Z    int32
+	Yaw, Pitch float32
+	HeldItem   ItemID
+
+	stage int
+}
+
+func (p *ClientboundSpawnPlayer) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if ok, err := p.username.Step(a, rd); !ok {
+				return false, err
+			}
+			p.Username = p.username.Runes
+		case 2:
+			if !rd.ReadInt32(&p.X) {
+				return false, rd.Err()
+			}
+		case 3:
+			if !rd.ReadInt32(&p.Y) {
+				return false, rd.Err()
+			}
+		case 4:
+			if !rd.ReadInt32(&p.Z) {
+				return false, rd.Err()
+			}
+		case 5:
+			var angle int8
+			if !rd.ReadInt8(&angle) {
+				return false, rd.Err()
+			}
+			p.Yaw = UnquantizeAngle(angle)
+		case 6:
+			var angle int8
+			if !rd.ReadInt8(&angle) {
+				return false, rd.Err()
+			}
+			p.Pitch = UnquantizeAngle(angle)
+		case 7:
+			if !rd.ReadInt16(&p.HeldItem) {
+				return false, rd.Err()
+			}
+		case 8:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type PacketChatMessage struct {
+	msg     String16Reader
+	Message String16
+	stage   int
+}
+
+func (p *PacketChatMessage) Write(w io.Writer) error {
+	if err := WriteByte(w, PKT_ChatMessage); err != nil {
+		return err
+	}
+	if err := WriteString16(w, p.Message); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *PacketChatMessage) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if ok, err := p.msg.Step(a, rd); !ok {
+				return false, err
+			}
+			p.Message = p.msg.Runes
+		case 1:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundSetEquipment struct {
+	EntityID      int32
+	InventorySlot int16
+	ItemID        ItemID
+	Metadata      int16
+
+	stage int
+}
+
+func (p *ClientboundSetEquipment) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt16(&p.InventorySlot) {
+				return false, rd.Err()
+			}
+		case 2:
+			if !rd.ReadInt16(&p.ItemID) {
+				return false, rd.Err()
+			}
+		case 3:
+			if !rd.ReadInt16(&p.Metadata) {
+				return false, rd.Err()
+			}
+		case 4:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
 // Returns a decoder for the given packet id. It is the user's job to free the decoder.
 // Returns nil if packetID is invalid.
 func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
@@ -1382,6 +1530,14 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientboundEntityMetadata](a)
 	case PKT_Chunk:
 		return mem.Alloc[ClientboundChunk](a)
+	case PKT_IncrementStatistic:
+		return mem.Alloc[ClientboundIncrementStatistic](a)
+	case PKT_SpawnPlayer:
+		return mem.Alloc[ClientboundSpawnPlayer](a)
+	case PKT_ChatMessage:
+		return mem.Alloc[PacketChatMessage](a)
+	case PKT_SetEquipment:
+		return mem.Alloc[ClientboundSetEquipment](a)
 		// end of bare minimum packets
 	}
 	return nil

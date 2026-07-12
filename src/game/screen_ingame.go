@@ -29,36 +29,41 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 		state.Init(s)
 		state.Initialized = true
 	}
+	s.MouseLock = true // mouse lock is explicitly disabled if needed.
+	s.ProcessDpadUIInput(2, &state.selected)
 	if state.Disconnected {
 		state.OnDisconnect(s, screen)
 		return
 	}
+	if s.Inputs[InputClose].Released {
+		state.Paused = !state.Paused
+	}
+	if state.Paused {
+		state.OnPaused(s, screen)
+		return
+	}
 	state.NetworkSystem(s)
-
 	if err := s.ServerBound.Flush(); err != nil {
 		state.Disconnected = true
 		state.Error = err
 		s.Conn.Close()
 		return
 	}
-	// println(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
-	// println(state.Cam.Target.X, state.Cam.Target.Y, state.Cam.Target.Z)
-	// fwd := state.Cam.GetForward()
-	// println(fwd.X, fwd.Y, fwd.Z)
 	if s.Inputs[InputLook].Pressed {
 		state.ProcessLook(s.Inputs[InputLook].Direction)
 	}
 	gfx.BeginMode3D(state.Cam)
-	box := state.Cam.GetUp().Scale(-20).Add(state.Cam.Position)
-	gfx.DrawCube3D(box, 200, 2, 200, gfx.Blue)
+	gfx.DrawStars()
+	// box := state.Cam.GetUp().Scale(-20).Add(state.Cam.Position)
+	// gfx.DrawCube3D(box, 200, 2, 200, gfx.Blue)
 	gfx.EndMode3D()
 }
 
 // delta is mouse delta movement.
 func (state *ScreenInGameState) ProcessLook(delta gfx.Vector2) {
-	delta.Scale(-1)
-	state.Cam.Yaw(delta.X*0.003, false)
-	state.Cam.Pitch(delta.Y*0.003, true, false, false)
+	const sensitivity = 0.001
+	state.Cam.Yaw(-delta.X*sensitivity, false)
+	state.Cam.Pitch(-delta.Y*sensitivity, true, false, false)
 }
 func (state *ScreenInGameState) NetworkSystem(s *State) {
 	// drain packets from buffer
@@ -134,6 +139,13 @@ var NoDecoderForPacketErr = errors.New("No decoder implemented for packet")
 
 // Show disconnected screen.
 func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
+	s.InteractingWithUI = true
+	state.selected = 0
+	s.MouseLock = false
+	clicked := s.Inputs[InputTap].Released
+	if s.UIDpadMode {
+		clicked = s.Inputs[InputReturn].Released
+	}
 	// Draw dirt background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	gfx.DrawTextureTiled(bg,
@@ -142,11 +154,15 @@ func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
 		gfx.White.Tint(gfx.Black, 75),
 	)
 	fnt := gui.ActivePack.Font()
-	runes := []rune(state.Error.Error())
-	if state.Error == NoDecoderForPacketErr {
+	var runes []rune
+	if state.Error == nil {
+		runes = []rune("Disconnected")
+	} else if state.Error == NoDecoderForPacketErr {
 		runes = []rune(
 			fmt.Sprintf(fmt.NewBuffer(100), "Cannot decode %s", mc.PacketIDString(state.PacketID)),
 		)
+	} else if state.Error != nil {
+		runes = []rune(state.Error.Error())
 	}
 	size := fnt.TextSize(runes).Scale(gui.Scale)
 	bbox := gfx.Rectangle{W: size.X, H: size.Y}.
@@ -158,8 +174,11 @@ func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
 	bbox = bbox.Anchor(screen, .5, .5)
 	bbox.Y += bbox.H
 	bbox.Y += 4 * gui.Scale
-	clicked := s.Inputs[InputTap].Released
+
 	hovered := bbox.Contains(s.Cursor)
+	if s.UIDpadMode {
+		hovered = state.selected == 0
+	}
 	if clicked && hovered {
 		s.PlaySoundEffect(assets.Newsound_random_click)
 		s.CurrentScreeen = SCREEN_CONNECT_SERVER
@@ -170,5 +189,56 @@ func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
 		return
 	}
 	gui.Button("Back", bbox, hovered, true)
+}
 
+func (state *ScreenInGameState) OnPaused(s *State, screen gfx.Rectangle) {
+	s.InteractingWithUI = true
+	s.MouseLock = false
+	bg := s.Pack.GetTexture(assets.Gui_background)
+	gfx.DrawTextureTiled(bg,
+		gfx.NewRectangle(0, 0, float32(s.ScreenWidth), float32(s.ScreenHeight)),
+		gui.Scale*2,
+		gfx.White.Tint(gfx.Black, 75),
+	)
+	fnt := gui.ActivePack.Font()
+	runes := []rune("Paused")
+	size := fnt.TextSize(runes).Scale(gui.Scale)
+	bbox := gfx.Rectangle{W: size.X, H: size.Y}.
+		Anchor(screen, .5, .35)
+
+	fnt.DrawRunes(runes, bbox.Position(), gui.Scale, 0, gfx.White, false)
+
+	buttons := gui.ButtonSize.Scale(gui.Scale).Anchor(screen, .5, .5)
+
+	resumeButton := gfx.Rectangle{W: buttons.W, H: buttons.H, X: buttons.X, Y: buttons.Y}
+	clicked := s.Inputs[InputTap].Released
+	if s.UIDpadMode {
+		clicked = s.Inputs[InputReturn].Released
+	}
+	buttons.Y += buttons.H + 1
+	{ // resume button
+		hovered := resumeButton.Contains(s.Cursor)
+		if s.UIDpadMode {
+			hovered = state.selected == 0
+		}
+		gui.Button("Resume", resumeButton, hovered, true)
+		if hovered && clicked {
+			s.PlaySoundEffect(assets.Newsound_random_click)
+			state.Paused = false
+		}
+	}
+	disconnectButton := gfx.Rectangle{W: buttons.W, H: buttons.H, X: buttons.X, Y: buttons.Y}
+	buttons.Y += buttons.H + 1
+	{ // disconect button
+		hovered := disconnectButton.Contains(s.Cursor)
+		if s.UIDpadMode {
+			hovered = state.selected == 1
+		}
+		gui.Button("Disconnect", disconnectButton, hovered, true)
+		if hovered && clicked {
+			s.PlaySoundEffect(assets.Newsound_random_click)
+			state.SendDisconnect(s)
+			state.Disconnected = true
+		}
+	}
 }

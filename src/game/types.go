@@ -135,6 +135,7 @@ type ScreenJoinServerState struct {
 	TextFieldFocused uint
 }
 type ScreenConnectServerState struct {
+	selected         int
 	ShouldTransision bool
 	TransisionTo     int
 	Dialed           bool
@@ -242,8 +243,10 @@ func (things *ThingPool) Iter() ThingsIter {
 type PacketHandler func(data mc.Decoder)
 
 type ScreenInGameState struct {
+	selected     int
 	Initialized  bool
 	Disconnected bool
+	Paused       bool
 
 	Error error
 
@@ -298,6 +301,7 @@ type State struct {
 
 	// Moving with dpad
 	InteractingWithUI bool // is interacting with UI
+	MouseLock         bool // lock mouse (FPS mode)
 	UIDpadMode        bool
 
 	Pack gfx.TexturePack
@@ -338,4 +342,26 @@ type State struct {
 	__arenaForClientbound mem.Arena
 	ServerBound           bufio.Writer
 	ClientBound           net.BufferedReader
+}
+
+// ProcessDpadUIInput updates the selected UI element.
+func (s *State) ProcessDpadUIInput(nInteractables int, selected *int) {
+	if !s.UIDpadMode {
+		return
+	}
+
+	delta := 0
+
+	if s.Inputs[InputDown].Pressed || s.Inputs[InputRight].Pressed {
+		delta = 1
+	} else if s.Inputs[InputUp].Pressed || s.Inputs[InputLeft].Pressed {
+		delta = -1
+	}
+
+	newSelection := *selected + delta
+	if delta != 0 && newSelection >= 0 && newSelection < nInteractables {
+		*selected = newSelection
+		s.PlaySoundEffect(assets.Newsound_step_stone3)
+		s.TextInputActive = false // Stop typing if focus moves
+	}
 }

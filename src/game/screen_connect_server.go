@@ -21,6 +21,8 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		gui.Scale*2,
 		gfx.White.Tint(gfx.Black, 75),
 	)
+	const NInteractables = 1
+	s.ProcessDpadUIInput(NInteractables, &state.selected)
 	if state.ShouldTransision {
 		s.CurrentScreeen = state.TransisionTo
 		s.Conn.Close()
@@ -50,6 +52,10 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	bbox.Y += 4 * gui.Scale
 	clicked := s.Inputs[InputTap].Released
 	hovered := bbox.Contains(s.Cursor)
+	if s.UIDpadMode {
+		clicked = s.Inputs[InputReturn].Released
+		hovered = state.selected == 0
+	}
 	if clicked && hovered {
 		state.ShouldTransision = true
 		state.TransisionTo = SCREEN_MENU_SELECT_SERVER

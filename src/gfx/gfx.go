@@ -5,6 +5,8 @@ import (
 
 	"solod.dev/so/c"
 	"solod.dev/so/math"
+	"solod.dev/so/math/rand"
+	"solod.dev/so/mem"
 	"solod.dev/so/slices"
 	"solod.dev/so/unicode"
 )
@@ -85,6 +87,14 @@ func GetWindowSize() (int, int) {
 
 func BeginDrawing() { rlLoadIdentity() }
 func EndDrawing()   { rlDrawRenderBatchActive(); sdl.GLSwapWindow(Window) }
+
+// Lock or unlock the mouse (FPS mode)
+func SetMouseLock(v bool) {
+	if sdl.GetWindowRelativeMouseMode(Window) == v {
+		return
+	}
+	sdl.SetWindowRelativeMouseMode(Window, v)
+}
 
 func ClearBackground(c Color) {
 	rlClearColor(float32(c.R)/255, float32(c.G)/255, float32(c.B)/255, float32(c.A)/255)
@@ -812,6 +822,260 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 	rlEnd()
 }
 
+//so:attr align(16)
+type vertex struct {
+	X, Y, Z float32
+}
+
+//so:attr align(16)
+type texcoord struct {
+	X, Y float32
+}
+
+//so:attr align(16)
+type color struct {
+	R, G, B, A uint8
+}
+type Mesh struct {
+	a         mem.Allocator
+	vertices  []vertex
+	texCoords []texcoord
+	colors    []color
+
+	vaoID int
+	vboID [5]int
+}
+
+func (m *Mesh) Vertex3f(x, y, z float32)  { slices.Append(m.a, m.vertices, vertex{x, y, z}) }
+func (m *Mesh) Color4ub(r, g, b, a uint8) { slices.Append(m.a, m.colors, color{r, g, b, a}) }
+func (m *Mesh) TexCoord2f(u, v float32)   { slices.Append(m.a, m.texCoords, texcoord{u, v}) }
+func (m *Mesh) Upload(dynamic bool) {
+	version := rlGetVersion()
+	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
+		return
+	}
+	m.vboID = [5]int{} // reset
+
+	// enable VAO
+	m.vaoID = rlLoadVertexArray()
+	rlEnableVertexArray(m.vaoID)
+
+	if len(m.vertices) > 0 {
+		m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION] =
+			rlLoadVertexBuffer(&m.vertices[0], len(m.vertices)*3*4, dynamic)
+		// Enable vertex attributes: position (shader-location = 0)
+		rlSetVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION, 3, RL_FLOAT, false, 0, 0)
+		rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION)
+	}
+
+	// Enable vertex attributes: texcoords (shader-location = 1)
+	if len(m.texCoords) > 0 {
+		m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD] = rlLoadVertexBuffer(m.texCoords, len(m.texCoords)*2*4, dynamic)
+		rlSetVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD, 2, RL_FLOAT, false, 0, 0)
+		rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD)
+	} else {
+		var value [2]float32
+		rlSetVertexAttributeDefault(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD, &value, RL_SHADER_ATTRIB_VEC2, 2)
+		rlDisableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD)
+	}
+	c.Raw(`#ifndef SDL_PLATFORM_VITA`)
+	var value = [3]float32{0, 0, 1}
+	rlSetVertexAttributeDefault(RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL, &value, RL_SHADER_ATTRIB_VEC3, 3)
+	rlDisableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL)
+	c.Raw(`#endif`)
+
+	if len(m.colors) > 0 {
+		// Enable vertex attribute: color (shader-location = 3)
+		m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR] = rlLoadVertexBuffer(m.colors, len(m.colors)*4, dynamic)
+		rlSetVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR, 4, RL_UNSIGNED_BYTE, true, 0, 0)
+		rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR)
+	} else {
+		var value = [4]float32{1, 1, 1, 1} //white
+		rlSetVertexAttributeDefault(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR, &value, RL_SHADER_ATTRIB_VEC4, 4)
+		rlDisableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR)
+	}
+	if m.vaoID > 0 {
+		sdl.Log("VAO: [ID %i] Mesh uploaded successfully to VRAM (GPU)", m.vaoID)
+	} else {
+		sdl.Log("VBO: Mesh uploaded successfully to VRAM (GPU)")
+	}
+	rlDisableVertexArray()
+}
+func (m *Mesh) Reset() {
+	m.vertices = m.vertices[:0]
+	m.texCoords = m.texCoords[:0]
+	m.colors = m.colors[:0]
+}
+func (m *Mesh) Draw(transform Matrix) {
+	version := rlGetVersion()
+	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
+		const (
+			GL_VERTEX_ARRAY        = 0x8074
+			GL_NORMAL_ARRAY        = 0x8075
+			GL_COLOR_ARRAY         = 0x8076
+			GL_TEXTURE_COORD_ARRAY = 0x8078
+		)
+		if len(m.vertices) > 0 {
+			rlEnableStatePointer(GL_VERTEX_ARRAY, &m.vertices[0])
+		}
+		if len(m.texCoords) > 0 {
+			rlEnableStatePointer(GL_TEXTURE_COORD_ARRAY, &m.texCoords[0])
+		}
+		if len(m.colors) > 0 {
+			rlEnableStatePointer(GL_COLOR_ARRAY, &m.colors[0])
+		}
+		rlPushMatrix()
+		{
+			f := MatrixToFloat(transform)
+			rlMultMatrixf(&f.V[0])
+			rlDrawVertexArray(0, len(m.vertices))
+		}
+		rlPopMatrix()
+		return
+	}
+
+	rlEnableShader(rlGetShaderIdDefault())
+
+	matModel := MatrixMultiply(transform, rlGetMatrixTransform().Matrix())
+	matView := rlGetMatrixModelview().Matrix()
+	matProjection := rlGetMatrixProjection().Matrix()
+	matModelView := MatrixMultiply(matModel, matView)
+	mvp := MatrixMultiply(matModelView, matProjection)
+
+	rlSetUniformMatrix(
+		getShaderLocDefault(RL_SHADER_LOC_MATRIX_MODEL),
+		matModel.toRlMatrix(),
+	)
+	rlSetUniformMatrix(
+		getShaderLocDefault(RL_SHADER_LOC_MATRIX_VIEW),
+		matView.toRlMatrix(),
+	)
+	rlSetUniformMatrix(
+		getShaderLocDefault(RL_SHADER_LOC_MATRIX_PROJECTION),
+		matProjection.toRlMatrix(),
+	)
+	rlSetUniformMatrix(
+		getShaderLocDefault(RL_SHADER_LOC_MATRIX_MVP),
+		mvp.toRlMatrix(),
+	)
+	if m.vaoID > 0 {
+		rlEnableVertexArray(m.vaoID)
+	} else {
+		// for opengl ES 2.0
+		if len(m.vertices) > 0 {
+			rlEnableVertexBuffer(m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION])
+			rlSetVertexAttribute(
+				RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION,
+				3,
+				RL_FLOAT,
+				false, 0, 0,
+			)
+			rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION)
+		}
+		if len(m.texCoords) > 0 {
+			rlEnableVertexBuffer(m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD])
+			rlSetVertexAttribute(
+				RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD,
+				2,
+				RL_FLOAT,
+				false,
+				0,
+				0,
+			)
+			rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD)
+		}
+
+		if len(m.colors) > 0 {
+			rlEnableVertexBuffer(m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR])
+			rlSetVertexAttribute(
+				RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR,
+				4,
+				RL_UNSIGNED_BYTE,
+				true,
+				0,
+				0,
+			)
+			rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR)
+		}
+	}
+	rlDrawVertexArray(0, len(m.vertices))
+	if m.vaoID > 0 {
+		rlDisableVertexArray()
+	} else {
+		rlDisableVertexBuffer()
+	}
+	rlDisableShader()
+}
+func NewMesh(a mem.Allocator) Mesh {
+	var m Mesh
+	m.a = a
+	m.vertices = slices.MakeCap[vertex](a, 0, 128)
+	m.texCoords = slices.MakeCap[texcoord](a, 0, 128)
+	m.colors = slices.MakeCap[color](a, 0, 128)
+	return m
+}
+
+func DrawStars() {
+	rlBegin(rlQUADS)
+
+	for range 1500 {
+		dir := Vector3{
+			rand.Float32()*2 - 1,
+			rand.Float32()*2 - 1,
+			rand.Float32()*2 - 1,
+		}
+
+		starSize := 0.25 + rand.Float32()*0.25
+
+		lengthSquared := dir.LengthSqr()
+		if lengthSquared >= 1.0 || lengthSquared <= 0.01 {
+			continue
+		}
+
+		dir = dir.Normalize()
+		star := dir.Scale(100)
+
+		// Orient the quad to face outward from the sphere.
+		yaw := float32(math.Atan2(float64(dir.X), float64(dir.Z)))
+		yawSin, yawCos := Sincos(yaw)
+
+		pitch := float32(math.Atan2(
+			math.Sqrt(float64(dir.X*dir.X+dir.Z*dir.Z)),
+			float64(dir.Y),
+		))
+		pitchSin, pitchCos := Sincos(pitch)
+
+		// Random rotation around the quad's normal.
+		roll := rand.Float32() * math.Pi * 2
+		rollSin, rollCos := Sincos(roll)
+
+		for corner := range 4 {
+			localX := float32((corner&2)-1) * starSize
+			localZ := float32((((corner + 1) & 2) - 1)) * starSize
+
+			// Roll
+			rolledX := localX*rollCos - localZ*rollSin
+			rolledZ := localZ*rollCos + localX*rollSin
+
+			// Pitch
+			pitchedY := rolledX * pitchSin
+			pitchedX := -rolledX * pitchCos
+
+			// Yaw
+			offsetX := pitchedX*yawSin - rolledZ*yawCos
+			offsetZ := rolledZ*yawSin + pitchedX*yawCos
+
+			rlVertex3f(
+				star.X+offsetX,
+				star.Y+pitchedY,
+				star.Z+offsetZ,
+			)
+		}
+	}
+
+	rlEnd()
+}
+
 /* RLGL IMPORTS*/
 //so:extern
 func rlViewport(x int32, y int32, width int32, height int32)
@@ -908,7 +1172,7 @@ func rlDrawRenderBatchActive()
 
 func rlLoadTexture(data any, width, height, format, mipmaps int) int
 
-// so:extern RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+//so:extern RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
 const rlPIXELFORMAT_UNCOMPRESSED_R8G8B8A8 = 7
 
 //so:extern
@@ -922,3 +1186,120 @@ func rlFrustum(left float64, right float64, bottom float64, top float64, near_va
 
 //so:extern
 func rlEnableDepthTest()
+
+// attributes buffer
+//
+//so:extern
+func rlLoadVertexBuffer(vertices any, size int, dynamic bool) int
+
+//so:extern
+func rlLoadVertexArray() int
+
+//so:extern
+func rlEnableVertexArray(int)
+
+//so:extern
+func rlDisableVertexArray()
+
+//so:extern
+func rlSetVertexAttribute(index, compSize, typ int, normalized bool, stride, offset int)
+
+//so:extern
+func rlSetVertexAttributeDefault(locIndex int, value any, attribType, count int)
+
+//so:extern
+func rlEnableVertexAttribute(int)
+
+//so:extern
+func rlDrawVertexArray(offset, count int)
+
+//so:extern
+func rlDisableVertexAttribute(int)
+
+//so:extern
+func rlEnableStatePointer(vertexAttribType int, buffer any)
+
+//so:extern
+func rlGetShaderIdDefault() int
+
+//so:extern Matrix
+type rlMatrix struct{}
+
+func (m rlMatrix) Matrix() Matrix     { return *any(&m).(*Matrix) }
+func (m Matrix) toRlMatrix() rlMatrix { return *any(&m).(*rlMatrix) }
+
+//so:extern
+func rlGetMatrixModelview() rlMatrix
+
+//so:extern
+func rlGetMatrixProjection() rlMatrix
+
+//so:extern
+func rlGetMatrixTransform() rlMatrix
+
+//so:extern
+func rlEnableShader(int)
+
+//so:extern
+func rlDisableShader()
+
+const (
+	RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION = 0
+	RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD = 1
+	RL_DEFAULT_SHADER_ATTRIB_LOCATION_NORMAL   = 2
+	RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR    = 3
+)
+const (
+	RL_UNSIGNED_BYTE = 0x1401
+	RL_FLOAT         = 0x1406
+)
+const (
+	RL_SHADER_ATTRIB_FLOAT = iota // Shader attribute type: float
+	RL_SHADER_ATTRIB_VEC2         // Shader attribute type: vec2 (2 float)
+	RL_SHADER_ATTRIB_VEC3         // Shader attribute type: vec3 (3 float)
+	RL_SHADER_ATTRIB_VEC4         // Shader attribute type: vec4 (4 float)
+)
+
+// Shader location point type
+const (
+	RL_SHADER_LOC_VERTEX_POSITION   = iota // Shader location: vertex attribute: position
+	RL_SHADER_LOC_VERTEX_TEXCOORD01        // Shader location: vertex attribute: texcoord01
+	RL_SHADER_LOC_VERTEX_TEXCOORD02        // Shader location: vertex attribute: texcoord02
+	RL_SHADER_LOC_VERTEX_NORMAL            // Shader location: vertex attribute: normal
+	RL_SHADER_LOC_VERTEX_TANGENT           // Shader location: vertex attribute: tangent
+	RL_SHADER_LOC_VERTEX_COLOR             // Shader location: vertex attribute: color
+	RL_SHADER_LOC_MATRIX_MVP               // Shader location: matrix uniform: model-view-projection
+	RL_SHADER_LOC_MATRIX_VIEW              // Shader location: matrix uniform: view (camera transform)
+	RL_SHADER_LOC_MATRIX_PROJECTION        // Shader location: matrix uniform: projection
+	RL_SHADER_LOC_MATRIX_MODEL             // Shader location: matrix uniform: model (transform)
+	RL_SHADER_LOC_MATRIX_NORMAL            // Shader location: matrix uniform: normal
+	RL_SHADER_LOC_VECTOR_VIEW              // Shader location: vector uniform: view
+	RL_SHADER_LOC_COLOR_DIFFUSE            // Shader location: vector uniform: diffuse color
+	RL_SHADER_LOC_COLOR_SPECULAR           // Shader location: vector uniform: specular color
+	RL_SHADER_LOC_COLOR_AMBIENT            // Shader location: vector uniform: ambient color
+	RL_SHADER_LOC_MAP_ALBEDO               // Shader location: sampler2d texture: albedo (same as: RL_SHADER_LOC_MAP_DIFFUSE)
+	RL_SHADER_LOC_MAP_METALNESS            // Shader location: sampler2d texture: metalness (same as: RL_SHADER_LOC_MAP_SPECULAR)
+	RL_SHADER_LOC_MAP_NORMAL               // Shader location: sampler2d texture: normal
+	RL_SHADER_LOC_MAP_ROUGHNESS            // Shader location: sampler2d texture: roughness
+	RL_SHADER_LOC_MAP_OCCLUSION            // Shader location: sampler2d texture: occlusion
+	RL_SHADER_LOC_MAP_EMISSION             // Shader location: sampler2d texture: emission
+	RL_SHADER_LOC_MAP_HEIGHT               // Shader location: sampler2d texture: height
+	RL_SHADER_LOC_MAP_CUBEMAP              // Shader location: samplerCube texture: cubemap
+	RL_SHADER_LOC_MAP_IRRADIANCE           // Shader location: samplerCube texture: irradiance
+	RL_SHADER_LOC_MAP_PREFILTER            // Shader location: samplerCube texture: prefilter
+	RL_SHADER_LOC_MAP_BRDF                 // Shader location: sampler2d texture: brdf
+)
+
+//so:extern rlGetShaderLocsDefault
+func rlgsldf() *c.Int
+
+func getShaderLocDefault(id int) int { return int(*c.PtrAt(rlgsldf(), id)) }
+
+//so:extern
+func rlSetUniformMatrix(locIndex int, mat rlMatrix)
+
+//so:extern
+func rlEnableVertexBuffer(int)
+
+//so:extern
+func rlDisableVertexBuffer()

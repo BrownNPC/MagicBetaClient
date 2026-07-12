@@ -214,3 +214,17 @@ func GLSetAttribute(attr int, value int) bool
 
 //so:extern SDL_OpenGamepad
 func OpenGamepad(id uint32) *Gamepad
+
+//so:extern SDL_SetWindowRelativeMouseMode
+func SetWindowRelativeMouseMode(*Window, bool)
+
+//so:extern SDL_GetWindowRelativeMouseMode
+func GetWindowRelativeMouseMode(*Window) bool
+func IsPlatformPSP() bool {
+	c.Raw(`
+	#ifdef SDL_PLATFORM_PSP
+	return true;
+	#endif
+		`)
+	return false
+}

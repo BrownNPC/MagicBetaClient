@@ -54,6 +54,7 @@ func AppIterate(appState any) sdl.AppResult {
 	now := time.Now()
 	// Update/render
 	state.game.InteractingWithUI = false // reset before frame
+	gfx.SetMouseLock(state.game.MouseLock)
 	if !state.game.Update() {
 		return sdl.APP_SUCCESS
 	}
@@ -180,11 +181,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 				typ = game.InputClose
 			}
 		}
-		if state.game.InteractingWithUI {
-			state.game.UIDpadMode = true
-		} else {
-			state.game.UIDpadMode = true
-		}
+		state.game.UIDpadMode = state.game.InteractingWithUI
 		state.game.Inputs[typ] = game.Input{
 			Pressed:  btn.Type == sdl.EVENT_GAMEPAD_BUTTON_DOWN,
 			Released: btn.Type == sdl.EVENT_GAMEPAD_BUTTON_UP,

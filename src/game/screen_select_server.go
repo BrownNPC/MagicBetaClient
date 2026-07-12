@@ -25,16 +25,7 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		s.CurrentScreeen = SCREEN_MENU_MAIN
 	}
 	const NInteractables = 5 + 2 + 1
-	if s.UIDpadMode && (s.Inputs[InputDown].Pressed || s.Inputs[InputRight].Pressed) {
-		state.selected = min(state.selected+1, NInteractables-1)
-		s.PlaySoundEffect(assets.Newsound_step_stone3)
-		s.TextInputActive = false // Stop typing if focus moves
-	}
-	if s.UIDpadMode && (s.Inputs[InputUp].Pressed || s.Inputs[InputLeft].Pressed) {
-		state.selected = max(state.selected-1, 0)
-		s.PlaySoundEffect(assets.Newsound_step_stone3)
-		s.TextInputActive = false // Stop typing if focus moves
-	}
+	s.ProcessDpadUIInput(NInteractables, &state.selected)
 
 	list := gfx.Rectangle{
 		W: gui.ButtonSize.W,
