@@ -22,6 +22,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.PacketDecodeArena = mem.NewArena(state.__PacketDecodeArenaMemory[:])
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
 	state.Player = state.Things.New(KindPlayer)
+	state.Stars = state.GenMeshStars(&state.PersistentArena)
 }
 func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	if !state.Initialized {
@@ -53,9 +54,11 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 		state.ProcessLook(s.Inputs[InputLook].Direction)
 	}
 	gfx.BeginMode3D(state.Cam)
-	gfx.DrawStars()
-	// box := state.Cam.GetUp().Scale(-20).Add(state.Cam.Position)
-	// gfx.DrawCube3D(box, 200, 2, 200, gfx.Blue)
+	state.Stars.Draw(gfx.Texture{}, gfx.MatrixTranslate(
+		state.Cam.Position.X,
+		state.Cam.Position.Y,
+		state.Cam.Position.Z,
+	))
 	gfx.EndMode3D()
 }
 
@@ -186,6 +189,7 @@ func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
 		s.ScreenConnectServerState = ScreenConnectServerState{}
 		s.ScreenConnectServerState.ShouldTransision = true
 		s.ScreenConnectServerState.TransisionTo = SCREEN_MENU_SELECT_SERVER
+		state.Unload()
 		return
 	}
 	gui.Button("Back", bbox, hovered, true)
@@ -241,4 +245,9 @@ func (state *ScreenInGameState) OnPaused(s *State, screen gfx.Rectangle) {
 			state.Disconnected = true
 		}
 	}
+}
+
+// Called in OnDisconnect
+func (s *ScreenInGameState) Unload() {
+	s.Stars.Free(&s.PersistentArena)
 }

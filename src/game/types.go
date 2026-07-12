@@ -243,19 +243,17 @@ func (things *ThingPool) Iter() ThingsIter {
 type PacketHandler func(data mc.Decoder)
 
 type ScreenInGameState struct {
+	// STATE BOOK KEEPING
 	selected     int
 	Initialized  bool
 	Disconnected bool
+	Error        error
 	Paused       bool
-
-	Error error
-
-	Things ThingPool
-
-	// game state
-	Cam gfx.Camera
-
+	Things       ThingPool
+	// GAME STATE
+	Cam    gfx.Camera
 	Player ThingRef
+
 	// Last player position and rotation sent by server.
 	// Used to calculate relative coordinates for entity position packets.
 	LastPlayerPosition             gfx.Vector3
@@ -265,7 +263,10 @@ type ScreenInGameState struct {
 	SpawnPosition gfx.Vector3
 	InGameTime    int64 // game time in ticks.
 
-	// Networking related fields
+	// RENDERING DATA
+	Stars gfx.Mesh // Initialized
+
+	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte
 	PacketDecodeArena         mem.Arena
 

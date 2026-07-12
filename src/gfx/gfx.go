@@ -5,7 +5,6 @@ import (
 
 	"solod.dev/so/c"
 	"solod.dev/so/math"
-	"solod.dev/so/math/rand"
 	"solod.dev/so/mem"
 	"solod.dev/so/slices"
 	"solod.dev/so/unicode"
@@ -97,7 +96,7 @@ func SetMouseLock(v bool) {
 }
 
 func ClearBackground(c Color) {
-	rlClearColor(float32(c.R)/255, float32(c.G)/255, float32(c.B)/255, float32(c.A)/255)
+	rlClearColor(c.R, c.G, c.B, c.A)
 	rlClearScreenBuffers()
 }
 func BeginMode3D(cam Camera) {
@@ -822,33 +821,75 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 	rlEnd()
 }
 
-//so:attr align(16)
-type vertex struct {
+type VertexCoord struct {
 	X, Y, Z float32
 }
-
-//so:attr align(16)
-type texcoord struct {
+type VertexTexcoord struct {
 	X, Y float32
 }
-
-//so:attr align(16)
-type color struct {
+type VertexColor struct {
 	R, G, B, A uint8
 }
 type Mesh struct {
-	a         mem.Allocator
-	vertices  []vertex
-	texCoords []texcoord
-	colors    []color
+	a  mem.Allocator
+	sz int
 
-	vaoID int
-	vboID [5]int
+	vertices  []VertexCoord
+	texCoords []VertexTexcoord
+	colors    []VertexColor
+	vaoID     int
+	vboID     [5]int
+
+	quadVerts  [4]VertexCoord
+	quadColors [4]VertexColor
+	quadCount  int
 }
 
-func (m *Mesh) Vertex3f(x, y, z float32)  { slices.Append(m.a, m.vertices, vertex{x, y, z}) }
-func (m *Mesh) Color4ub(r, g, b, a uint8) { slices.Append(m.a, m.colors, color{r, g, b, a}) }
-func (m *Mesh) TexCoord2f(u, v float32)   { slices.Append(m.a, m.texCoords, texcoord{u, v}) }
+func (m *Mesh) Vertex3f(x, y, z float32) {
+	m.vertices = slices.Append(m.a, m.vertices, VertexCoord{x, y, z})
+}
+func (m *Mesh) Color4ub(r, g, b, a uint8) {
+	m.colors = slices.Append(m.a, m.colors, VertexColor{r, g, b, a})
+}
+func (m *Mesh) TexCoord2f(u, v float32) {
+	m.texCoords = slices.Append(m.a, m.texCoords, VertexTexcoord{u, v})
+}
+
+// helper to convert quad code to triangles
+func (m *Mesh) QuadVertex3f(x, y, z float32, r, g, b, a uint8) {
+	m.quadVerts[m.quadCount] = VertexCoord{x, y, z}
+	m.quadColors[m.quadCount] = VertexColor{r, g, b, a}
+	m.quadCount++
+
+	if m.quadCount == 4 {
+		v := m.quadVerts
+		c := m.quadColors
+
+		// Triangle 1
+		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
+		m.Color4ub(c[0].R, c[0].G, c[0].B, c[0].A)
+
+		m.Vertex3f(v[1].X, v[1].Y, v[1].Z)
+		m.Color4ub(c[1].R, c[1].G, c[1].B, c[1].A)
+
+		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
+		m.Color4ub(c[2].R, c[2].G, c[2].B, c[2].A)
+
+		// Triangle 2
+		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
+		m.Color4ub(c[0].R, c[0].G, c[0].B, c[0].A)
+
+		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
+		m.Color4ub(c[2].R, c[2].G, c[2].B, c[2].A)
+
+		m.Vertex3f(v[3].X, v[3].Y, v[3].Z)
+		m.Color4ub(c[3].R, c[3].G, c[3].B, c[3].A)
+
+		m.quadCount = 0
+	}
+}
+
+// No-op if on opengl 1.1
 func (m *Mesh) Upload(dynamic bool) {
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
@@ -870,7 +911,7 @@ func (m *Mesh) Upload(dynamic bool) {
 
 	// Enable vertex attributes: texcoords (shader-location = 1)
 	if len(m.texCoords) > 0 {
-		m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD] = rlLoadVertexBuffer(m.texCoords, len(m.texCoords)*2*4, dynamic)
+		m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD] = rlLoadVertexBuffer(&m.texCoords[0], len(m.texCoords)*2*4, dynamic)
 		rlSetVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD, 2, RL_FLOAT, false, 0, 0)
 		rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD)
 	} else {
@@ -886,7 +927,7 @@ func (m *Mesh) Upload(dynamic bool) {
 
 	if len(m.colors) > 0 {
 		// Enable vertex attribute: color (shader-location = 3)
-		m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR] = rlLoadVertexBuffer(m.colors, len(m.colors)*4, dynamic)
+		m.vboID[RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR] = rlLoadVertexBuffer(&m.colors[0], len(m.colors)*4, dynamic)
 		rlSetVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR, 4, RL_UNSIGNED_BYTE, true, 0, 0)
 		rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR)
 	} else {
@@ -899,14 +940,36 @@ func (m *Mesh) Upload(dynamic bool) {
 	} else {
 		sdl.Log("VBO: Mesh uploaded successfully to VRAM (GPU)")
 	}
+	sdl.Log("Vertices: %d", len(m.vertices))
 	rlDisableVertexArray()
 }
+func (m *Mesh) Free(a mem.Allocator) {
+	mem.FreeSlice(a, m.vertices)
+	mem.FreeSlice(a, m.texCoords)
+	mem.FreeSlice(a, m.colors)
+	m.Reset()
+}
+
+// Reset de-allocates GPU memory.
+// Allows Mesh to be reused.
 func (m *Mesh) Reset() {
 	m.vertices = m.vertices[:0]
 	m.texCoords = m.texCoords[:0]
 	m.colors = m.colors[:0]
+	if m.vaoID > 0 {
+		rlUnloadVertexArray(m.vaoID)
+		m.vaoID = 0
+	}
+
+	for i := range m.vboID {
+		if m.vboID[i] > 0 {
+			rlUnloadVertexBuffer(m.vboID[i])
+			m.vboID[i] = 0
+		}
+	}
+	*m = Mesh{}
 }
-func (m *Mesh) Draw(transform Matrix) {
+func (m *Mesh) Draw(texture Texture, transform Matrix) {
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
 		const (
@@ -931,33 +994,44 @@ func (m *Mesh) Draw(transform Matrix) {
 			rlDrawVertexArray(0, len(m.vertices))
 		}
 		rlPopMatrix()
+
+		rlDisableStatePointer(GL_VERTEX_ARRAY)
+		rlDisableStatePointer(GL_TEXTURE_COORD_ARRAY)
+		rlDisableStatePointer(GL_NORMAL_ARRAY)
+		rlDisableStatePointer(GL_COLOR_ARRAY)
 		return
 	}
-
 	rlEnableShader(rlGetShaderIdDefault())
 
-	matModel := MatrixMultiply(transform, rlGetMatrixTransform().Matrix())
+	matModel := MatrixIdentity()
 	matView := rlGetMatrixModelview().Matrix()
+	matModelView := MatrixIdentity()
 	matProjection := rlGetMatrixProjection().Matrix()
-	matModelView := MatrixMultiply(matModel, matView)
-	mvp := MatrixMultiply(matModelView, matProjection)
 
-	rlSetUniformMatrix(
-		getShaderLocDefault(RL_SHADER_LOC_MATRIX_MODEL),
-		matModel.toRlMatrix(),
-	)
-	rlSetUniformMatrix(
-		getShaderLocDefault(RL_SHADER_LOC_MATRIX_VIEW),
-		matView.toRlMatrix(),
-	)
-	rlSetUniformMatrix(
-		getShaderLocDefault(RL_SHADER_LOC_MATRIX_PROJECTION),
-		matProjection.toRlMatrix(),
-	)
-	rlSetUniformMatrix(
-		getShaderLocDefault(RL_SHADER_LOC_MATRIX_MVP),
-		mvp.toRlMatrix(),
-	)
+	// Upload view and projection matrices (if locations available)
+	if getShaderLocDefault(RL_SHADER_LOC_MATRIX_VIEW) != -1 {
+		rlSetUniformMatrix(RL_SHADER_LOC_MATRIX_VIEW, matView.toRlMatrix())
+	}
+	if getShaderLocDefault(RL_SHADER_LOC_MATRIX_PROJECTION) != -1 {
+		rlSetUniformMatrix(RL_SHADER_LOC_MATRIX_PROJECTION, matProjection.toRlMatrix())
+	}
+
+	// Accumulate several model transformations:
+	//    transform: model transformation provided (includes DrawModel() params combined with model.transform)
+	//    rlGetMatrixTransform(): rlgl internal transform matrix due to push/pop matrix stack
+	matModel = MatrixMultiply(transform, rlGetMatrixTransform().Matrix())
+
+	if getShaderLocDefault(RL_SHADER_LOC_MATRIX_MODEL) != -1 {
+		rlSetUniformMatrix(RL_SHADER_LOC_MATRIX_MODEL, matModel.toRlMatrix())
+	}
+
+	// Get model-view matrix
+	matModelView = MatrixMultiply(matModel, matView)
+	// MVP matrix
+	matModelViewProjection := MatrixIdentity()
+	matModelViewProjection = MatrixMultiply(matModelView, matProjection)
+	rlSetUniformMatrix(getShaderLocDefault(RL_SHADER_LOC_MATRIX_MVP), matModelViewProjection.toRlMatrix())
+
 	if m.vaoID > 0 {
 		rlEnableVertexArray(m.vaoID)
 	} else {
@@ -1007,73 +1081,13 @@ func (m *Mesh) Draw(transform Matrix) {
 	rlDisableShader()
 }
 func NewMesh(a mem.Allocator) Mesh {
+	var size = 1024
 	var m Mesh
 	m.a = a
-	m.vertices = slices.MakeCap[vertex](a, 0, 128)
-	m.texCoords = slices.MakeCap[texcoord](a, 0, 128)
-	m.colors = slices.MakeCap[color](a, 0, 128)
+	m.vertices = slices.MakeCap[VertexCoord](a, 0, size)
+	m.texCoords = slices.MakeCap[VertexTexcoord](a, 0, size)
+	m.colors = slices.MakeCap[VertexColor](a, 0, size)
 	return m
-}
-
-func DrawStars() {
-	rlBegin(rlQUADS)
-
-	for range 1500 {
-		dir := Vector3{
-			rand.Float32()*2 - 1,
-			rand.Float32()*2 - 1,
-			rand.Float32()*2 - 1,
-		}
-
-		starSize := 0.25 + rand.Float32()*0.25
-
-		lengthSquared := dir.LengthSqr()
-		if lengthSquared >= 1.0 || lengthSquared <= 0.01 {
-			continue
-		}
-
-		dir = dir.Normalize()
-		star := dir.Scale(100)
-
-		// Orient the quad to face outward from the sphere.
-		yaw := float32(math.Atan2(float64(dir.X), float64(dir.Z)))
-		yawSin, yawCos := Sincos(yaw)
-
-		pitch := float32(math.Atan2(
-			math.Sqrt(float64(dir.X*dir.X+dir.Z*dir.Z)),
-			float64(dir.Y),
-		))
-		pitchSin, pitchCos := Sincos(pitch)
-
-		// Random rotation around the quad's normal.
-		roll := rand.Float32() * math.Pi * 2
-		rollSin, rollCos := Sincos(roll)
-
-		for corner := range 4 {
-			localX := float32((corner&2)-1) * starSize
-			localZ := float32((((corner + 1) & 2) - 1)) * starSize
-
-			// Roll
-			rolledX := localX*rollCos - localZ*rollSin
-			rolledZ := localZ*rollCos + localX*rollSin
-
-			// Pitch
-			pitchedY := rolledX * pitchSin
-			pitchedX := -rolledX * pitchCos
-
-			// Yaw
-			offsetX := pitchedX*yawSin - rolledZ*yawCos
-			offsetZ := rolledZ*yawSin + pitchedX*yawCos
-
-			rlVertex3f(
-				star.X+offsetX,
-				star.Y+pitchedY,
-				star.Z+offsetZ,
-			)
-		}
-	}
-
-	rlEnd()
 }
 
 /* RLGL IMPORTS*/
@@ -1144,7 +1158,7 @@ func rlVertex2f(x float32, y float32)
 func rlVertex3f(x float32, y float32, z float32)
 
 //so:extern rlClearColor
-func rlClearColor(red float32, green float32, blue float32, alpha float32)
+func rlClearColor(red, green, blue, alpha uint8)
 
 //so:extern rlClear
 func rlClear(int)
@@ -1220,6 +1234,9 @@ func rlDisableVertexAttribute(int)
 func rlEnableStatePointer(vertexAttribType int, buffer any)
 
 //so:extern
+func rlDisableStatePointer(int)
+
+//so:extern
 func rlGetShaderIdDefault() int
 
 //so:extern Matrix
@@ -1289,6 +1306,21 @@ const (
 	RL_SHADER_LOC_MAP_PREFILTER            // Shader location: samplerCube texture: prefilter
 	RL_SHADER_LOC_MAP_BRDF                 // Shader location: sampler2d texture: brdf
 )
+const (
+	RL_SHADER_UNIFORM_FLOAT     = iota // Shader uniform type: float
+	RL_SHADER_UNIFORM_VEC2             // Shader uniform type: vec2 (2 float)
+	RL_SHADER_UNIFORM_VEC3             // Shader uniform type: vec3 (3 float)
+	RL_SHADER_UNIFORM_VEC4             // Shader uniform type: vec4 (4 float)
+	RL_SHADER_UNIFORM_INT              // Shader uniform type: int
+	RL_SHADER_UNIFORM_IVEC2            // Shader uniform type: ivec2 (2 int)
+	RL_SHADER_UNIFORM_IVEC3            // Shader uniform type: ivec3 (3 int)
+	RL_SHADER_UNIFORM_IVEC4            // Shader uniform type: ivec4 (4 int)
+	RL_SHADER_UNIFORM_UINT             // Shader uniform type: unsigned int
+	RL_SHADER_UNIFORM_UIVEC2           // Shader uniform type: uivec2 (2 unsigned int)
+	RL_SHADER_UNIFORM_UIVEC3           // Shader uniform type: uivec3 (3 unsigned int)
+	RL_SHADER_UNIFORM_UIVEC4           // Shader uniform type: uivec4 (4 unsigned int)
+	RL_SHADER_UNIFORM_SAMPLER2D        // Shader uniform type: sampler2d
+)
 
 //so:extern rlGetShaderLocsDefault
 func rlgsldf() *c.Int
@@ -1303,3 +1335,15 @@ func rlEnableVertexBuffer(int)
 
 //so:extern
 func rlDisableVertexBuffer()
+
+//so:extern
+func rlUnloadVertexBuffer(int)
+
+//so:extern
+func rlUnloadVertexArray(int)
+
+//so:extern
+func rlSetUniform(locIndex int, value any, uniformType any, count int)
+
+//so:extern
+func rlGetTextureIdDefault() int
