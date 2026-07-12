@@ -54,7 +54,7 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 		state.ProcessLook(s.Inputs[InputLook].Direction)
 	}
 	gfx.BeginMode3D(state.Cam)
-	state.Stars.Draw(gfx.Texture{}, gfx.MatrixTranslate(
+	state.Stars.Draw(gfx.DefaultTexture(), gfx.White, gfx.MatrixTranslate(
 		state.Cam.Position.X,
 		state.Cam.Position.Y,
 		state.Cam.Position.Z,

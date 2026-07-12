@@ -969,7 +969,8 @@ func (m *Mesh) Reset() {
 	}
 	*m = Mesh{}
 }
-func (m *Mesh) Draw(texture Texture, transform Matrix) {
+func DefaultTexture() Texture { return Texture{Width: 1, Height: 1, ID: rlGetTextureIdDefault()} }
+func (m *Mesh) Draw(albedo Texture, color Color, transform Matrix) {
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
 		const (
@@ -978,6 +979,8 @@ func (m *Mesh) Draw(texture Texture, transform Matrix) {
 			GL_COLOR_ARRAY         = 0x8076
 			GL_TEXTURE_COORD_ARRAY = 0x8078
 		)
+		EnableTexture(albedo)
+		defer DisableTexture()
 		if len(m.vertices) > 0 {
 			rlEnableStatePointer(GL_VERTEX_ARRAY, &m.vertices[0])
 		}
@@ -989,6 +992,7 @@ func (m *Mesh) Draw(texture Texture, transform Matrix) {
 		}
 		rlPushMatrix()
 		{
+			rlColor4ub(color.R, color.G, color.B, color.A)
 			f := MatrixToFloat(transform)
 			rlMultMatrixf(&f.V[0])
 			rlDrawVertexArray(0, len(m.vertices))
@@ -1007,6 +1011,17 @@ func (m *Mesh) Draw(texture Texture, transform Matrix) {
 	matView := rlGetMatrixModelview().Matrix()
 	matModelView := MatrixIdentity()
 	matProjection := rlGetMatrixProjection().Matrix()
+
+	// albedo color (Diffuse in raylib)
+	{
+		var values = [4]float32{
+			float32(color.R) / 255,
+			float32(color.G) / 255,
+			float32(color.B) / 255,
+			float32(color.A) / 255,
+		}
+		rlSetUniform(getShaderLocDefault(RL_SHADER_LOC_COLOR_DIFFUSE), &values[0], RL_SHADER_UNIFORM_VEC4, 1)
+	}
 
 	// Upload view and projection matrices (if locations available)
 	if getShaderLocDefault(RL_SHADER_LOC_MATRIX_VIEW) != -1 {
@@ -1031,6 +1046,13 @@ func (m *Mesh) Draw(texture Texture, transform Matrix) {
 	matModelViewProjection := MatrixIdentity()
 	matModelViewProjection = MatrixMultiply(matModelView, matProjection)
 	rlSetUniformMatrix(getShaderLocDefault(RL_SHADER_LOC_MATRIX_MVP), matModelViewProjection.toRlMatrix())
+
+	// setup albedo/diffuse texture
+	rlActiveTextureSlot(0)
+	rlEnableTexture(albedo.ID)
+
+	slot := int32(0)
+	rlSetUniform(getShaderLocDefault(RL_SHADER_LOC_MAP_ALBEDO), &slot, RL_SHADER_UNIFORM_INT, 1)
 
 	if m.vaoID > 0 {
 		rlEnableVertexArray(m.vaoID)
@@ -1347,3 +1369,12 @@ func rlSetUniform(locIndex int, value any, uniformType any, count int)
 
 //so:extern
 func rlGetTextureIdDefault() int
+
+//so:extern
+func rlActiveTextureSlot(int)
+
+//so:extern
+func rlEnableTexture(int)
+
+//so:extern
+func rlDisableTexture()
