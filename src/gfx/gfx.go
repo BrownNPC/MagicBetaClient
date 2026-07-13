@@ -1006,7 +1006,6 @@ func (m *Mesh) Draw(albedo Texture, color Color, transform Matrix) {
 		return
 	}
 	rlEnableShader(rlGetShaderIdDefault())
-
 	matModel := MatrixIdentity()
 	matView := rlGetMatrixModelview().Matrix()
 	matModelView := MatrixIdentity()

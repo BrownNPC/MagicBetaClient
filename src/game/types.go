@@ -264,13 +264,15 @@ type ScreenInGameState struct {
 	// Player spawn position
 	SpawnPosition gfx.Vector3
 
-	InGameTime     int64 // game time in ticks.
-	LastTimeUpdate time.Time
 	// Used for celestial angle and day/night cycle
-	PartialTicks float32 // In game time but it's a float
+	GameTimeFloat  float32 // In game time but it's a float
+	GameTicksInt   int64   // game time in ticks.
+	LastTimeUpdate time.Time
 
 	// RENDERING DATA
 	Stars gfx.Mesh // Initialized
+	SkyColor      gfx.Color
+	Sky   gfx.Mesh
 
 	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte

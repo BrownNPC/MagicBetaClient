@@ -19,6 +19,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
+	state.SkyColor = gfx.NewColor(120, 167, 255, 255)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
@@ -34,15 +35,21 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		return
 	}
 	// lerp ticks
-	state.PartialTicks = state.LerpTicks()
+	state.GameTimeFloat = state.LerpTicks()
 	// Process mouse look
 	if s.Inputs[InputLook].Updated {
 		state.ProcessLook(s.Inputs[InputLook].Direction)
 	}
 
 	// RENDER
+	gfx.ClearBackground(state.CalculateSkyColor())
 	gfx.BeginMode3D(state.Cam)
 	state.Stars.Draw(gfx.DefaultTexture(), gfx.White, gfx.MatrixTranslate(
+		state.Cam.Position.X,
+		state.Cam.Position.Y,
+		state.Cam.Position.Z,
+	))
+	state.Sky.Draw(gfx.DefaultTexture(), gfx.White, gfx.MatrixTranslate(
 		state.Cam.Position.X,
 		state.Cam.Position.Y,
 		state.Cam.Position.Z,
@@ -77,5 +84,5 @@ func (s *ScreenInGameState) Unload() {
 }
 func (state *ScreenInGameState) LerpTicks() float32 {
 	elapsed := time.Since(state.LastTimeUpdate).Seconds() * 20
-	return float32(state.InGameTime) + float32(elapsed)
+	return float32(state.GameTicksInt) + float32(elapsed)
 }
