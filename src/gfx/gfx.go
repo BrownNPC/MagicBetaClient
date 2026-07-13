@@ -943,10 +943,10 @@ func (m *Mesh) Upload(dynamic bool) {
 	sdl.Log("Vertices: %d", len(m.vertices))
 	rlDisableVertexArray()
 }
-func (m *Mesh) Free(a mem.Allocator) {
-	mem.FreeSlice(a, m.vertices)
-	mem.FreeSlice(a, m.texCoords)
-	mem.FreeSlice(a, m.colors)
+func (m *Mesh) Destroy() {
+	mem.FreeSlice(m.a, m.vertices)
+	mem.FreeSlice(m.a, m.texCoords)
+	mem.FreeSlice(m.a, m.colors)
 	m.Reset()
 }
 

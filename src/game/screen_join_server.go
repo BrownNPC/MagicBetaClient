@@ -43,7 +43,7 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 	}
 
 	// go back if close input
-	if s.Inputs[InputClose].Pressed {
+	if s.Inputs[InputClose].Updated {
 		state.ShouldTransition = true
 		state.switchToScreen = SCREEN_MENU_SELECT_SERVER
 	}
@@ -169,7 +169,7 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 		if input != 0 && tf.Len < 70 {
 			tf.Add(input)
 		}
-		if s.Inputs[InputBackspace].Pressed {
+		if s.Inputs[InputBackspace].Updated {
 			tf.Pop()
 		}
 	}

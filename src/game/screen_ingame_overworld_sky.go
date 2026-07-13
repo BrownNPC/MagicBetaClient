@@ -19,10 +19,10 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 			Z: rand.Float32()*2 - 1,
 		}
 
-		starSize := 0.25 + rand.Float32()*0.25
-
+		// starSize := 0.25 + rand.Float32()*0.25 //original
+		var starSize float32 = 0.15 + rand.Float32()*0.15/2
 		lengthSquared := dir.LengthSqr()
-		if lengthSquared >= 1.0 || lengthSquared <= 0.01 {
+		if lengthSquared >= 1.0 || lengthSquared <= 0.025 {
 			continue
 		}
 
@@ -68,4 +68,6 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 	}
 	mesh.Upload(true)
 	return mesh
+}
+func (state *ScreenInGameState) CalculateOverworldCelestialAngle() {
 }

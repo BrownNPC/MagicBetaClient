@@ -75,11 +75,14 @@ const (
 	SCREEN_JOIN_SERVER
 	SCREEN_CONNECT_SERVER
 	SCREEN_INGAME
+	// within screen ingame
+	SCREEN_INGAME_DISCONNECTED_SCREEN
+	SCREEN_INGAME_PAUSED_SCREEN
 )
 
 type InputType uint32
 type Input struct {
-	Pressed  bool
+	Updated  bool
 	Released bool
 	Text     rune // for text input
 	// Direction is delta mouse movment in InputLook
@@ -244,12 +247,11 @@ type PacketHandler func(data mc.Decoder)
 
 type ScreenInGameState struct {
 	// STATE BOOK KEEPING
-	selected     int
-	Initialized  bool
-	Disconnected bool
-	Error        error
-	Paused       bool
-	Things       ThingPool
+	CurrentScreen int
+	selected      int
+	Initialized   bool
+	Error         error
+	Things        ThingPool
 	// GAME STATE
 	Cam    gfx.Camera
 	Player ThingRef
@@ -261,7 +263,11 @@ type ScreenInGameState struct {
 
 	// Player spawn position
 	SpawnPosition gfx.Vector3
-	InGameTime    int64 // game time in ticks.
+
+	InGameTime     int64 // game time in ticks.
+	LastTimeUpdate time.Time
+	// Used for celestial angle and day/night cycle
+	PartialTicks float32 // In game time but it's a float
 
 	// RENDERING DATA
 	Stars gfx.Mesh // Initialized
@@ -353,9 +359,9 @@ func (s *State) ProcessDpadUIInput(nInteractables int, selected *int) {
 
 	delta := 0
 
-	if s.Inputs[InputDown].Pressed || s.Inputs[InputRight].Pressed {
+	if s.Inputs[InputDown].Updated || s.Inputs[InputRight].Updated {
 		delta = 1
-	} else if s.Inputs[InputUp].Pressed || s.Inputs[InputLeft].Pressed {
+	} else if s.Inputs[InputUp].Updated || s.Inputs[InputLeft].Updated {
 		delta = -1
 	}
 

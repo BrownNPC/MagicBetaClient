@@ -63,7 +63,7 @@ func (s *State) Update() bool {
 	screen := gfx.Rectangle{W: float32(s.ScreenWidth), H: float32(s.ScreenHeight)}
 	s.RollBackgroundMusic()
 	gfx.BeginDrawing()
-	gfx.ClearBackground(gfx.Red)
+	gfx.ClearBackground(gfx.Black)
 	switch s.CurrentScreeen {
 	case SCREEN_MENU_MAIN:
 		s.Screen_MenuMain(&s.ScreenMainMenuState, screen)

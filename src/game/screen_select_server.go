@@ -21,7 +21,7 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		gfx.White.Tint(gfx.Black, 75),
 	)
 	// go to main menu if close input
-	if s.Inputs[InputClose].Pressed {
+	if s.Inputs[InputClose].Updated {
 		s.CurrentScreeen = SCREEN_MENU_MAIN
 	}
 	const NInteractables = 5 + 2 + 1

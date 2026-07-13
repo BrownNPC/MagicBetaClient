@@ -96,7 +96,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		// store the input
 		state.game.Inputs[typ] = game.Input{
 			Direction: gfx.Vector2{X: m.Xrel, Y: m.Yrel},
-			Pressed:   true,
+			Updated:   true,
 		}
 
 	case sdl.EVENT_MOUSE_BUTTON_UP, sdl.EVENT_MOUSE_BUTTON_DOWN:
@@ -112,7 +112,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			typ = game.InputRightClick
 		}
 		state.game.Inputs[typ] = game.Input{
-			Pressed:  m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN,
+			Updated:  m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN,
 			Released: m.Type == sdl.EVENT_MOUSE_BUTTON_UP,
 		}
 	case sdl.EVENT_TEXT_EDITING:
@@ -121,7 +121,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		typ := game.InputTextInput
 		state.game.Inputs[typ] = game.Input{
 			Text:    t.Rune(),
-			Pressed: true,
+			Updated: true,
 		}
 
 	case sdl.EVENT_KEY_DOWN, sdl.EVENT_KEY_UP:
@@ -144,7 +144,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		}
 
 		state.game.Inputs[typ] = game.Input{
-			Pressed:  key.Type == sdl.EVENT_KEY_DOWN,
+			Updated:  key.Type == sdl.EVENT_KEY_DOWN,
 			Released: key.Type == sdl.EVENT_KEY_UP,
 		}
 	case sdl.EVENT_GAMEPAD_ADDED:
@@ -183,7 +183,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		}
 		state.game.UIDpadMode = state.game.InteractingWithUI
 		state.game.Inputs[typ] = game.Input{
-			Pressed:  btn.Type == sdl.EVENT_GAMEPAD_BUTTON_DOWN,
+			Updated:  btn.Type == sdl.EVENT_GAMEPAD_BUTTON_DOWN,
 			Released: btn.Type == sdl.EVENT_GAMEPAD_BUTTON_UP,
 		}
 	}

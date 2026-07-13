@@ -9,78 +9,24 @@ import (
 
 	"solod.dev/so/errors"
 	"solod.dev/so/fmt"
-	"solod.dev/so/mem"
 )
 
-func (state *ScreenInGameState) Init(s *State) {
-	state.Cam = gfx.Camera{
-		Position: gfx.Vector3{Y: 2},
-		Target:   gfx.Vector3{Y: 2, Z: -1},
-		Up:       gfx.Vector3{Y: 1},
-		Fovy:     70,
-	}
-	state.PacketDecodeArena = mem.NewArena(state.__PacketDecodeArenaMemory[:])
-	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
-	state.Player = state.Things.New(KindPlayer)
-	state.Stars = state.GenMeshStars(&state.PersistentArena)
-}
 func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	if !state.Initialized {
 		*state = ScreenInGameState{}
 		state.Init(s)
 		state.Initialized = true
 	}
+
 	s.MouseLock = true // mouse lock is explicitly disabled if needed.
 	s.ProcessDpadUIInput(2, &state.selected)
-	if state.Disconnected {
-		state.OnDisconnect(s, screen)
-		return
-	}
-	if s.Inputs[InputClose].Released {
-		state.Paused = !state.Paused
-	}
-	if state.Paused {
-		state.OnPaused(s, screen)
-		return
-	}
-	state.NetworkSystem(s)
-	if err := s.ServerBound.Flush(); err != nil {
-		state.Disconnected = true
-		state.Error = err
-		s.Conn.Close()
-		return
-	}
-	if s.Inputs[InputLook].Pressed {
-		state.ProcessLook(s.Inputs[InputLook].Direction)
-	}
-	gfx.BeginMode3D(state.Cam)
-	state.Stars.Draw(gfx.DefaultTexture(), gfx.White, gfx.MatrixTranslate(
-		state.Cam.Position.X,
-		state.Cam.Position.Y,
-		state.Cam.Position.Z,
-	))
-	gfx.EndMode3D()
-}
-
-// delta is mouse delta movement.
-func (state *ScreenInGameState) ProcessLook(delta gfx.Vector2) {
-	const sensitivity = 0.001
-	state.Cam.Yaw(-delta.X*sensitivity, false)
-	state.Cam.Pitch(-delta.Y*sensitivity, true, false, false)
-}
-func (state *ScreenInGameState) NetworkSystem(s *State) {
-	// drain packets from buffer
-	for {
-		ok, err := state.TickPacketDecoder(s)
-		if err != nil {
-			state.Disconnected = true
-			state.Error = err
-			s.Conn.Close()
-			return
-		}
-		if !ok {
-			return
-		}
+	switch state.CurrentScreen {
+	case SCREEN_INGAME_DISCONNECTED_SCREEN:
+		state.ScreenDisconnected(s, screen)
+	case SCREEN_INGAME_PAUSED_SCREEN:
+		state.ScreenPaused(s, screen)
+	case SCREEN_INGAME:
+		state.ScreenInGame(s)
 	}
 }
 func (state *ScreenInGameState) SendDisconnect(s *State) {
@@ -141,7 +87,7 @@ func (state *ScreenInGameState) TickPacketDecoder(s *State) (bool, error) {
 var NoDecoderForPacketErr = errors.New("No decoder implemented for packet")
 
 // Show disconnected screen.
-func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
+func (state *ScreenInGameState) ScreenDisconnected(s *State, screen gfx.Rectangle) {
 	s.InteractingWithUI = true
 	state.selected = 0
 	s.MouseLock = false
@@ -195,7 +141,7 @@ func (state *ScreenInGameState) OnDisconnect(s *State, screen gfx.Rectangle) {
 	gui.Button("Back", bbox, hovered, true)
 }
 
-func (state *ScreenInGameState) OnPaused(s *State, screen gfx.Rectangle) {
+func (state *ScreenInGameState) ScreenPaused(s *State, screen gfx.Rectangle) {
 	s.InteractingWithUI = true
 	s.MouseLock = false
 	bg := s.Pack.GetTexture(assets.Gui_background)
@@ -228,7 +174,7 @@ func (state *ScreenInGameState) OnPaused(s *State, screen gfx.Rectangle) {
 		gui.Button("Resume", resumeButton, hovered, true)
 		if hovered && clicked {
 			s.PlaySoundEffect(assets.Newsound_random_click)
-			state.Paused = false
+			state.CurrentScreen = SCREEN_INGAME_PAUSED_SCREEN
 		}
 	}
 	disconnectButton := gfx.Rectangle{W: buttons.W, H: buttons.H, X: buttons.X, Y: buttons.Y}
@@ -242,12 +188,7 @@ func (state *ScreenInGameState) OnPaused(s *State, screen gfx.Rectangle) {
 		if hovered && clicked {
 			s.PlaySoundEffect(assets.Newsound_random_click)
 			state.SendDisconnect(s)
-			state.Disconnected = true
+			state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
 		}
 	}
-}
-
-// Called in OnDisconnect
-func (s *ScreenInGameState) Unload() {
-	s.Stars.Free(&s.PersistentArena)
 }

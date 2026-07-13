@@ -86,7 +86,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		}
 	}
 	// go back if back is pressed
-	if s.Inputs[InputClose].Pressed {
+	if s.Inputs[InputClose].Updated {
 		state.ShouldTransision = true
 		state.TransisionTo = SCREEN_JOIN_SERVER
 		return

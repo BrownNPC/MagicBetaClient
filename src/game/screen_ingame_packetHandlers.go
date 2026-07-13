@@ -3,6 +3,8 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/net/mc"
+
+	"solod.dev/so/time"
 )
 
 func (state *ScreenInGameState) OnSetSpawnPosition(data mc.Decoder) {
@@ -11,8 +13,10 @@ func (state *ScreenInGameState) OnSetSpawnPosition(data mc.Decoder) {
 }
 func (state *ScreenInGameState) OnSetTime(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSetTime)
+	state.LastTimeUpdate = time.Now()
 	state.InGameTime = pkt.Time
 }
+
 func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSpawnMob)
 	_ = pkt // nothing for now.
