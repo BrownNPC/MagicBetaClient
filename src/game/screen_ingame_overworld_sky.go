@@ -69,6 +69,30 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 	mesh.Upload(true)
 	return mesh
 }
+func (state *ScreenInGameState) GenMeshSky(a mem.Allocator, posY float32, reverseX bool) gfx.Mesh {
+	var m = gfx.NewMesh(a)
+	defer m.Upload(false)
+	// Basically this constructs a flat plane that's a grid.
+	// Minecraft will use backface culling tricks to render the void or whatever idk
+	for k := -384; k <= 384; k += 64 {
+		for l := -384; l <= 384; l += 64 {
+			f := float32(k)
+			f1 := float32(k + 64)
+			if reverseX {
+				f1 = f
+				f = float32(k + 64)
+			}
+			m.QuadVertex3f(f, posY, float32(l))
+			m.QuadVertex3f(f1, posY, float32(l))
+			m.QuadVertex3f(f1, posY, float32(l+64))
+			m.QuadVertex3f(f, posY, float32(l+64))
+
+			m.QuadEndVertex()
+		}
+
+	}
+	return m
+}
 
 // notch code (or jeb idfk)
 func (state *ScreenInGameState) DrawSkyFan(celestialAngle float32, sunsetColor gfx.Color) {
