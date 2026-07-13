@@ -20,6 +20,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
+	// state.SkyPlanes = state.GenMeshSkyPlanes(mem.System)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {

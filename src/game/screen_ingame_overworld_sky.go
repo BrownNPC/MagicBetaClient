@@ -2,7 +2,6 @@ package game
 
 import (
 	"mbc/gfx"
-	"mbc/gfx/assets"
 
 	"solod.dev/so/mem"
 
@@ -63,82 +62,58 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 				star.Y+pitchedY,
 				star.Z+offsetZ,
 			)
-			mesh.QuadEndVertex()
+			mesh.QuadEndVertex(true, false, false)
 		}
 	}
 	mesh.Upload(true)
 	return mesh
 }
-func (state *ScreenInGameState) GenMeshSky(a mem.Allocator, posY float32, reverseX bool) gfx.Mesh {
-	var m = gfx.NewMesh(a)
-	defer m.Upload(false)
-	// Basically this constructs a flat plane that's a grid.
-	// Minecraft will use backface culling tricks to render the void or whatever idk
-	for k := -384; k <= 384; k += 64 {
-		for l := -384; l <= 384; l += 64 {
-			f := float32(k)
-			f1 := float32(k + 64)
-			if reverseX {
-				f1 = f
-				f = float32(k + 64)
-			}
-			m.QuadVertex3f(f, posY, float32(l))
-			m.QuadVertex3f(f1, posY, float32(l))
-			m.QuadVertex3f(f1, posY, float32(l+64))
-			m.QuadVertex3f(f, posY, float32(l+64))
 
-			m.QuadEndVertex()
-		}
+// // notch code (or jeb idfk)
+// func (state *ScreenInGameState) DrawSkyFan(celestialAngle float32, sunsetColor gfx.Color) {
+// 	celestialAngleRadians := celestialAngle * gfx.Pi * 2
 
-	}
-	return m
-}
+// 	gfx.PushMatrix()
+// 	gfx.Translatef(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
+// 	gfx.Rotatef(90, 1, 0, 0)
 
-// notch code (or jeb idfk)
-func (state *ScreenInGameState) DrawSkyFan(celestialAngle float32, sunsetColor gfx.Color) {
-	celestialAngleRadians := celestialAngle * gfx.Pi * 2
+// 	if math.Sin(float64(celestialAngleRadians)) < 0 {
+// 		gfx.Rotatef(180, 0, 0, 1)
+// 	} else {
+// 		gfx.Rotatef(0, 0, 0, 1)
+// 	}
+// 	gfx.Begin(gfx.RL_TRIANGLES)
+// 	const fanSteps = 16
+// 	for step := range fanSteps {
+// 		angle1 := float32(step) * gfx.Pi * 2.0 / float32(fanSteps)
+// 		sin1, cos1 := gfx.Sincos(angle1)
 
-	gfx.PushMatrix()
-	gfx.Translatef(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
-	gfx.Rotatef(90, 1, 0, 0)
+// 		angle2 := float32(step+1) * gfx.Pi * 2.0 / float32(fanSteps)
+// 		sin2, cos2 := gfx.Sincos(angle2)
 
-	if math.Sin(float64(celestialAngleRadians)) < 0 {
-		gfx.Rotatef(180, 0, 0, 1)
-	} else {
-		gfx.Rotatef(0, 0, 0, 1)
-	}
-	gfx.Begin(gfx.RL_TRIANGLES)
-	const fanSteps = 16
-	for step := range fanSteps {
-		angle1 := float32(step) * gfx.Pi * 2.0 / float32(fanSteps)
-		sin1, cos1 := gfx.Sincos(angle1)
+// 		// center of fan
+// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, sunsetColor.A)
+// 		gfx.Vertex3f(0, 100, 0)
 
-		angle2 := float32(step+1) * gfx.Pi * 2.0 / float32(fanSteps)
-		sin2, cos2 := gfx.Sincos(angle2)
-
-		// center of fan
-		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, sunsetColor.A)
-		gfx.Vertex3f(0, 100, 0)
-
-		// current edge
-		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
-		gfx.Vertex3f(
-			sin1*120,
-			cos1*120,
-			-cos1*40*(float32(sunsetColor.A)/255),
-		)
-		// Next edge (Faded to 0 alpha)
-		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
-		gfx.Vertex3f(
-			sin2*120,
-			cos2*120,
-			-cos2*40*(float32(sunsetColor.A)/255),
-		)
-	}
-	gfx.End()
-	gfx.PopMatrix()
-	gfx.DrawRenderBatchActive()
-}
+// 		// current edge
+// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
+// 		gfx.Vertex3f(
+// 			sin1*120,
+// 			cos1*120,
+// 			-cos1*40*(float32(sunsetColor.A)/255),
+// 		)
+// 		// Next edge (Faded to 0 alpha)
+// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
+// 		gfx.Vertex3f(
+// 			sin2*120,
+// 			cos2*120,
+// 			-cos2*40*(float32(sunsetColor.A)/255),
+// 		)
+// 	}
+// 	gfx.End()
+// 	gfx.PopMatrix()
+// 	gfx.DrawRenderBatchActive()
+// }
 
 // from notch code
 func (state *ScreenInGameState) CalculateCelestialAngle(gameTime float32) float32 {
@@ -166,53 +141,30 @@ func (state *ScreenInGameState) DrawSky3D() {
 	celestialAngle := state.CalculateCelestialAngle(state.GameTimeFloat)
 	daylight := state.CalculateDaylight(celestialAngle)
 	skyColor := state.CalculateSkyColor(celestialAngle, daylight, BaseSkyColor)
-	gfx.ClearBackground(skyColor)
+	_ = skyColor
+	gfx.DrawPlane(state.Cam.Position.Add(gfx.NewVector3(0, 16, 0)),
+		gfx.NewVector2(768, 768), skyColor)
+	gfx.DrawPlane(state.Cam.Position.Add(gfx.NewVector3(0, -16, 0)),
+		gfx.NewVector2(768, 768), skyColor)
 
-	starBrightness := state.CalculateStarBrightness(celestialAngle)
+	// starBrightness := state.CalculateStarBrightness(celestialAngle)
 	// TODO: draw base plane (glSkyList)
 
 	// draw sunset
-	sunsetColors := state.CalculateSunriseSunsetColors(celestialAngle)
-	if sunsetColors.A > 0 {
-		state.DrawSkyFan(celestialAngle, sunsetColors)
-	}
+	// sunsetColors := state.CalculateSunriseSunsetColors(celestialAngle)
+	// if sunsetColors.A > 0 {
+	// 	state.DrawSkyFan(celestialAngle, sunsetColors)
+	// }
 	// draw sun, moon, stars
-	gfx.PushMatrix()
-	var rainStrength float32 = 0 // TODO
-	clearSkyAlpha := 255 - rainStrength*255
-	gfx.Color4ub(255, 255, 255, uint8(clearSkyAlpha))
-	gfx.Translatef(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
-	gfx.Rotatef(0, 0, 0, 1)
 
-	gfx.Rotatef(celestialAngle*360, 1, 0, 0)
-	const sunSize float32 = 30
-	gfx.EnableTexture(state.s.Pack.GetTexture(assets.Terrain_sun))
-	gfx.Begin(gfx.RL_QUADS)
-
-	gfx.Vertex3f(-sunSize, 100, -sunSize)
-	gfx.TexCoord2f(0, 0)
-
-	gfx.Vertex3f(sunSize, 100, -sunSize)
-	gfx.TexCoord2f(1, 0)
-
-	gfx.Vertex3f(sunSize, 100, sunSize)
-	gfx.TexCoord2f(1, 1)
-
-	gfx.Vertex3f(-sunSize, 100, sunSize)
-	gfx.TexCoord2f(0, 1)
-	gfx.End()
-	gfx.DisableTexture()
-	gfx.PopMatrix()
-	// gfx.DrawRenderBatchActive()
-
-	if starBrightness > 0 {
-		starColor := gfx.NewColor4f(gfx.NewVector4(starBrightness, starBrightness, starBrightness, starBrightness))
-		state.Stars.Draw(gfx.DefaultTexture(), starColor, gfx.MatrixTranslate(
-			state.Cam.Position.X,
-			state.Cam.Position.Y,
-			state.Cam.Position.Z,
-		))
-	}
+	// if starBrightness > 0 {
+	// 	starColor := gfx.NewColor4f(gfx.NewVector4(starBrightness, starBrightness, starBrightness, starBrightness))
+	// 	state.Stars.Draw(gfx.DefaultTexture(), starColor, gfx.MatrixTranslate(
+	// 		state.Cam.Position.X,
+	// 		state.Cam.Position.Y,
+	// 		state.Cam.Position.Z,
+	// 	))
+	// }
 }
 
 // CalculateDaylight from celestialAngle. taken from Notch code.

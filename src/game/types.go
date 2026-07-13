@@ -271,7 +271,7 @@ type ScreenInGameState struct {
 	LastTimeUpdate time.Time
 
 	// RENDERING DATA
-	Stars  gfx.Mesh // Initialized
+	Stars gfx.Mesh // Initialized
 
 	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte
