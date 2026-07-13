@@ -14,6 +14,7 @@ func (state *ScreenInGameState) Init(s *State) {
 		Up:       gfx.Vector3{Y: 1},
 		Fovy:     70,
 	}
+	state.s = s
 	state.CurrentScreen = SCREEN_INGAME
 	state.PacketDecodeArena = mem.NewArena(state.__PacketDecodeArenaMemory[:])
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
@@ -26,7 +27,13 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		state.CurrentScreen = SCREEN_INGAME_PAUSED_SCREEN
 	}
 	// read packets.
-	state.DecodeRecievedPackets(s)
+	_, err := state.DecodeRecievedPackets(s)
+	if err != nil {
+		state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
+		state.Error = err
+		s.Conn.Close()
+		return
+	}
 	// send buffered packets
 	if err := s.ServerBound.Flush(); err != nil {
 		state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
@@ -63,17 +70,12 @@ func (state *ScreenInGameState) ProcessLook(delta gfx.Vector2) {
 	state.Cam.Yaw(-delta.X*sensitivity, false)
 	state.Cam.Pitch(-delta.Y*sensitivity, true, false, false)
 }
-func (state *ScreenInGameState) DecodeRecievedPackets(s *State) {
+func (state *ScreenInGameState) DecodeRecievedPackets(s *State) (bool, error) {
 	// drain packets from buffer
 	for {
 		ok, err := state.TickPacketDecoder(s)
 		if !ok {
-			if err != nil {
-				state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
-				state.Error = err
-				s.Conn.Close()
-			}
-			return
+			return ok, err
 		}
 	}
 }

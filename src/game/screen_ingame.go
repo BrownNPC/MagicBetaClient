@@ -29,9 +29,9 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 		state.ScreenInGame(s)
 	}
 }
-func (state *ScreenInGameState) SendDisconnect(s *State) {
+func (state *ScreenInGameState) SendQuittingPacket(s *State) {
 	dc := mc.PacketDisconnect{
-		Reason: []rune("Client error"),
+		Reason: []rune("Quitting"),
 	}
 	dc.Write(&s.ServerBound)
 	s.ServerBound.Flush()
@@ -64,7 +64,7 @@ func (state *ScreenInGameState) TickPacketDecoder(s *State) (bool, error) {
 			state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, state.PacketID)
 		}
 		if state.Decoder == nil {
-			state.SendDisconnect(s)
+			state.SendQuittingPacket(s)
 			return false, NoDecoderForPacketErr
 		}
 		state.DecodeState = DECODING_PACKET
@@ -142,6 +142,10 @@ func (state *ScreenInGameState) ScreenDisconnected(s *State, screen gfx.Rectangl
 }
 
 func (state *ScreenInGameState) ScreenPaused(s *State, screen gfx.Rectangle) {
+	if s.Inputs[InputClose].Released {
+		state.CurrentScreen = SCREEN_INGAME
+		return
+	}
 	s.InteractingWithUI = true
 	s.MouseLock = false
 	bg := s.Pack.GetTexture(assets.Gui_background)
@@ -174,7 +178,7 @@ func (state *ScreenInGameState) ScreenPaused(s *State, screen gfx.Rectangle) {
 		gui.Button("Resume", resumeButton, hovered, true)
 		if hovered && clicked {
 			s.PlaySoundEffect(assets.Newsound_random_click)
-			state.CurrentScreen = SCREEN_INGAME_PAUSED_SCREEN
+			state.CurrentScreen = SCREEN_INGAME
 		}
 	}
 	disconnectButton := gfx.Rectangle{W: buttons.W, H: buttons.H, X: buttons.X, Y: buttons.Y}
@@ -187,7 +191,7 @@ func (state *ScreenInGameState) ScreenPaused(s *State, screen gfx.Rectangle) {
 		gui.Button("Disconnect", disconnectButton, hovered, true)
 		if hovered && clicked {
 			s.PlaySoundEffect(assets.Newsound_random_click)
-			state.SendDisconnect(s)
+			state.SendQuittingPacket(s)
 			state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
 		}
 	}

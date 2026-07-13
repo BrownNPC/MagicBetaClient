@@ -260,15 +260,11 @@ type PacketKeepAlive struct {
 	_ byte
 }
 
-// Read implements [ClientBoundPacket].
 func (p *PacketKeepAlive) Step(mem.Allocator, *net.BufferedReader) (bool, error) {
 	return true, nil
 }
 
-// Write implements [ServerBoundPacket].
-func (p PacketKeepAlive) Write(io.Writer) error {
-	return nil
-}
+func (p PacketKeepAlive) Write(w io.Writer) error { return WriteByte(w, PKT_KeepAlive) }
 
 // https://pixelbrush.dev/beta-wiki/networking/packets/001-login
 type ClientboundLogin struct {

@@ -11,10 +11,12 @@ func (state *ScreenInGameState) OnSetSpawnPosition(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSetSpawnPosition)
 	state.SpawnPosition = gfx.NewVector3(float32(pkt.X), float32(pkt.Y), float32(pkt.Z))
 }
-func (state *ScreenInGameState) OnSetTime(data mc.Decoder) {
+func (state *ScreenInGameState) OnSetTime(data mc.Decoder) error {
 	pkt := data.(*mc.ClientboundSetTime)
 	state.LastTimeUpdate = time.Now()
 	state.GameTicksInt = pkt.Time
+	// Send keep alive every tick
+	return mc.PacketKeepAlive{}.Write(&state.s.ServerBound)
 }
 
 func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
@@ -46,12 +48,12 @@ func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) 
 }
 
 // register packet handlers here
-func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.Decoder) {
+func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.Decoder) error {
 	switch id {
 	case mc.PKT_SetSpawnPosition:
 		state.OnSetSpawnPosition(data)
 	case mc.PKT_SetTime:
-		state.OnSetTime(data)
+		return state.OnSetTime(data)
 	case mc.PKT_SpawnMob:
 		state.OnSpawnMob(data)
 	case mc.PKT_PlayerPosition:
@@ -66,7 +68,6 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
-	default:
-		return
 	}
+	return nil
 }
