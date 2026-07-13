@@ -422,18 +422,18 @@ func DrawTextureTiled(
 	rlNormal3f(0, 0, 1)
 
 	// Top-left
-	rlTexCoord2f(0, 0)
+	TexCoord2f(0, 0)
 	rlVertex2f(dest.X, dest.Y)
 
-	rlTexCoord2f(0, v)
+	TexCoord2f(0, v)
 	rlVertex2f(dest.X, dest.Y+dest.H)
 
 	// Bottom-right
-	rlTexCoord2f(u, v)
+	TexCoord2f(u, v)
 	rlVertex2f(dest.X+dest.W, dest.Y+dest.H)
 
 	// Top-right
-	rlTexCoord2f(u, 0)
+	TexCoord2f(u, 0)
 	rlVertex2f(dest.X+dest.W, dest.Y)
 
 	End()
@@ -514,33 +514,33 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 
 	// Top-left
 	if flipX {
-		rlTexCoord2f((source.X+source.W)/width, source.Y/height)
+		TexCoord2f((source.X+source.W)/width, source.Y/height)
 	} else {
-		rlTexCoord2f(source.X/width, source.Y/height)
+		TexCoord2f(source.X/width, source.Y/height)
 	}
 	rlVertex2f(topLeft.X, topLeft.Y)
 
 	// Bottom-left
 	if flipX {
-		rlTexCoord2f((source.X+source.W)/width, (source.Y+source.H)/height)
+		TexCoord2f((source.X+source.W)/width, (source.Y+source.H)/height)
 	} else {
-		rlTexCoord2f(source.X/width, (source.Y+source.H)/height)
+		TexCoord2f(source.X/width, (source.Y+source.H)/height)
 	}
 	rlVertex2f(bottomLeft.X, bottomLeft.Y)
 
 	// Bottom-right
 	if flipX {
-		rlTexCoord2f(source.X/width, (source.Y+source.H)/height)
+		TexCoord2f(source.X/width, (source.Y+source.H)/height)
 	} else {
-		rlTexCoord2f((source.X+source.W)/width, (source.Y+source.H)/height)
+		TexCoord2f((source.X+source.W)/width, (source.Y+source.H)/height)
 	}
 	rlVertex2f(bottomRight.X, bottomRight.Y)
 
 	// Top-right
 	if flipX {
-		rlTexCoord2f(source.X/width, source.Y/height)
+		TexCoord2f(source.X/width, source.Y/height)
 	} else {
-		rlTexCoord2f((source.X+source.W)/width, source.Y/height)
+		TexCoord2f((source.X+source.W)/width, source.Y/height)
 	}
 	rlVertex2f(topRight.X, topRight.Y)
 
@@ -860,46 +860,63 @@ func (m *Mesh) TexCoord2f(u, v float32) {
 	m.texCoords = slices.Append(m.a, m.texCoords, VertexTexcoord{u, v})
 }
 
-// Automatically handles position, texcoords, and colors, decomposing into 2 triangles when full.
-func (m *Mesh) QuadVertex(x, y, z, u, v float32, r, g, b, a uint8) {
+// Stores the position for the current quad vertex.
+func (m *Mesh) QuadVertex3f(x, y, z float32) {
 	m.quadVerts[m.quadCount] = VertexCoord{x, y, z}
+}
+
+// Stores the texcoord for the current quad vertex.
+func (m *Mesh) QuadTexCoord2f(u, v float32) {
 	m.quadTexCoords[m.quadCount] = VertexTexcoord{u, v}
+}
+
+// Stores the color for the current quad vertex.
+func (m *Mesh) QuadColor4ub(r, g, b, a uint8) {
 	m.quadColors[m.quadCount] = VertexColor{r, g, b, a}
+}
+
+// Finishes the current quad vertex. After four vertices have been submitted,
+// the quad is expanded into two triangles.
+func (m *Mesh) QuadEndVertex() {
 	m.quadCount++
 
-	if m.quadCount == 4 {
-		v := m.quadVerts
-		t := m.quadTexCoords
-		c := m.quadColors
-
-		// Triangle 1 (Vertices: 0 -> 1 -> 2)
-		m.TexCoord2f(t[0].X, t[0].Y)
-		m.Color4ub(c[0].R, c[0].G, c[0].B, c[0].A)
-		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
-
-		m.TexCoord2f(t[1].X, t[1].Y)
-		m.Color4ub(c[1].R, c[1].G, c[1].B, c[1].A)
-		m.Vertex3f(v[1].X, v[1].Y, v[1].Z)
-
-		m.TexCoord2f(t[2].X, t[2].Y)
-		m.Color4ub(c[2].R, c[2].G, c[2].B, c[2].A)
-		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
-
-		// Triangle 2 (Vertices: 0 -> 2 -> 3)
-		m.TexCoord2f(t[0].X, t[0].Y)
-		m.Color4ub(c[0].R, c[0].G, c[0].B, c[0].A)
-		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
-
-		m.TexCoord2f(t[2].X, t[2].Y)
-		m.Color4ub(c[2].R, c[2].G, c[2].B, c[2].A)
-		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
-
-		m.TexCoord2f(t[3].X, t[3].Y)
-		m.Color4ub(c[3].R, c[3].G, c[3].B, c[3].A)
-		m.Vertex3f(v[3].X, v[3].Y, v[3].Z)
-
-		m.quadCount = 0
+	if m.quadCount != 4 {
+		return
 	}
+
+	const (
+		v0 = 0
+		v1 = 1
+		v2 = 2
+		v3 = 3
+	)
+
+	indices := [...]int{
+		v0, v1, v2,
+		v0, v2, v3,
+	}
+
+	for _, i := range indices {
+		m.Vertex3f(
+			m.quadVerts[i].X,
+			m.quadVerts[i].Y,
+			m.quadVerts[i].Z,
+		)
+
+		m.TexCoord2f(
+			m.quadTexCoords[i].X,
+			m.quadTexCoords[i].Y,
+		)
+
+		m.Color4ub(
+			m.quadColors[i].R,
+			m.quadColors[i].G,
+			m.quadColors[i].B,
+			m.quadColors[i].A,
+		)
+	}
+
+	m.quadCount = 0
 }
 
 // No-op if on opengl 1.1
@@ -1182,8 +1199,8 @@ func Translatef(nx float32, ny float32, nz float32)
 //so:extern rlRotatef
 func Rotatef(nx float32, ny float32, nz float32, z float32)
 
-//so:extern
-func rlTexCoord2f(s float32, t float32)
+//so:extern rlTexCoord2f
+func TexCoord2f(s float32, t float32)
 
 //so:extern
 func rlVertex2f(x float32, y float32)

@@ -2,6 +2,7 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/gfx/assets"
 
 	"solod.dev/so/mem"
 
@@ -57,14 +58,12 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 			// Yaw
 			offsetX := pitchedX*yawSin - rolledZ*yawCos
 			offsetZ := rolledZ*yawSin + pitchedX*yawCos
-
-			mesh.QuadVertex(
+			mesh.QuadVertex3f(
 				star.X+offsetX,
 				star.Y+pitchedY,
 				star.Z+offsetZ,
-				0, 0, //uv
-				255, 255, 255, 255,
 			)
+			mesh.QuadEndVertex()
 		}
 	}
 	mesh.Upload(true)
@@ -153,6 +152,34 @@ func (state *ScreenInGameState) DrawSky3D() {
 	if sunsetColors.A > 0 {
 		state.DrawSkyFan(celestialAngle, sunsetColors)
 	}
+	// draw sun, moon, stars
+	gfx.PushMatrix()
+	var rainStrength float32 = 0 // TODO
+	clearSkyAlpha := 255 - rainStrength*255
+	gfx.Color4ub(255, 255, 255, uint8(clearSkyAlpha))
+	gfx.Translatef(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
+	gfx.Rotatef(0, 0, 0, 1)
+
+	gfx.Rotatef(celestialAngle*360, 1, 0, 0)
+	const sunSize float32 = 30
+	gfx.EnableTexture(state.s.Pack.GetTexture(assets.Terrain_sun))
+	gfx.Begin(gfx.RL_QUADS)
+
+	gfx.Vertex3f(-sunSize, 100, -sunSize)
+	gfx.TexCoord2f(0, 0)
+
+	gfx.Vertex3f(sunSize, 100, -sunSize)
+	gfx.TexCoord2f(1, 0)
+
+	gfx.Vertex3f(sunSize, 100, sunSize)
+	gfx.TexCoord2f(1, 1)
+
+	gfx.Vertex3f(-sunSize, 100, sunSize)
+	gfx.TexCoord2f(0, 1)
+	gfx.End()
+	gfx.DisableTexture()
+	gfx.PopMatrix()
+	// gfx.DrawRenderBatchActive()
 
 	if starBrightness > 0 {
 		starColor := gfx.NewColor4f(gfx.NewVector4(starBrightness, starBrightness, starBrightness, starBrightness))
@@ -215,11 +242,15 @@ func (state *ScreenInGameState) CalculateSkyColor(celestialAngle, daylight float
 // Notch code
 func (state *ScreenInGameState) CalculateSunriseSunsetColors(celestialAngle float32) gfx.Color {
 	horizonWindow := float32(0.4)
-	sunHorizonProximity := float32(math.Cos(float64(celestialAngle * gfx.Pi * 2)))
+
+	celestialAngleRadians := float64(celestialAngle * gfx.Pi * 2)
+	sunHorizonProximity := float32(math.Cos(celestialAngleRadians))
 
 	if sunHorizonProximity >= -horizonWindow && sunHorizonProximity <= horizonWindow {
 		progressFactor := sunHorizonProximity/horizonWindow*0.5 + 0.5
-		alphaFade := float32(1.0 - (1.0-math.Sin(float64(progressFactor)*gfx.Pi))*0.99)
+		alphaFade := float32(
+			1.0 - (1.0-math.Sin(float64(progressFactor*gfx.Pi)))*0.99,
+		)
 		alphaFade *= alphaFade
 
 		return gfx.NewColor4f(gfx.NewVector4(
