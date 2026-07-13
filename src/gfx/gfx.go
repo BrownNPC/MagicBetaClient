@@ -85,7 +85,7 @@ func GetWindowSize() (int, int) {
 }
 
 func BeginDrawing() { rlLoadIdentity() }
-func EndDrawing()   { rlDrawRenderBatchActive(); sdl.GLSwapWindow(Window) }
+func EndDrawing()   { DrawRenderBatchActive(); sdl.GLSwapWindow(Window) }
 
 // Lock or unlock the mouse (FPS mode)
 func SetMouseLock(v bool) {
@@ -100,11 +100,11 @@ func ClearBackground(c Color) {
 	rlClearScreenBuffers()
 }
 func BeginMode3D(cam Camera) {
-	rlDrawRenderBatchActive()
+	DrawRenderBatchActive()
 	w, h := GetWindowSize()
 
 	rlMatrixMode(rlPROJECTION)
-	rlPushMatrix()
+	PushMatrix()
 	rlLoadIdentity()
 
 	aspect := float32(w) / float32(h)
@@ -126,99 +126,99 @@ func BeginMode3D(cam Camera) {
 	rlEnableDepthTest()
 }
 func DrawCircle3D(center Vector3, radius float32, color Color) {
-	rlPushMatrix()
+	PushMatrix()
 
-	rlTranslatef(center.X, center.Y, center.Z)
+	Translatef(center.X, center.Y, center.Z)
 
-	rlBegin(rlLINES)
+	Begin(rlLINES)
 	for i := float32(0); i < 360; i += 10 {
-		rlColor4ub(color.R, color.G, color.B, color.A)
+		Color4ub(color.R, color.G, color.B, color.A)
 
 		sin, cos := Sincos(Deg2rad * i)
-		rlVertex3f(sin*radius, cos*radius, 0)
+		Vertex3f(sin*radius, cos*radius, 0)
 		sin, cos = Sincos(Deg2rad * (i + 10))
-		rlVertex3f(sin*radius, cos*radius, 0)
+		Vertex3f(sin*radius, cos*radius, 0)
 	}
-	rlEnd()
-	rlPopMatrix()
+	End()
+	PopMatrix()
 }
 func DrawCube3D(position Vector3, width, height, length float32, color Color) {
 	var x, y, z float32
-	rlPushMatrix()
+	PushMatrix()
 	{
-		rlTranslatef(position.X, position.Y, position.Z)
-		rlBegin(rlTRIANGLES)
+		Translatef(position.X, position.Y, position.Z)
+		Begin(RL_TRIANGLES)
 		{
-			rlColor4ub(color.R, color.G, color.B, color.A)
+			Color4ub(color.R, color.G, color.B, color.A)
 			// Front face
 			rlNormal3f(0.0, 0.0, 1.0)
-			rlVertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
-			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
-			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+			Vertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
+			Vertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+			Vertex3f(x-width/2, y+height/2, z+length/2) // Top Left
 
-			rlVertex3f(x+width/2, y+height/2, z+length/2) // Top Right
-			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
-			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+			Vertex3f(x+width/2, y+height/2, z+length/2) // Top Right
+			Vertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+			Vertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
 
 			// Back face
 			rlNormal3f(0.0, 0.0, -1.0)
-			rlVertex3f(x-width/2, y-height/2, z-length/2) // Bottom Left
-			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
-			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+			Vertex3f(x-width/2, y-height/2, z-length/2) // Bottom Left
+			Vertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+			Vertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
 
-			rlVertex3f(x+width/2, y+height/2, z-length/2) // Top Right
-			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
-			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+			Vertex3f(x+width/2, y+height/2, z-length/2) // Top Right
+			Vertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+			Vertex3f(x-width/2, y+height/2, z-length/2) // Top Left
 
 			// Top face
 			rlNormal3f(0.0, 1.0, 0.0)
-			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
-			rlVertex3f(x-width/2, y+height/2, z+length/2) // Bottom Left
-			rlVertex3f(x+width/2, y+height/2, z+length/2) // Bottom Right
+			Vertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+			Vertex3f(x-width/2, y+height/2, z+length/2) // Bottom Left
+			Vertex3f(x+width/2, y+height/2, z+length/2) // Bottom Right
 
-			rlVertex3f(x+width/2, y+height/2, z-length/2) // Top Right
-			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Left
-			rlVertex3f(x+width/2, y+height/2, z+length/2) // Bottom Right
+			Vertex3f(x+width/2, y+height/2, z-length/2) // Top Right
+			Vertex3f(x-width/2, y+height/2, z-length/2) // Top Left
+			Vertex3f(x+width/2, y+height/2, z+length/2) // Bottom Right
 
 			// Bottom face
 			rlNormal3f(0.0, -1.0, 0.0)
-			rlVertex3f(x-width/2, y-height/2, z-length/2) // Top Left
-			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
-			rlVertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
+			Vertex3f(x-width/2, y-height/2, z-length/2) // Top Left
+			Vertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+			Vertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
 
-			rlVertex3f(x+width/2, y-height/2, z-length/2) // Top Right
-			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
-			rlVertex3f(x-width/2, y-height/2, z-length/2) // Top Left
+			Vertex3f(x+width/2, y-height/2, z-length/2) // Top Right
+			Vertex3f(x+width/2, y-height/2, z+length/2) // Bottom Right
+			Vertex3f(x-width/2, y-height/2, z-length/2) // Top Left
 
 			// Right face
 			rlNormal3f(1.0, 0.0, 0.0)
-			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
-			rlVertex3f(x+width/2, y+height/2, z-length/2) // Top Right
-			rlVertex3f(x+width/2, y+height/2, z+length/2) // Top Left
+			Vertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+			Vertex3f(x+width/2, y+height/2, z-length/2) // Top Right
+			Vertex3f(x+width/2, y+height/2, z+length/2) // Top Left
 
-			rlVertex3f(x+width/2, y-height/2, z+length/2) // Bottom Left
-			rlVertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
-			rlVertex3f(x+width/2, y+height/2, z+length/2) // Top Left
+			Vertex3f(x+width/2, y-height/2, z+length/2) // Bottom Left
+			Vertex3f(x+width/2, y-height/2, z-length/2) // Bottom Right
+			Vertex3f(x+width/2, y+height/2, z+length/2) // Top Left
 
 			// Left face
 			rlNormal3f(-1.0, 0.0, 0.0)
-			rlVertex3f(x-width/2, y-height/2, z-length/2) // Bottom Right
-			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
-			rlVertex3f(x-width/2, y+height/2, z-length/2) // Top Right
+			Vertex3f(x-width/2, y-height/2, z-length/2) // Bottom Right
+			Vertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+			Vertex3f(x-width/2, y+height/2, z-length/2) // Top Right
 
-			rlVertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
-			rlVertex3f(x-width/2, y+height/2, z+length/2) // Top Left
-			rlVertex3f(x-width/2, y-height/2, z-length/2) // Bottom Right
+			Vertex3f(x-width/2, y-height/2, z+length/2) // Bottom Left
+			Vertex3f(x-width/2, y+height/2, z+length/2) // Top Left
+			Vertex3f(x-width/2, y-height/2, z-length/2) // Bottom Right
 		}
-		rlEnd()
+		End()
 	}
-	rlPopMatrix()
+	PopMatrix()
 }
 func EndMode3D() {
-	rlDrawRenderBatchActive()
+	DrawRenderBatchActive()
 
 	rlMatrixMode(rlPROJECTION) // Switch to projection matrix
-	rlPopMatrix()              // Restore previous matrix (projection) from matrix stack
+	PopMatrix()                // Restore previous matrix (projection) from matrix stack
 
 	rlMatrixMode(rlMODELVIEW) // Switch back to modelview matrix
 	rlLoadIdentity()          // Reset current matrix (modelview)
@@ -234,7 +234,7 @@ func BeginMode2D(cam Camera2D) {
 	rlMultMatrixf(&matCamera)
 }
 
-func EndMode2D() { rlDrawRenderBatchActive(); rlLoadIdentity() }
+func EndMode2D() { DrawRenderBatchActive(); rlLoadIdentity() }
 
 // Get the screen space position for a 2d camera world space position
 func GetWorldToScreen2D(position Vector2, camera Camera2D) Vector2 {
@@ -416,9 +416,9 @@ func DrawTextureTiled(
 
 	EnableTexture(texture)
 
-	rlBegin(rlQUADS)
+	Begin(RL_QUADS)
 
-	rlColor4ub(tint.R, tint.G, tint.B, tint.A)
+	Color4ub(tint.R, tint.G, tint.B, tint.A)
 	rlNormal3f(0, 0, 1)
 
 	// Top-left
@@ -436,7 +436,7 @@ func DrawTextureTiled(
 	rlTexCoord2f(u, 0)
 	rlVertex2f(dest.X+dest.W, dest.Y)
 
-	rlEnd()
+	End()
 	DisableTexture()
 }
 
@@ -507,9 +507,9 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 
 	EnableTexture(texture)
 
-	rlBegin(rlQUADS)
+	Begin(RL_QUADS)
 
-	rlColor4ub(tint.R, tint.G, tint.B, tint.A)
+	Color4ub(tint.R, tint.G, tint.B, tint.A)
 	rlNormal3f(0, 0, 1)
 
 	// Top-left
@@ -544,7 +544,7 @@ func DrawTexturePro(texture Texture, source, dest Rectangle, origin Vector2, rot
 	}
 	rlVertex2f(topRight.X, topRight.Y)
 
-	rlEnd()
+	End()
 
 	DisableTexture()
 }
@@ -661,13 +661,13 @@ func (fnt *Font) DrawRunes(text []rune, position Vector2, scale, rotation float3
 
 	// Pivot at center of the whole text block.
 	pivot := position.Add(textSize.Half())
-	rlPushMatrix()
-	defer rlPopMatrix()
+	PushMatrix()
+	defer PopMatrix()
 
 	// Move to pivot, rotate, then move back to local text space.
-	rlTranslatef(pivot.X, pivot.Y, 0)
-	rlRotatef(rotation, 0, 0, 1)
-	rlTranslatef(-textSize.X*0.5, -textSize.Y*0.5, 0)
+	Translatef(pivot.X, pivot.Y, 0)
+	Rotatef(rotation, 0, 0, 1)
+	Translatef(-textSize.X*0.5, -textSize.Y*0.5, 0)
 
 	textOffsetX := float32(0)
 	textOffsetY := float32(0) // newlines
@@ -806,9 +806,9 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 
 	DisableTexture()
 
-	rlBegin(rlTRIANGLES)
+	Begin(RL_TRIANGLES)
 
-	rlColor4ub(color.R, color.G, color.B, color.A)
+	Color4ub(color.R, color.G, color.B, color.A)
 
 	rlVertex2f(topLeft.X, topLeft.Y)
 	rlVertex2f(bottomLeft.X, bottomLeft.Y)
@@ -818,7 +818,7 @@ func DrawRectanglePro(rectangle Rectangle, origin Vector2, rotation float32, col
 	rlVertex2f(bottomLeft.X, bottomLeft.Y)
 	rlVertex2f(bottomRight.X, bottomRight.Y)
 
-	rlEnd()
+	End()
 }
 
 type VertexCoord struct {
@@ -830,6 +830,7 @@ type VertexTexcoord struct {
 type VertexColor struct {
 	R, G, B, A uint8
 }
+
 type Mesh struct {
 	a  mem.Allocator
 	sz int
@@ -840,10 +841,14 @@ type Mesh struct {
 	vaoID     int
 	vboID     [5]int
 
-	quadVerts  [4]VertexCoord
-	quadColors [4]VertexColor
-	quadCount  int
+	// Quad tracking state
+	quadVerts     [4]VertexCoord
+	quadTexCoords [4]VertexTexcoord
+	quadColors    [4]VertexColor
+	quadCount     int
 }
+
+func (m *Mesh) VertexCount() int { return len(m.vertices) }
 
 func (m *Mesh) Vertex3f(x, y, z float32) {
 	m.vertices = slices.Append(m.a, m.vertices, VertexCoord{x, y, z})
@@ -855,35 +860,43 @@ func (m *Mesh) TexCoord2f(u, v float32) {
 	m.texCoords = slices.Append(m.a, m.texCoords, VertexTexcoord{u, v})
 }
 
-// helper to convert quad code to triangles
-func (m *Mesh) QuadVertex3f(x, y, z float32, r, g, b, a uint8) {
+// Automatically handles position, texcoords, and colors, decomposing into 2 triangles when full.
+func (m *Mesh) QuadVertex(x, y, z, u, v float32, r, g, b, a uint8) {
 	m.quadVerts[m.quadCount] = VertexCoord{x, y, z}
+	m.quadTexCoords[m.quadCount] = VertexTexcoord{u, v}
 	m.quadColors[m.quadCount] = VertexColor{r, g, b, a}
 	m.quadCount++
 
 	if m.quadCount == 4 {
 		v := m.quadVerts
+		t := m.quadTexCoords
 		c := m.quadColors
 
-		// Triangle 1
-		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
+		// Triangle 1 (Vertices: 0 -> 1 -> 2)
+		m.TexCoord2f(t[0].X, t[0].Y)
 		m.Color4ub(c[0].R, c[0].G, c[0].B, c[0].A)
+		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
 
-		m.Vertex3f(v[1].X, v[1].Y, v[1].Z)
+		m.TexCoord2f(t[1].X, t[1].Y)
 		m.Color4ub(c[1].R, c[1].G, c[1].B, c[1].A)
+		m.Vertex3f(v[1].X, v[1].Y, v[1].Z)
 
-		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
+		m.TexCoord2f(t[2].X, t[2].Y)
 		m.Color4ub(c[2].R, c[2].G, c[2].B, c[2].A)
+		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
 
-		// Triangle 2
-		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
+		// Triangle 2 (Vertices: 0 -> 2 -> 3)
+		m.TexCoord2f(t[0].X, t[0].Y)
 		m.Color4ub(c[0].R, c[0].G, c[0].B, c[0].A)
+		m.Vertex3f(v[0].X, v[0].Y, v[0].Z)
 
-		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
+		m.TexCoord2f(t[2].X, t[2].Y)
 		m.Color4ub(c[2].R, c[2].G, c[2].B, c[2].A)
+		m.Vertex3f(v[2].X, v[2].Y, v[2].Z)
 
-		m.Vertex3f(v[3].X, v[3].Y, v[3].Z)
+		m.TexCoord2f(t[3].X, t[3].Y)
 		m.Color4ub(c[3].R, c[3].G, c[3].B, c[3].A)
+		m.Vertex3f(v[3].X, v[3].Y, v[3].Z)
 
 		m.quadCount = 0
 	}
@@ -990,14 +1003,14 @@ func (m *Mesh) Draw(albedo Texture, color Color, transform Matrix) {
 		if len(m.colors) > 0 {
 			rlEnableStatePointer(GL_COLOR_ARRAY, &m.colors[0])
 		}
-		rlPushMatrix()
+		PushMatrix()
 		{
-			rlColor4ub(color.R, color.G, color.B, color.A)
+			Color4ub(color.R, color.G, color.B, color.A)
 			f := MatrixToFloat(transform)
 			rlMultMatrixf(&f.V[0])
 			rlDrawVertexArray(0, len(m.vertices))
 		}
-		rlPopMatrix()
+		PopMatrix()
 
 		rlDisableStatePointer(GL_VERTEX_ARRAY)
 		rlDisableStatePointer(GL_TEXTURE_COORD_ARRAY)
@@ -1146,28 +1159,28 @@ func rlSetTexture(int)
 const rlLINES = 0x0001
 
 //so:extern RL_TRIANGLES
-const rlTRIANGLES = 0x0004
+const RL_TRIANGLES = 0x0004
 
 //so:extern RL_QUADS
-const rlQUADS = 0x0007
+const RL_QUADS = 0x0007
 
-//so:extern
-func rlBegin(int)
+//so:extern rlBegin
+func Begin(int)
 
-//so:extern
-func rlEnd()
+//so:extern rlEnd
+func End()
 
-//so:extern
-func rlColor4ub(red uint8, green uint8, blue uint8, alpha uint8)
+//so:extern rlColor4ub
+func Color4ub(red uint8, green uint8, blue uint8, alpha uint8)
 
 //so:extern
 func rlNormal3f(nx float32, ny float32, nz float32)
 
-//so:extern
-func rlTranslatef(nx float32, ny float32, nz float32)
+//so:extern rlTranslatef
+func Translatef(nx float32, ny float32, nz float32)
 
-//so:extern
-func rlRotatef(nx float32, ny float32, nz float32, z float32)
+//so:extern rlRotatef
+func Rotatef(nx float32, ny float32, nz float32, z float32)
 
 //so:extern
 func rlTexCoord2f(s float32, t float32)
@@ -1175,8 +1188,8 @@ func rlTexCoord2f(s float32, t float32)
 //so:extern
 func rlVertex2f(x float32, y float32)
 
-//so:extern
-func rlVertex3f(x float32, y float32, z float32)
+//so:extern rlVertex3f
+func Vertex3f(x float32, y float32, z float32)
 
 //so:extern rlClearColor
 func rlClearColor(red, green, blue, alpha uint8)
@@ -1197,13 +1210,13 @@ func rlDisableBackfaceCulling()
 func rlEnableBackfaceCulling()
 
 //so:extern rlPopMatrix
-func rlPopMatrix() {}
+func PopMatrix() {}
 
 //so:extern rlMultMatrixf
 func rlMultMatrixf(m *float32)
 
-//so:extern
-func rlDrawRenderBatchActive()
+//so:extern rlDrawRenderBatchActive
+func DrawRenderBatchActive()
 
 func rlLoadTexture(data any, width, height, format, mipmaps int) int
 
@@ -1213,8 +1226,8 @@ const rlPIXELFORMAT_UNCOMPRESSED_R8G8B8A8 = 7
 //so:extern
 func rlUnloadTexture(int)
 
-//so:extern
-func rlPushMatrix()
+//so:extern rlPushMatrix
+func PushMatrix()
 
 //so:extern
 func rlFrustum(left float64, right float64, bottom float64, top float64, near_val float64, far_val float64)
@@ -1377,3 +1390,6 @@ func rlEnableTexture(int)
 
 //so:extern
 func rlDisableTexture()
+
+//so:extern
+func rlUpdateVertexBuffer(bufferId int, data any, dataSize, offset int)

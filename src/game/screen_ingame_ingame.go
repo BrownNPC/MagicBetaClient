@@ -20,7 +20,6 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
-	state.SkyColor = gfx.NewColor(120, 167, 255, 255)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
@@ -49,18 +48,8 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	}
 
 	// RENDER
-	gfx.ClearBackground(state.CalculateSkyColor())
 	gfx.BeginMode3D(state.Cam)
-	state.Stars.Draw(gfx.DefaultTexture(), gfx.White, gfx.MatrixTranslate(
-		state.Cam.Position.X,
-		state.Cam.Position.Y,
-		state.Cam.Position.Z,
-	))
-	state.Sky.Draw(gfx.DefaultTexture(), gfx.White, gfx.MatrixTranslate(
-		state.Cam.Position.X,
-		state.Cam.Position.Y,
-		state.Cam.Position.Z,
-	))
+	state.DrawSky3D()
 	gfx.EndMode3D()
 }
 
