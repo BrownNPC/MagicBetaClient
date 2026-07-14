@@ -141,13 +141,22 @@ func (state *ScreenInGameState) DrawSky3D() {
 	celestialAngle := state.CalculateCelestialAngle(state.GameTimeFloat)
 	daylight := state.CalculateDaylight(celestialAngle)
 	skyColor := state.CalculateSkyColor(celestialAngle, daylight, BaseSkyColor)
-	_ = skyColor
-	gfx.DrawPlane(state.Cam.Position.Add(gfx.NewVector3(0, 16, 0)),
-		gfx.NewVector2(768, 768), skyColor)
-	gfx.DrawPlane(state.Cam.Position.Add(gfx.NewVector3(0, -16, 0)),
-		gfx.NewVector2(768, 768), skyColor)
+	gfx.ClearBackground(skyColor)
+	
+	// bottom plane.
+	// gfx.DrawPlane(state.Cam.Position.Add(gfx.NewVector3(0, -16, 0)),
+	// 	gfx.NewVector2(768, 768), skyColor)
 
-	// starBrightness := state.CalculateStarBrightness(celestialAngle)
+	starBrightness := state.CalculateStarBrightness(celestialAngle)
+	if starBrightness > 0 {
+		starColor := gfx.NewColor4f(gfx.NewVector4(starBrightness, starBrightness, starBrightness, starBrightness))
+		state.Stars.Draw(gfx.DefaultTexture(), starColor, gfx.MatrixTranslate(
+			state.Cam.Position.X,
+			state.Cam.Position.Y,
+			state.Cam.Position.Z,
+		))
+	}
+
 	// TODO: draw base plane (glSkyList)
 
 	// draw sunset
@@ -157,14 +166,6 @@ func (state *ScreenInGameState) DrawSky3D() {
 	// }
 	// draw sun, moon, stars
 
-	// if starBrightness > 0 {
-	// 	starColor := gfx.NewColor4f(gfx.NewVector4(starBrightness, starBrightness, starBrightness, starBrightness))
-	// 	state.Stars.Draw(gfx.DefaultTexture(), starColor, gfx.MatrixTranslate(
-	// 		state.Cam.Position.X,
-	// 		state.Cam.Position.Y,
-	// 		state.Cam.Position.Z,
-	// 	))
-	// }
 }
 
 // CalculateDaylight from celestialAngle. taken from Notch code.

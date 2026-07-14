@@ -1146,9 +1146,6 @@ func NewMesh(a mem.Allocator) Mesh {
 }
 func DrawPlane(centerPos Vector3, size Vector2, color Color) {
 	// NOTE: Plane is always created on XZ ground
-	rlEnableBackfaceCulling()
-	defer rlDisableBackfaceCulling()
-
 	rlPushMatrix()
 	rlTranslatef(centerPos.X, centerPos.Y, centerPos.Z)
 	rlScalef(size.X, 1.0, size.Y)
@@ -1163,6 +1160,81 @@ func DrawPlane(centerPos Vector3, size Vector2, color Color) {
 	rlVertex3f(0.5, 0.0, -0.5)
 	rlEnd()
 	rlPopMatrix()
+}
+
+// Draw a billboard with additional parameters
+func DrawBillboardPro(camera Camera, texture Texture, source Rectangle, position, up Vector3, size, origin Vector2, rotation float32, tint Color) {
+	// Compute the up vector and the right vector
+	matView := MatrixLookAt(camera.Position, camera.Target, camera.Up)
+	right := Vector3{matView.M0, matView.M4, matView.M8}
+	right = Vector3Scale(right, size.X)
+	up = Vector3Scale(up, size.Y)
+
+	// Flip the content of the billboard while maintaining the counterclockwise edge rendering order
+	if size.X < 0.0 {
+		source.X -= size.X
+		source.W *= -1.0
+		right = Vector3Negate(right)
+		origin.X *= -1.0
+	}
+	if size.Y < 0.0 {
+		source.Y -= size.Y
+		source.H *= -1.0
+		up = Vector3Negate(up)
+		origin.Y *= -1.0
+	}
+
+	// Draw the texture region described by source on the following rectangle in 3D space:
+	//
+	//                size.X          <--.
+	//  3 ^---------------------------+ 2 \ rotation
+	//    |                           |   /
+	//    |                           |
+	//    |   origin.X   position     |
+	// up |..............             | size.y
+	//    |             .             |
+	//    |             . origin.y    |
+	//    |             .             |
+	//  0 +---------------------------> 1
+	//                right
+	var forward Vector3
+	if rotation != 0.0 {
+		forward = Vector3CrossProduct(right, up)
+	}
+
+	origin3D := Vector3Add(Vector3Scale(Vector3Normalize(right), origin.X), Vector3Scale(Vector3Normalize(up), origin.Y))
+
+	var points [4]Vector3
+	points[0] = Vector3Zero()
+	points[1] = right
+	points[2] = Vector3Add(up, right)
+	points[3] = up
+
+	for i := range 4 {
+		points[i] = Vector3Subtract(points[i], origin3D)
+		if rotation != 0.0 {
+			points[i] = Vector3RotateByAxisAngle(points[i], forward, rotation*Deg2rad)
+		}
+		points[i] = Vector3Add(points[i], position)
+	}
+
+	var texcoords [4]Vector2
+	texcoords[0] = Vector2{(source.X / float32(texture.Width)), (source.Y + source.H) / float32(texture.Height)}
+	texcoords[1] = Vector2{(source.X + source.W) / float32(texture.Width), (source.Y + source.H) / float32(texture.Height)}
+	texcoords[2] = Vector2{(source.X + source.W) / float32(texture.Width), (source.Y / float32(texture.Height))}
+	texcoords[3] = Vector2{(source.X / float32(texture.Width)), (source.Y / float32(texture.Height))}
+
+	rlSetTexture(texture.ID)
+	rlBegin(RL_QUADS)
+
+	rlColor4ub(tint.R, tint.G, tint.B, tint.A)
+	for i := range 4 {
+		rlTexCoord2f(texcoords[i].X, texcoords[i].Y)
+		rlVertex3f(points[i].X, points[i].Y, points[i].Z)
+	}
+
+	rlEnd()
+	rlSetTexture(0)
 }
 
 /* RLGL IMPORTS*/
