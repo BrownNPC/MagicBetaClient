@@ -1162,6 +1162,20 @@ func DrawPlane(centerPos Vector3, size Vector2, color Color) {
 	rlPopMatrix()
 }
 
+// Draw a billboard
+func DrawBillboard(camera Camera, texture Texture, position Vector3, scale float32, tint Color) {
+	source := Rectangle{0.0, 0.0, float32(texture.Width), float32(texture.Height)}
+
+	DrawBillboardRec(camera, texture, source, position, Vector2{scale * float32(math.Abs(float64(source.W/source.H))), scale}, tint)
+}
+
+// Draw a billboard (part of a texture defined by a rectangle)
+func DrawBillboardRec(camera Camera, texture Texture, source Rectangle, position Vector3, size Vector2, tint Color) {
+	// NOTE: Billboard locked on axis-Y
+	up := Vector3{0.0, 1.0, 0.0}
+	DrawBillboardPro(camera, texture, source, position, up, size, Vector2Scale(size, 0.5), 0.0, tint)
+}
+
 // Draw a billboard with additional parameters
 func DrawBillboardPro(camera Camera, texture Texture, source Rectangle, position, up Vector3, size, origin Vector2, rotation float32, tint Color) {
 	// Compute the up vector and the right vector
