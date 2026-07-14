@@ -2,6 +2,7 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/gfx/assets"
 
 	"solod.dev/so/mem"
 
@@ -69,52 +70,6 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 	return mesh
 }
 
-// // notch code (or jeb idfk)
-// func (state *ScreenInGameState) DrawSkyFan(celestialAngle float32, sunsetColor gfx.Color) {
-// 	celestialAngleRadians := celestialAngle * gfx.Pi * 2
-
-// 	gfx.PushMatrix()
-// 	gfx.Translatef(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
-// 	gfx.Rotatef(90, 1, 0, 0)
-
-// 	if math.Sin(float64(celestialAngleRadians)) < 0 {
-// 		gfx.Rotatef(180, 0, 0, 1)
-// 	} else {
-// 		gfx.Rotatef(0, 0, 0, 1)
-// 	}
-// 	gfx.Begin(gfx.RL_TRIANGLES)
-// 	const fanSteps = 16
-// 	for step := range fanSteps {
-// 		angle1 := float32(step) * gfx.Pi * 2.0 / float32(fanSteps)
-// 		sin1, cos1 := gfx.Sincos(angle1)
-
-// 		angle2 := float32(step+1) * gfx.Pi * 2.0 / float32(fanSteps)
-// 		sin2, cos2 := gfx.Sincos(angle2)
-
-// 		// center of fan
-// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, sunsetColor.A)
-// 		gfx.Vertex3f(0, 100, 0)
-
-// 		// current edge
-// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
-// 		gfx.Vertex3f(
-// 			sin1*120,
-// 			cos1*120,
-// 			-cos1*40*(float32(sunsetColor.A)/255),
-// 		)
-// 		// Next edge (Faded to 0 alpha)
-// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
-// 		gfx.Vertex3f(
-// 			sin2*120,
-// 			cos2*120,
-// 			-cos2*40*(float32(sunsetColor.A)/255),
-// 		)
-// 	}
-// 	gfx.End()
-// 	gfx.PopMatrix()
-// 	gfx.DrawRenderBatchActive()
-// }
-
 // from notch code
 func (state *ScreenInGameState) CalculateCelestialAngle(gameTime float32) float32 {
 	dayTime := float32(math.Mod(float64(gameTime), 24000))
@@ -136,16 +91,18 @@ func (state *ScreenInGameState) CalculateCelestialAngle(gameTime float32) float3
 	return angle
 }
 
-func (state *ScreenInGameState) DrawSky3D() {
+func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 	var BaseSkyColor = gfx.NewColor(120, 167, 255, 255)
 	celestialAngle := state.CalculateCelestialAngle(state.GameTimeFloat)
 	daylight := state.CalculateDaylight(celestialAngle)
 	skyColor := state.CalculateSkyColor(celestialAngle, daylight, BaseSkyColor)
 	gfx.ClearBackground(skyColor)
-	
-	// bottom plane.
-	// gfx.DrawPlane(state.Cam.Position.Add(gfx.NewVector3(0, -16, 0)),
-	// 	gfx.NewVector2(768, 768), skyColor)
+	gfx.DisableDepthMask()
+	defer gfx.EnableDepthMask()
+
+	// bottom plane
+	// gfx.DrawPlane(cam.Position.Add(gfx.NewVector3(0, -16, 0)),
+	// 	gfx.NewVector2(768, 768), gfx.Red)
 
 	starBrightness := state.CalculateStarBrightness(celestialAngle)
 	if starBrightness > 0 {
@@ -156,16 +113,26 @@ func (state *ScreenInGameState) DrawSky3D() {
 			state.Cam.Position.Z,
 		))
 	}
+	const sunDistance = 100
+	angleDeg := celestialAngle * 360
 
-	// TODO: draw base plane (glSkyList)
+	sunPosition := gfx.NewVector3(
+		0,
+		sunDistance*float32(math.Cos(float64(angleDeg*math.Pi/180))),
+		sunDistance*float32(math.Sin(float64(angleDeg*math.Pi/180))),
+	)
 
-	// draw sunset
-	// sunsetColors := state.CalculateSunriseSunsetColors(celestialAngle)
-	// if sunsetColors.A > 0 {
-	// 	state.DrawSkyFan(celestialAngle, sunsetColors)
-	// }
-	// draw sun, moon, stars
-
+	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)
+	
+	
+	state.SunMesh.Draw(sunTexture, gfx.White,
+		gfx.CalculateModelMatrix(
+			cam.Position.Add(sunPosition),
+			gfx.NewVector3(1, 0, 0), // Rotate around X to follow the arc
+			angleDeg,
+			gfx.NewVector3(1, 1, 1),
+		),
+	)
 }
 
 // CalculateDaylight from celestialAngle. taken from Notch code.

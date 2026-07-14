@@ -26,25 +26,17 @@ func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
 func (state *ScreenInGameState) OnPlayerRotation(pitch, yaw float32) {
 	state.LastPlayerPitch = pitch
 	state.LastPlayerYaw = yaw
-	lockView := true
-	rotateAroundTarget := false
-	rotateUp := false
-	// Reset camera target and up vector to baseline before applying absolute rotation
-	state.Cam.Target = gfx.Vector3Add(state.Cam.Position, gfx.NewVector3(0, 0, -1))
-	state.Cam.Up = gfx.NewVector3(0, 1, 0)
-	state.Cam.Pitch(pitch*gfx.Deg2rad, lockView, rotateAroundTarget, rotateUp)
-	state.Cam.Yaw(yaw*gfx.Deg2rad, rotateAroundTarget)
+	state.Cam.Update(gfx.Vector3{}, gfx.NewVector3(yaw, pitch, 0), 0)
 }
 
 func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) {
-	state.LastPlayerPosition = gfx.NewVector3(X, Y, Z)
-	state.Things.Get(state.Player).Position = state.LastPlayerPosition
+	state.LastPlayerPosition = state.Things.Get(state.Player).Position
+	state.Things.Get(state.Player).Position = gfx.NewVector3(X, Y, Z)
 
 	oldPos := state.Cam.Position
 	newPos := gfx.NewVector3(X, Y+camY, Z)
 	diff := gfx.Vector3Subtract(newPos, oldPos)
-	state.Cam.Position = newPos
-	state.Cam.Target = gfx.Vector3Add(state.Cam.Target, diff)
+	state.Cam.Update(diff, gfx.Vector3{}, 0)
 }
 
 // register packet handlers here

@@ -1,5 +1,7 @@
 package gfx
 
+import "solod.dev/so/math"
+
 var CameraCullDistanceNear = 0.05
 var CameraCullDistanceFar = 4000.0
 
@@ -12,6 +14,14 @@ func (camera *Camera) GetForward() Vector3 {
 // Note: The up vector might not be perpendicular to the forward vector
 func (camera *Camera) GetUp() Vector3 {
 	return Vector3Normalize(camera.Up)
+}
+
+// Returns Pitch in radians.
+func (camera *Camera) GetPitch() float32 {
+	direction := camera.Target.Subtract(camera.Position)
+	distance := math.Sqrt(float64(direction.X*direction.X + direction.Z*direction.Z))
+	pitch := math.Atan2(float64(direction.Y), distance)
+	return float32(pitch)
 }
 
 // GetRight - Returns the cameras right vector (normalized)

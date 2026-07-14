@@ -94,10 +94,9 @@ func (c Color) Tint(target Color, percent int) Color {
 // NewColor - Returns new Color
 func NewColor(r, g, b, a uint8) Color { return Color{r, g, b, a} }
 func NewColor4f(v Vector4) Color {
-	v = v.Scale(255)
 	return NewColor(
-		uint8(v.X), uint8(v.Y),
-		uint8(v.Z), uint8(v.W))
+		uint8(v.X*255), uint8(v.Y*255),
+		uint8(v.Z*255), uint8(v.W*255))
 }
 func NewColor3f(v Vector3) Color      { return NewColorRGB(uint8(v.X*255), uint8(v.Y*255), uint8(v.Z*255)) }
 func NewColorRGB(r, g, b uint8) Color { return Color{R: r, G: g, B: b, A: 255} }

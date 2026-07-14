@@ -20,7 +20,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.PersistentArena = mem.NewArena(state.__PersistentMemory[:])
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
-	// state.SkyPlanes = state.GenMeshSkyPlanes(mem.System)
+	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
@@ -48,9 +48,12 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		state.ProcessLook(s.Inputs[InputLook].Direction)
 	}
 
-	// RENDER
+	// RENDER SKY
+
 	gfx.BeginMode3D(state.Cam)
-	state.DrawSky3D()
+	state.DrawSky3D(state.Cam)
+	// draw cube (floor)
+	gfx.DrawCube(gfx.NewVector3(0, 0, 0), 200, 2, 200, gfx.Red)
 	gfx.EndMode3D()
 }
 

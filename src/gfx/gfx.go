@@ -142,7 +142,7 @@ func DrawCircle3D(center Vector3, radius float32, color Color) {
 	rlEnd()
 	rlPopMatrix()
 }
-func DrawCube3D(position Vector3, width, height, length float32, color Color) {
+func DrawCube(position Vector3, width, height, length float32, color Color) {
 	var x, y, z float32
 	rlPushMatrix()
 	{
@@ -1004,7 +1004,7 @@ func (m *Mesh) Reset() {
 	*m = Mesh{}
 }
 func DefaultTexture() Texture { return Texture{Width: 1, Height: 1, ID: rlGetTextureIdDefault()} }
-func (m *Mesh) Draw(albedo Texture, color Color, transform Matrix) {
+func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
 		const (
@@ -1026,7 +1026,7 @@ func (m *Mesh) Draw(albedo Texture, color Color, transform Matrix) {
 		}
 		rlPushMatrix()
 		{
-			rlColor4ub(color.R, color.G, color.B, color.A)
+			rlColor4ub(tint.R, tint.G, tint.B, tint.A)
 			f := MatrixToFloat(transform)
 			rlMultMatrixf(&f.V[0])
 			rlDrawVertexArray(0, len(m.vertices))
@@ -1048,10 +1048,10 @@ func (m *Mesh) Draw(albedo Texture, color Color, transform Matrix) {
 	// albedo color (Diffuse in raylib)
 	{
 		var values = [4]float32{
-			float32(color.R) / 255,
-			float32(color.G) / 255,
-			float32(color.B) / 255,
-			float32(color.A) / 255,
+			float32(tint.R) / 255,
+			float32(tint.G) / 255,
+			float32(tint.B) / 255,
+			float32(tint.A) / 255,
 		}
 		rlSetUniform(getShaderLocDefault(RL_SHADER_LOC_COLOR_DIFFUSE), &values[0], RL_SHADER_UNIFORM_VEC4, 1)
 	}
@@ -1144,6 +1144,71 @@ func NewMesh(a mem.Allocator) Mesh {
 	m.colors = slices.MakeCap[VertexColor](a, 0, size)
 	return m
 }
+func GenMeshPlane(a mem.Allocator, width, length float32, resX, resZ int) Mesh {
+	var mesh = NewMesh(a)
+
+	if resX < 1 {
+		resX = 1
+	}
+	if resZ < 1 {
+		resZ = 1
+	}
+
+	halfWidth := width * 0.5
+	halfLength := length * 0.5
+
+	stepX := width / float32(resX)
+	stepZ := length / float32(resZ)
+
+	for z := 0; z < resZ; z++ {
+		z0 := -halfLength + float32(z)*stepZ
+		z1 := z0 + stepZ
+
+		v0 := float32(z) / float32(resZ)
+		v1 := float32(z+1) / float32(resZ)
+
+		for x := 0; x < resX; x++ {
+			x0 := -halfWidth + float32(x)*stepX
+			x1 := x0 + stepX
+
+			u0 := float32(x) / float32(resX)
+			u1 := float32(x+1) / float32(resX)
+
+			// Bottom-left
+			mesh.QuadVertex3f(x0, 0, z0)
+			mesh.QuadTexCoord2f(u0, v0)
+			mesh.QuadEndVertex(true, true, false)
+
+			// Bottom-right
+			mesh.QuadVertex3f(x1, 0, z0)
+			mesh.QuadTexCoord2f(u1, v0)
+			mesh.QuadEndVertex(true, true, false)
+
+			// Top-right
+			mesh.QuadVertex3f(x1, 0, z1)
+			mesh.QuadTexCoord2f(u1, v1)
+			mesh.QuadEndVertex(true, true, false)
+
+			// Top-left
+			mesh.QuadVertex3f(x0, 0, z1)
+			mesh.QuadTexCoord2f(u0, v1)
+			mesh.QuadEndVertex(true, true, false)
+		}
+	}
+
+	mesh.Upload(false)
+	return mesh
+}
+func CalculateModelMatrix(position, rotationAxis Vector3, rotationAngle float32, scale Vector3) Matrix {
+	// Calculate transformation matrix from function parameters
+	// Get transform matrix (rotation -> scale -> translation)
+	matScale := MatrixScale(scale.X, scale.Y, scale.Z)
+	matRotation := MatrixRotate(rotationAxis, rotationAngle*Deg2rad)
+	matTranslation := MatrixTranslate(position.X, position.Y, position.Z)
+
+	matTransform := MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation)
+	return matTransform
+}
 func DrawPlane(centerPos Vector3, size Vector2, color Color) {
 	// NOTE: Plane is always created on XZ ground
 	rlPushMatrix()
@@ -1233,10 +1298,11 @@ func DrawBillboardPro(camera Camera, texture Texture, source Rectangle, position
 	}
 
 	var texcoords [4]Vector2
-	texcoords[0] = Vector2{(source.X / float32(texture.Width)), (source.Y + source.H) / float32(texture.Height)}
-	texcoords[1] = Vector2{(source.X + source.W) / float32(texture.Width), (source.Y + source.H) / float32(texture.Height)}
-	texcoords[2] = Vector2{(source.X + source.W) / float32(texture.Width), (source.Y / float32(texture.Height))}
-	texcoords[3] = Vector2{(source.X / float32(texture.Width)), (source.Y / float32(texture.Height))}
+	w, h := float32(texture.Width), float32(texture.Height)
+	texcoords[0] = Vector2{(source.X / w), (source.Y + source.H) / h}
+	texcoords[1] = Vector2{(source.X + source.W) / w, (source.Y + source.H) / h}
+	texcoords[2] = Vector2{(source.X + source.W) / w, (source.Y / h)}
+	texcoords[3] = Vector2{(source.X / w), (source.Y / h)}
 
 	rlSetTexture(texture.ID)
 	rlBegin(RL_QUADS)
@@ -1523,3 +1589,9 @@ func rlDisableTexture()
 
 //so:extern
 func rlUpdateVertexBuffer(bufferId int, data any, dataSize, offset int)
+
+//so:extern rlDisableDepthMask
+func DisableDepthMask()
+
+//so:extern rlEnableDepthMask
+func EnableDepthMask()
