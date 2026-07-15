@@ -264,6 +264,7 @@ type ScreenInGameState struct {
 
 	// Player spawn position
 	SpawnPosition gfx.Vector3
+	acc           float32
 
 	// Used for celestial angle and day/night cycle
 	GameTimeFloat  float32 // In game time but it's a float

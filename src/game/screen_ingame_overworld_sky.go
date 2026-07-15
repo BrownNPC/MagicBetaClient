@@ -18,48 +18,82 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 	for range starAttempts {
 		// yaw,pitch is star position in a sphere. roll is star rotation
 		yaw, pitch, roll := rand.Float32(), rand.Float32(), rand.Float32()
+		_ = roll
 
-		starWorldPos := gfx.PointOnSphere(yaw, pitch).Scale(100)
-		starSize := 0.15 + rand.Float32()*0.075
+		// unit vector pointing away from 0,0,0 towards the star.
+		starDirection := gfx.PointOnSphere(yaw, pitch)
+		// Move in the direction of the star 100 units.
+		// arbitrarily decide to place the star here.
+		starWorldPos := starDirection.Scale(10)
+		starSize := 0.025 + rand.Float32()*0.025
 
-		// rotate the star (which is a square) so it forms different diamond shapes.
-		starRotation := gfx.MatrixRotateXYZ(gfx.NewVector3(.5, 0, roll*gfx.Tau))
+		up := gfx.NewVector3(0, 1, 0)
+		if math.Abs(float64(starDirection.DotProduct(up))) > 0.99 {
+			up = gfx.NewVector3(1, 0, 0)
+		}
+		normal := starWorldPos.Normalize().Negate()
+		right := up.CrossProduct(normal).Normalize()
+		forward := normal.CrossProduct(right).Normalize()
+		forward = forward.Negate()
+		corners := []gfx.Vector3{
+			right.Scale(-starSize).Add(forward.Scale(-starSize)),
+			right.Scale(-starSize).Add(forward.Scale(starSize)),
+			right.Scale(starSize).Add(forward.Scale(starSize)),
+			right.Scale(starSize).Add(forward.Scale(-starSize)),
+		}
 
-		for corner := range 4 {
-			// Define local quad corners
-			var cornerPos gfx.Vector3
-			switch corner {
-			case 0:
-				cornerPos = gfx.NewVector3(-starSize, 0, -starSize)
-			case 1:
-				cornerPos = gfx.NewVector3(-starSize, 0, starSize)
-			case 2:
-				cornerPos = gfx.NewVector3(starSize, 0, starSize)
-			case 3:
-				cornerPos = gfx.NewVector3(starSize, 0, -starSize)
-			}
-			// rotate the corner around the center of the star
-			transformed := gfx.Vector3Transform(cornerPos, starRotation)
-
-			// Add the star's world position to the rotated corner
-			cornerPos = starWorldPos.Add(transformed)
-			mesh.QuadVertex3f(
-				cornerPos.X,
-				cornerPos.Y,
-				cornerPos.Z,
-			)
-			mesh.QuadColor4ub(255, 255, 255, 255)
-			mesh.QuadEndVertex(true, false, true)
+		for _, offset := range corners {
+			vert := starWorldPos.Add(offset)
+			mesh.Vertex3f(vert.X, vert.Y, vert.Z)
+			mesh.QuadEndVertex(true, false, false)
 		}
 	}
 	return mesh
 }
+func (state *ScreenInGameState) DrawStarsAsCubes(cam gfx.Vector3) {
+	const starAttempts = 150
+	pcg := rand.NewPCG(0, 0)
+	r := rand.New(&pcg)
+
+	for range starAttempts {
+		// yaw,pitch is star position in a sphere. roll is star rotation
+		yaw, pitch, roll := r.Float32(), r.Float32(), r.Float32()
+		_ = roll
+
+		// unit vector pointing away from 0,0,0 towards the star.
+		starDirection := gfx.PointOnSphere(yaw, pitch)
+		// Move in the direction of the star 100 units.
+		// arbitrarily decide to place the star here.
+		starWorldPos := starDirection.Scale(10)
+		starSize := 0.025 + r.Float32()*0.025
+
+		up := gfx.NewVector3(0, 1, 0)
+		if math.Abs(float64(starDirection.DotProduct(up))) > 0.99 {
+			up = gfx.NewVector3(1, 0, 0)
+		}
+		normal := starWorldPos.Normalize().Negate()
+		right := up.CrossProduct(normal).Normalize()
+		forward := normal.CrossProduct(right).Normalize()
+
+		corners := []gfx.Vector3{
+			right.Scale(-starSize).Add(forward.Scale(-starSize)),
+			right.Scale(-starSize).Add(forward.Scale(starSize)),
+			right.Scale(starSize).Add(forward.Scale(starSize)),
+			right.Scale(starSize).Add(forward.Scale(-starSize)),
+		}
+
+		for _, offset := range corners {
+			vert := starWorldPos.Add(offset)
+			gfx.DrawCube(cam.Add(vert), starSize, starSize, starSize, gfx.White)
+		}
+	}
+}
 
 func (state *ScreenInGameState) CalculateHorizonFanModelMatrix(cam gfx.Camera, celestialAngle float32, sunsetColor gfx.Color) gfx.Matrix {
 	mat := gfx.MatrixTranslate(cam.Position.X, cam.Position.Y, cam.Position.Z)
-	mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateX(90))
+	mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateX(.25*gfx.Tau))
 	if gfx.SinT(celestialAngle) < 0 {
-		mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateZ(180))
+		mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateZ(.25*gfx.Tau))
 	}
 	mat = gfx.MatrixMultiply(mat, gfx.MatrixScale(1, 1, float32(sunsetColor.A)/255))
 	return mat
@@ -102,6 +136,10 @@ func (state *ScreenInGameState) CalculateCelestialAngle(gameTime float32) float3
 	return linear + (angle-linear)/3
 }
 func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
+	state.acc += 0.001
+	if state.acc > 1 {
+		state.acc = 0
+	}
 	var BaseSkyColor = gfx.NewColor(120, 167, 255, 255)
 	celestialAngle := state.CalculateCelestialAngle(state.GameTimeFloat)
 	daylight := state.CalculateDaylight(celestialAngle)
@@ -135,29 +173,7 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 		)
 	}
 
-	// STAR DEBUG
-	{
-		starWorldPos := gfx.PointOnSphere(.5, .4).Scale(100)
-		starSize := 5 + rand.Float32()*0.075
-		starRotation := gfx.MatrixRotateXYZ(gfx.NewVector3(0, 0, .5*gfx.Tau))
-		for corner := range 4 {
-			// Define local quad corners
-			var cornerPos gfx.Vector3
-			switch corner {
-			case 0:
-				cornerPos = gfx.NewVector3(-starSize, 0, -starSize)
-			case 1:
-				cornerPos = gfx.NewVector3(-starSize, 0, starSize)
-			case 2:
-				cornerPos = gfx.NewVector3(starSize, 0, starSize)
-			case 3:
-				cornerPos = gfx.NewVector3(starSize, 0, -starSize)
-			}
-			transformed := gfx.Vector3Transform(cornerPos, starRotation)
-			cornerPos = starWorldPos.Add(transformed)
-			gfx.DrawCube(cam.Position.Add(cornerPos), starSize, starSize, starSize, gfx.Red)
-		}
-	}
+	state.DrawStarsAsCubes(cam.Position)
 
 	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)
 	gfx.BeginBlendMode(gfx.BLEND_ADD_COLORS)

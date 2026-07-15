@@ -1043,8 +1043,6 @@ func (m *Mesh) Reset() {
 }
 func DefaultTexture() Texture { return Texture{Width: 1, Height: 1, ID: rlGetTextureIdDefault()} }
 func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
-	rlDisableBackfaceCulling()
-	defer rlEnableBackfaceCulling()
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
 		const (
