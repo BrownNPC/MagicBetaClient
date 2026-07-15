@@ -23,7 +23,7 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 		starSize := 0.15 + rand.Float32()*0.075
 
 		// rotate the star (which is a square) so it forms different diamond shapes.
-		starRotation := gfx.MatrixRotateXYZ(gfx.NewVector3(0, 0, roll*gfx.Tau))
+		starRotation := gfx.MatrixRotateXYZ(gfx.NewVector3(.5, 0, roll*gfx.Tau))
 
 		for corner := range 4 {
 			// Define local quad corners
@@ -48,60 +48,45 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 				cornerPos.Y,
 				cornerPos.Z,
 			)
-			mesh.QuadEndVertex(true, false, false)
+			mesh.QuadColor4ub(255, 255, 255, 255)
+			mesh.QuadEndVertex(true, false, true)
 		}
 	}
 	return mesh
 }
 
-// func (state *ScreenInGameState) GenMeshHorizonFan(a mem.Allocator, celestial angle) gfx.Mesh {
+func (state *ScreenInGameState) CalculateHorizonFanModelMatrix(cam gfx.Camera, celestialAngle float32, sunsetColor gfx.Color) gfx.Matrix {
+	mat := gfx.MatrixTranslate(cam.Position.X, cam.Position.Y, cam.Position.Z)
+	mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateX(90))
+	if gfx.SinT(celestialAngle) < 0 {
+		mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateZ(180))
+	}
+	mat = gfx.MatrixMultiply(mat, gfx.MatrixScale(1, 1, float32(sunsetColor.A)/255))
+	return mat
+}
+func (state *ScreenInGameState) GenMeshHorizonFan(a mem.Allocator) gfx.Mesh {
+	var m = gfx.NewMesh(a)
+	const fanSteps = 16
+	for step := range fanSteps {
+		currentEdge := float32(step) / fanSteps
+		sin, cos := gfx.SinCosT(currentEdge)
 
-// }
+		// top of the fan is full white
+		m.Color4ub(255, 255, 255, 255) // full white top
+		m.Vertex3f(0, 100, 0)
 
-// // notch code (or jeb idfk)
-// func (state *ScreenInGameState) DrawSkyFan(celestialAngle float32, sunsetColor gfx.Color) {
+		// edges fade to 0 opacity
+		m.Color4ub(255, 255, 255, 0)
+		m.Vertex3f(sin*120, cos*120, -cos*40)
 
-// 	gfx.PushMatrix()
-// 	gfx.Translatef(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
-// 	gfx.Rotatef(90, 1, 0, 0)
-
-// 	if math.Sin(float64(celestialAngle*gfx.Tau)) < 0 {
-// 		gfx.Rotatef(180, 0, 0, 1)
-// 	} else {
-// 		gfx.Rotatef(0, 0, 0, 1)
-// 	}
-// 	gfx.Begin(gfx.RL_TRIANGLES)
-// 	const fanSteps = 16
-// 	for step := range fanSteps {
-// 		angle1 := float32(step) * gfx.Pi * 2.0 / float32(fanSteps)
-// 		sin1, cos1 := gfx.Sincos(angle1)
-
-// 		angle2 := float32(step+1) * gfx.Pi * 2.0 / float32(fanSteps)
-// 		sin2, cos2 := gfx.Sincos(angle2)
-
-// 		// center of fan
-// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, sunsetColor.A)
-// 		gfx.Vertex3f(0, 100, 0)
-
-// 		// current edge
-// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
-// 		gfx.Vertex3f(
-// 			sin1*120,
-// 			cos1*120,
-// 			-cos1*40*(float32(sunsetColor.A)/255),
-// 		)
-// 		// Next edge (Faded to 0 alpha)
-// 		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
-// 		gfx.Vertex3f(
-// 			sin2*120,
-// 			cos2*120,
-// 			-cos2*40*(float32(sunsetColor.A)/255),
-// 		)
-// 	}
-// 	gfx.End()
-// 	gfx.PopMatrix()
-// 	gfx.DrawRenderBatchActive()
-// }
+		// next edge
+		nextEdge := float32(step+1) / fanSteps
+		sin, cos = gfx.SinCosT(nextEdge)
+		m.Color4ub(255, 255, 255, 0)
+		m.Vertex3f(sin*120, cos*120, -cos*40)
+	}
+	return m
+}
 
 // from notch code
 // Returns Celestial Angle in turns.
@@ -141,6 +126,39 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 		sunDistance*float32(gfx.CosT(celestialAngle)),
 		sunDistance*float32(gfx.SinT(celestialAngle)),
 	)
+	// draw glare (horizon)
+	sunsetColor := state.CalculateSunriseSunsetColors(celestialAngle)
+	if sunsetColor.A > 0 {
+		state.HorizonMesh.Draw(gfx.DefaultTexture(),
+			sunsetColor,
+			state.CalculateHorizonFanModelMatrix(cam, celestialAngle, sunsetColor),
+		)
+	}
+
+	// STAR DEBUG
+	{
+		starWorldPos := gfx.PointOnSphere(.5, .4).Scale(100)
+		starSize := 5 + rand.Float32()*0.075
+		starRotation := gfx.MatrixRotateXYZ(gfx.NewVector3(0, 0, .5*gfx.Tau))
+		for corner := range 4 {
+			// Define local quad corners
+			var cornerPos gfx.Vector3
+			switch corner {
+			case 0:
+				cornerPos = gfx.NewVector3(-starSize, 0, -starSize)
+			case 1:
+				cornerPos = gfx.NewVector3(-starSize, 0, starSize)
+			case 2:
+				cornerPos = gfx.NewVector3(starSize, 0, starSize)
+			case 3:
+				cornerPos = gfx.NewVector3(starSize, 0, -starSize)
+			}
+			transformed := gfx.Vector3Transform(cornerPos, starRotation)
+			cornerPos = starWorldPos.Add(transformed)
+			gfx.DrawCube(cam.Position.Add(cornerPos), starSize, starSize, starSize, gfx.Red)
+		}
+	}
+
 	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)
 	gfx.BeginBlendMode(gfx.BLEND_ADD_COLORS)
 	state.SunMesh.Draw(sunTexture, gfx.White,

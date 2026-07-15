@@ -21,6 +21,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
+	state.HorizonMesh = state.GenMeshHorizonFan(mem.System)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
