@@ -41,7 +41,7 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 		normal := starWorldPos.Normalize().Negate()
 		right := up.CrossProduct(normal).Normalize()
 		forward := normal.CrossProduct(right).Normalize()
-		forward = forward.Negate()
+		forward = forward.Negate() // flip the quad so it faces origin
 
 		// apply random roation to the star quad
 		roll := rand.Float32() * 2 * math.Pi
@@ -67,12 +67,16 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 }
 
 func (state *ScreenInGameState) CalculateHorizonFanModelMatrix(cam gfx.Camera, celestialAngle float32, sunsetColor gfx.Color) gfx.Matrix {
-	mat := gfx.MatrixTranslate(cam.Position.X, cam.Position.Y, cam.Position.Z)
-	mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateX(.25*gfx.Tau))
-	if gfx.SinT(celestialAngle) < 0 {
-		mat = gfx.MatrixMultiply(mat, gfx.MatrixRotateZ(.25*gfx.Tau))
-	}
-	mat = gfx.MatrixMultiply(mat, gfx.MatrixScale(1, 1, float32(sunsetColor.A)/255))
+	mat := gfx.MatrixIdentity()
+	mat = mat.Multiply(gfx.MatrixRotateX(90 * gfx.Deg2rad))
+	// if gfx.SinT(celestialAngle*gfx.Tau) < 0 {
+	// 	mat = mat.Multiply(gfx.MatrixRotateZ(180 * gfx.Deg2rad))
+	// }
+	mat = mat.Multiply(gfx.MatrixRotateZ(90 * gfx.Deg2rad))
+
+	mat = mat.Multiply(gfx.MatrixRotateX(state.acc * 360 * gfx.Deg2rad))
+	mat = mat.Multiply(gfx.MatrixTranslate(cam.Position.X, cam.Position.Y, cam.Position.Z))
+	mat = mat.Multiply(gfx.MatrixScale(1, 1, float32(sunsetColor.A)/255))
 	return mat
 }
 func (state *ScreenInGameState) GenMeshHorizonFan(a mem.Allocator) gfx.Mesh {
