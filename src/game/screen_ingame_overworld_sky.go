@@ -100,9 +100,9 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 	gfx.DisableDepthMask()
 	defer gfx.EnableDepthMask()
 
-	// bottom plane
-	// gfx.DrawPlane(cam.Position.Add(gfx.NewVector3(0, -16, 0)),
-	// 	gfx.NewVector2(768, 768), gfx.Red)
+	// So that you cannot see stars at the bottom (and probably other stuff i dont know)
+	gfx.DrawPlane(cam.Position.Add(gfx.NewVector3(0, -16, 0)),
+		gfx.NewVector2(768, 768), skyColor)
 
 	starBrightness := state.CalculateStarBrightness(celestialAngle)
 	if starBrightness > 0 {
@@ -123,8 +123,8 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 	)
 
 	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)
-	
-	
+
+	gfx.BeginBlendMode(gfx.BLEND_ADDITIVE)
 	state.SunMesh.Draw(sunTexture, gfx.White,
 		gfx.CalculateModelMatrix(
 			cam.Position.Add(sunPosition),
@@ -133,6 +133,7 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 			gfx.NewVector3(1, 1, 1),
 		),
 	)
+	gfx.EndBlendMode()
 }
 
 // CalculateDaylight from celestialAngle. taken from Notch code.

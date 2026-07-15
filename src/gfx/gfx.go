@@ -1551,6 +1551,19 @@ const (
 	RL_SHADER_UNIFORM_UIVEC4           // Shader uniform type: uivec4 (4 unsigned int)
 	RL_SHADER_UNIFORM_SAMPLER2D        // Shader uniform type: sampler2d
 )
+const (
+	BLEND_ALPHA             = iota // Blend textures considering alpha (default)
+	BLEND_ADDITIVE                 // Blend textures adding colors
+	BLEND_MULTIPLIED               // Blend textures multiplying colors
+	BLEND_ADD_COLORS               // Blend textures adding colors (alternative)
+	BLEND_SUBTRACT_COLORS          // Blend textures subtracting colors (alternative)
+	BLEND_ALPHA_PREMULTIPLY        // Blend premultiplied textures considering alpha
+	BLEND_CUSTOM                   // Blend textures using custom src/dst factors (use rlSetBlendFactors())
+	BLEND_CUSTOM_SEPARATE          // Blend textures using custom src/dst factors (use rlSetBlendFactorsSeparate())
+)
+
+func BeginBlendMode(mode int) { rlSetBlendMode(mode) }
+func EndBlendMode()           { rlSetBlendMode(BLEND_ALPHA) }
 
 //so:extern rlGetShaderLocsDefault
 func rlgsldf() *c.Int
@@ -1595,3 +1608,6 @@ func DisableDepthMask()
 
 //so:extern rlEnableDepthMask
 func EnableDepthMask()
+
+//so:extern rlSetBlendMode
+func rlSetBlendMode(int)
