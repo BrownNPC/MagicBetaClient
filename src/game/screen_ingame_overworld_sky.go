@@ -66,43 +66,6 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 	return mesh.Upload(false)
 }
 
-func (state *ScreenInGameState) CalculateHorizonFanModelMatrix(cam gfx.Camera, celestialAngle float32, sunsetColor gfx.Color) gfx.Matrix {
-	mat := gfx.MatrixIdentity()
-	mat = mat.Multiply(gfx.MatrixRotateX(90 * gfx.Deg2rad))
-	// if gfx.SinT(celestialAngle*gfx.Tau) < 0 {
-	// 	mat = mat.Multiply(gfx.MatrixRotateZ(180 * gfx.Deg2rad))
-	// }
-	mat = mat.Multiply(gfx.MatrixRotateZ(90 * gfx.Deg2rad))
-
-	mat = mat.Multiply(gfx.MatrixRotateX(state.acc * 360 * gfx.Deg2rad))
-	mat = mat.Multiply(gfx.MatrixTranslate(cam.Position.X, cam.Position.Y, cam.Position.Z))
-	mat = mat.Multiply(gfx.MatrixScale(1, 1, float32(sunsetColor.A)/255))
-	return mat
-}
-func (state *ScreenInGameState) GenMeshHorizonFan(a mem.Allocator) gfx.Mesh {
-	var m = gfx.NewMesh(a)
-	const fanSteps = 16
-	for step := range fanSteps {
-		currentEdge := float32(step) / fanSteps
-		sin, cos := gfx.SinCosT(currentEdge)
-
-		// top of the fan is full white
-		m.Color4ub(255, 255, 255, 255) // full white top
-		m.Vertex3f(0, 100, 0)
-
-		// edges fade to 0 opacity
-		m.Color4ub(255, 255, 255, 0)
-		m.Vertex3f(sin*120, cos*120, -cos*40)
-
-		// next edge
-		nextEdge := float32(step+1) / fanSteps
-		sin, cos = gfx.SinCosT(nextEdge)
-		m.Color4ub(255, 255, 255, 0)
-		m.Vertex3f(sin*120, cos*120, -cos*40)
-	}
-	return m.Upload(false)
-}
-
 // from notch code
 // Returns Celestial Angle in turns.
 func (state *ScreenInGameState) CalculateCelestialAngle(gameTime float32) float32 {
@@ -115,6 +78,52 @@ func (state *ScreenInGameState) CalculateCelestialAngle(gameTime float32) float3
 	linear := angle
 	angle = 1 - (gfx.CosT(angle*0.5)+1)*0.5
 	return linear + (angle-linear)/3
+}
+
+// notch code (or jeb idfk)
+func (state *ScreenInGameState) DrawHorizon(celestialAngle float32, sunsetColor gfx.Color) {
+	celestialAngleRadians := celestialAngle * gfx.Pi * 2
+
+	gfx.PushMatrix()
+	gfx.Translatef(state.Cam.Position.X, state.Cam.Position.Y, state.Cam.Position.Z)
+	gfx.Rotatef(90, 1, 0, 0)
+
+	if math.Sin(float64(celestialAngleRadians)) < 0 {
+		gfx.Rotatef(180, 0, 0, 1)
+	} else {
+		gfx.Rotatef(0, 0, 0, 1)
+	}
+	gfx.Begin(gfx.RL_TRIANGLES)
+	const fanSteps = 16
+	for step := range fanSteps {
+		angle1 := float32(step) * gfx.Pi * 2.0 / float32(fanSteps)
+		sin1, cos1 := gfx.Sincos(angle1)
+
+		angle2 := float32(step+1) * gfx.Pi * 2.0 / float32(fanSteps)
+		sin2, cos2 := gfx.Sincos(angle2)
+
+		// center of fan
+		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, sunsetColor.A)
+		gfx.Vertex3f(0, 100, 0)
+
+		// current edge
+		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
+		gfx.Vertex3f(
+			sin1*120,
+			cos1*120,
+			-cos1*40*(float32(sunsetColor.A)/255),
+		)
+		// Next edge (Faded to 0 alpha)
+		gfx.Color4ub(sunsetColor.R, sunsetColor.G, sunsetColor.B, 0) //fade
+		gfx.Vertex3f(
+			sin2*120,
+			cos2*120,
+			-cos2*40*(float32(sunsetColor.A)/255),
+		)
+	}
+	gfx.End()
+	gfx.PopMatrix()
+	gfx.DrawRenderBatchActive()
 }
 func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 	state.acc += 0.001
@@ -148,10 +157,7 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 	// draw glare (horizon)
 	sunsetColor := state.CalculateSunriseSunsetColors(celestialAngle)
 	if sunsetColor.A > 0 {
-		state.HorizonMesh.Draw(gfx.DefaultTexture(),
-			sunsetColor,
-			state.CalculateHorizonFanModelMatrix(cam, celestialAngle, sunsetColor),
-		)
+		state.DrawHorizon(celestialAngle, sunsetColor)
 	}
 
 	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)

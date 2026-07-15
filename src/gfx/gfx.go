@@ -1650,3 +1650,11 @@ func EnableDepthMask()
 
 //so:extern rlSetBlendMode
 func rlSetBlendMode(int)
+func PushMatrix()                { rlPushMatrix() }
+func PopMatrix()                 { rlPopMatrix() }
+func Translatef(x, y, z float32) { rlTranslatef(x, y, z) }
+func Rotatef(x, y, z, w float32) { rlRotatef(x, y, z, w) }
+func Begin(mode int)             { rlBegin(mode) }
+func End()                       { rlEnd() }
+func Color4ub(r, g, b, a uint8)  { rlColor4ub(r, g, b, a) }
+func Vertex3f(x, y, z float32)   { rlVertex3f(x, y, z) }

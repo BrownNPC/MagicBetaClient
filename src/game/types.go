@@ -274,7 +274,6 @@ type ScreenInGameState struct {
 	// RENDERING DATA
 	Stars       gfx.Mesh // Initialized
 	SunMesh     gfx.Mesh // Also used for moon
-	HorizonMesh gfx.Mesh
 
 	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte
