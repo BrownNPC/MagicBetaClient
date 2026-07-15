@@ -18,6 +18,40 @@ const (
 	Deg2rad = 0.017453292
 	Rad2deg = 57.295776
 )
+const tableSize = 4096
+
+var sinTable [tableSize]float32
+
+func init() {
+	for i := range sinTable {
+		sinTable[i] = float32(math.Sin(float64(i) * 2 * math.Pi / tableSize))
+	}
+}
+
+// I read this article: https://www.computerenhance.com/p/turns-are-better-than-radians
+
+func SinT(t float32) float32 {
+	mask := tableSize - 1
+
+	x := t * tableSize
+
+	i := int(x)
+	f := x - float32(i)
+
+	i &= mask
+
+	return sinTable[i] +
+		(sinTable[(i+1)&mask]-sinTable[i])*f
+}
+
+// Cos function that accepts Turns.
+func CosT(t float32) float32 {
+	index := int(t*tableSize) + tableSize/4
+	if index < 0 {
+		index += tableSize
+	}
+	return sinTable[(index)%tableSize]
+}
 
 // Java edition chat colors
 var (
