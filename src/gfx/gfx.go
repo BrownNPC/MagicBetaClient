@@ -962,10 +962,10 @@ func (m *Mesh) QuadEndVertex(vertex, texcoord, color bool) {
 }
 
 // No-op if on opengl 1.1
-func (m *Mesh) Upload(dynamic bool) {
+func (m *Mesh) Upload(dynamic bool) Mesh {
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
-		return
+		return *m
 	}
 	m.vboID = [5]int{} // reset
 
@@ -1014,6 +1014,7 @@ func (m *Mesh) Upload(dynamic bool) {
 	}
 	sdl.Log("Vertices: %d", len(m.vertices))
 	rlDisableVertexArray()
+	return *m
 }
 func (m *Mesh) Destroy() {
 	mem.FreeSlice(m.a, m.vertices)
@@ -1043,8 +1044,6 @@ func (m *Mesh) Reset() {
 }
 func DefaultTexture() Texture { return Texture{Width: 1, Height: 1, ID: rlGetTextureIdDefault()} }
 func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
-	rlDisableBackfaceCulling()
-	defer rlEnableBackfaceCulling()
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
 		const (

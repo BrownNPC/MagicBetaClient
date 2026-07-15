@@ -11,21 +11,28 @@ import (
 )
 
 func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
-	println("gen stars")
 	const starAttempts = 1500
 	var mesh = gfx.NewMesh(a)
 
 	for range starAttempts {
 		// yaw,pitch is star position in a sphere. roll is star rotation
-		yaw, pitch, roll := rand.Float32(), rand.Float32(), rand.Float32()
-		_ = roll
+		dir := gfx.NewVector3(
+			rand.Float32()*2-1,
+			rand.Float32()*2-1,
+			rand.Float32()*2-1,
+		)
 
-		// unit vector pointing away from 0,0,0 towards the star.
-		starDirection := gfx.PointOnSphere(yaw, pitch)
+		lengthSquared := dir.LengthSqr()
+
+		if lengthSquared >= 1 || lengthSquared <= 0.025 {
+			continue
+		}
+
+		starDirection := dir.Normalize()
 		// Move in the direction of the star 100 units.
 		// arbitrarily decide to place the star here.
-		starWorldPos := starDirection.Scale(10)
-		starSize := 0.025 + rand.Float32()*0.025
+		starWorldPos := starDirection.Scale(20)
+		starSize := 0.025 + rand.Float32()*0.025/2
 
 		up := gfx.NewVector3(0, 1, 0)
 		if math.Abs(float64(starDirection.DotProduct(up))) > 0.99 {
@@ -34,12 +41,20 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 		normal := starWorldPos.Normalize().Negate()
 		right := up.CrossProduct(normal).Normalize()
 		forward := normal.CrossProduct(right).Normalize()
+		forward = forward.Negate()
 
+		// apply random roation to the star quad
+		roll := rand.Float32() * 2 * math.Pi
+		c := float32(math.Cos(float64(roll)))
+		s := float32(math.Sin(float64(roll)))
+
+		rolledRight := right.Scale(c).Add(forward.Scale(s))
+		rolledForward := forward.Scale(c).Subtract(right.Scale(s))
 		corners := []gfx.Vector3{
-			right.Scale(-starSize).Add(forward.Scale(-starSize)),
-			right.Scale(-starSize).Add(forward.Scale(starSize)),
-			right.Scale(starSize).Add(forward.Scale(starSize)),
-			right.Scale(starSize).Add(forward.Scale(-starSize)),
+			rolledRight.Scale(-starSize).Add(rolledForward.Scale(-starSize)),
+			rolledRight.Scale(-starSize).Add(rolledForward.Scale(starSize)),
+			rolledRight.Scale(starSize).Add(rolledForward.Scale(starSize)),
+			rolledRight.Scale(starSize).Add(rolledForward.Scale(-starSize)),
 		}
 
 		for _, offset := range corners {
@@ -48,8 +63,7 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 			mesh.QuadEndVertex(true, false, false)
 		}
 	}
-	mesh.Upload(true)
-	return mesh
+	return mesh.Upload(false)
 }
 
 func (state *ScreenInGameState) CalculateHorizonFanModelMatrix(cam gfx.Camera, celestialAngle float32, sunsetColor gfx.Color) gfx.Matrix {
@@ -82,8 +96,7 @@ func (state *ScreenInGameState) GenMeshHorizonFan(a mem.Allocator) gfx.Mesh {
 		m.Color4ub(255, 255, 255, 0)
 		m.Vertex3f(sin*120, cos*120, -cos*40)
 	}
-	m.Upload(false)
-	return m
+	return m.Upload(false)
 }
 
 // from notch code
@@ -136,7 +149,6 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 			state.CalculateHorizonFanModelMatrix(cam, celestialAngle, sunsetColor),
 		)
 	}
-
 
 	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)
 	gfx.BeginBlendMode(gfx.BLEND_ADD_COLORS)
