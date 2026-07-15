@@ -90,7 +90,6 @@ func (state *ScreenInGameState) CalculateCelestialAngle(gameTime float32) float3
 
 	return angle
 }
-
 func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 	var BaseSkyColor = gfx.NewColor(120, 167, 255, 255)
 	celestialAngle := state.CalculateCelestialAngle(state.GameTimeFloat)
@@ -99,10 +98,6 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 	gfx.ClearBackground(skyColor)
 	gfx.DisableDepthMask()
 	defer gfx.EnableDepthMask()
-
-	// So that you cannot see stars at the bottom (and probably other stuff i dont know)
-	gfx.DrawPlane(cam.Position.Add(gfx.NewVector3(0, -16, 0)),
-		gfx.NewVector2(768, 768), skyColor)
 
 	starBrightness := state.CalculateStarBrightness(celestialAngle)
 	if starBrightness > 0 {
@@ -113,17 +108,15 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 			state.Cam.Position.Z,
 		))
 	}
+	// draw sun and moon.
 	const sunDistance = 100
 	angleDeg := celestialAngle * 360
-
 	sunPosition := gfx.NewVector3(
 		0,
 		sunDistance*float32(math.Cos(float64(angleDeg*math.Pi/180))),
 		sunDistance*float32(math.Sin(float64(angleDeg*math.Pi/180))),
 	)
-
 	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)
-
 	gfx.BeginBlendMode(gfx.BLEND_ADDITIVE)
 	state.SunMesh.Draw(sunTexture, gfx.White,
 		gfx.CalculateModelMatrix(
@@ -131,6 +124,15 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 			gfx.NewVector3(1, 0, 0), // Rotate around X to follow the arc
 			angleDeg,
 			gfx.NewVector3(1, 1, 1),
+		),
+	)
+	moonTexture := state.s.Pack.GetTexture(assets.Terrain_moon)
+	state.SunMesh.Draw(moonTexture, gfx.White,
+		gfx.CalculateModelMatrix(
+			cam.Position.Add(sunPosition.Negate()),
+			gfx.NewVector3(1, 0, 0), // Rotate around X to follow the arc
+			angleDeg+180,
+			gfx.NewVector3(1.5, 1.5, 1.5), // moon is bigger than sun
 		),
 	)
 	gfx.EndBlendMode()
