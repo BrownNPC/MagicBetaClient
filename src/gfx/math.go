@@ -3,12 +3,26 @@ package gfx
 import (
 	"solod.dev/so/math"
 )
+
 //so:include "math_include.h"
+
+// PointOnSphere converts angles (in Turns) to a unit vector.
+// yawTurns: rotation around the Y axis (0.0 to 1.0)
+// pitchTurns: rotation from the top to bottom (0.0 to 1.0)
+func PointOnSphere(leftToRight, topToBottom float32) Vector3 {
+	verticalHeight := CosT(topToBottom * 0.5)
+	horizontalRadius := SinT(topToBottom * 0.5)
+
+	return Vector3{
+		X: horizontalRadius * SinT(leftToRight),
+		Y: verticalHeight,
+		Z: horizontalRadius * CosT(leftToRight),
+	}
+}
 
 const epsilon = 1e-6
 
 // Clamp - Clamp float value
-//
 func Clamp(value, min, max float32) float32 {
 	var res float32
 	if value < min {
@@ -713,7 +727,6 @@ func Vector3Unproject(source Vector3, projection Matrix, view Matrix) Vector3 {
 type Float3 struct {
 	V [3]float32
 }
-
 
 // Vector3ToFloatV - Get Vector3 as float array
 func Vector3ToFloat(v Vector3) Float3 {

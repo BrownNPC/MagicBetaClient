@@ -17,6 +17,7 @@ const (
 	Pi      = 3.1415927
 	Deg2rad = 0.017453292
 	Rad2deg = 57.295776
+	Tau     = 6.2831853
 )
 const tableSize = 4096
 
@@ -51,6 +52,9 @@ func CosT(t float32) float32 {
 		index += tableSize
 	}
 	return sinTable[(index)%tableSize]
+}
+func SinCosT(t float32) (float32, float32) {
+	return SinT(t), CosT(t)
 }
 
 // Java edition chat colors

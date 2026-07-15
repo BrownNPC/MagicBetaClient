@@ -13,60 +13,44 @@ import (
 func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 	const starAttempts = 1500
 	var mesh = gfx.NewMesh(a)
+	defer mesh.Upload(true)
+
 	for range starAttempts {
-		dir := gfx.Vector3{
-			X: rand.Float32()*2 - 1,
-			Y: rand.Float32()*2 - 1,
-			Z: rand.Float32()*2 - 1,
-		}
+		// yaw,pitch is star position in a sphere. roll is star rotation
+		yaw, pitch, roll := rand.Float32(), rand.Float32(), rand.Float32()
 
-		// starSize := 0.25 + rand.Float32()*0.25 //original
-		var starSize float32 = 0.15 + rand.Float32()*0.15/2
-		lengthSquared := dir.LengthSqr()
-		if lengthSquared >= 1.0 || lengthSquared <= 0.025 {
-			continue
-		}
+		starWorldPos := gfx.PointOnSphere(yaw, pitch).Scale(100)
+		starSize := 0.15 + rand.Float32()*0.075
 
-		dir = dir.Normalize()
-		star := dir.Scale(100)
+		// rotate the star (which is a square) so it forms different diamond shapes.
+		starRotation := gfx.MatrixRotateXYZ(gfx.NewVector3(0, 0, roll*gfx.Tau))
 
-		// Orient the quad to face outward from the sphere.
-		yaw := float32(math.Atan2(float64(dir.X), float64(dir.Z)))
-		yawSin, yawCos := gfx.Sincos(yaw)
-
-		pitch := float32(math.Atan2(
-			math.Sqrt(float64(dir.X*dir.X+dir.Z*dir.Z)),
-			float64(dir.Y),
-		))
-		pitchSin, pitchCos := gfx.Sincos(pitch)
-
-		// Random rotation around the quad's normal.
-		roll := rand.Float32() * math.Pi * 2
-		rollSin, rollCos := gfx.Sincos(roll)
 		for corner := range 4 {
-			localX := float32((corner&2)-1) * starSize
-			localZ := float32((((corner + 1) & 2) - 1)) * starSize
+			// Define local quad corners
+			var cornerPos gfx.Vector3
+			switch corner {
+			case 0:
+				cornerPos = gfx.NewVector3(-starSize, 0, -starSize)
+			case 1:
+				cornerPos = gfx.NewVector3(-starSize, 0, starSize)
+			case 2:
+				cornerPos = gfx.NewVector3(starSize, 0, starSize)
+			case 3:
+				cornerPos = gfx.NewVector3(starSize, 0, -starSize)
+			}
+			// rotate the corner around the center of the star
+			transformed := gfx.Vector3Transform(cornerPos, starRotation)
 
-			// Roll
-			rolledX := localX*rollCos - localZ*rollSin
-			rolledZ := localZ*rollCos + localX*rollSin
-
-			// Pitch
-			pitchedY := rolledX * pitchSin
-			pitchedX := -rolledX * pitchCos
-
-			// Yaw
-			offsetX := pitchedX*yawSin - rolledZ*yawCos
-			offsetZ := rolledZ*yawSin + pitchedX*yawCos
+			// Add the star's world position to the rotated corner
+			cornerPos = starWorldPos.Add(transformed)
 			mesh.QuadVertex3f(
-				star.X+offsetX,
-				star.Y+pitchedY,
-				star.Z+offsetZ,
+				cornerPos.X,
+				cornerPos.Y,
+				cornerPos.Z,
 			)
 			mesh.QuadEndVertex(true, false, false)
 		}
 	}
-	mesh.Upload(true)
 	return mesh
 }
 
