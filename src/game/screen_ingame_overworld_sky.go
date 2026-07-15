@@ -11,9 +11,9 @@ import (
 )
 
 func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
+	println("gen stars")
 	const starAttempts = 1500
 	var mesh = gfx.NewMesh(a)
-	defer mesh.Upload(true)
 
 	for range starAttempts {
 		// yaw,pitch is star position in a sphere. roll is star rotation
@@ -34,7 +34,7 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 		normal := starWorldPos.Normalize().Negate()
 		right := up.CrossProduct(normal).Normalize()
 		forward := normal.CrossProduct(right).Normalize()
-		forward = forward.Negate()
+
 		corners := []gfx.Vector3{
 			right.Scale(-starSize).Add(forward.Scale(-starSize)),
 			right.Scale(-starSize).Add(forward.Scale(starSize)),
@@ -44,49 +44,12 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 
 		for _, offset := range corners {
 			vert := starWorldPos.Add(offset)
-			mesh.Vertex3f(vert.X, vert.Y, vert.Z)
+			mesh.QuadVertex3f(vert.X, vert.Y, vert.Z)
 			mesh.QuadEndVertex(true, false, false)
 		}
 	}
+	mesh.Upload(true)
 	return mesh
-}
-func (state *ScreenInGameState) DrawStarsAsCubes(cam gfx.Vector3) {
-	const starAttempts = 150
-	pcg := rand.NewPCG(0, 0)
-	r := rand.New(&pcg)
-
-	for range starAttempts {
-		// yaw,pitch is star position in a sphere. roll is star rotation
-		yaw, pitch, roll := r.Float32(), r.Float32(), r.Float32()
-		_ = roll
-
-		// unit vector pointing away from 0,0,0 towards the star.
-		starDirection := gfx.PointOnSphere(yaw, pitch)
-		// Move in the direction of the star 100 units.
-		// arbitrarily decide to place the star here.
-		starWorldPos := starDirection.Scale(10)
-		starSize := 0.025 + r.Float32()*0.025
-
-		up := gfx.NewVector3(0, 1, 0)
-		if math.Abs(float64(starDirection.DotProduct(up))) > 0.99 {
-			up = gfx.NewVector3(1, 0, 0)
-		}
-		normal := starWorldPos.Normalize().Negate()
-		right := up.CrossProduct(normal).Normalize()
-		forward := normal.CrossProduct(right).Normalize()
-
-		corners := []gfx.Vector3{
-			right.Scale(-starSize).Add(forward.Scale(-starSize)),
-			right.Scale(-starSize).Add(forward.Scale(starSize)),
-			right.Scale(starSize).Add(forward.Scale(starSize)),
-			right.Scale(starSize).Add(forward.Scale(-starSize)),
-		}
-
-		for _, offset := range corners {
-			vert := starWorldPos.Add(offset)
-			gfx.DrawCube(cam.Add(vert), starSize, starSize, starSize, gfx.White)
-		}
-	}
 }
 
 func (state *ScreenInGameState) CalculateHorizonFanModelMatrix(cam gfx.Camera, celestialAngle float32, sunsetColor gfx.Color) gfx.Matrix {
@@ -119,6 +82,7 @@ func (state *ScreenInGameState) GenMeshHorizonFan(a mem.Allocator) gfx.Mesh {
 		m.Color4ub(255, 255, 255, 0)
 		m.Vertex3f(sin*120, cos*120, -cos*40)
 	}
+	m.Upload(false)
 	return m
 }
 
@@ -173,7 +137,6 @@ func (state *ScreenInGameState) DrawSky3D(cam gfx.Camera) {
 		)
 	}
 
-	state.DrawStarsAsCubes(cam.Position)
 
 	sunTexture := state.s.Pack.GetTexture(assets.Terrain_sun)
 	gfx.BeginBlendMode(gfx.BLEND_ADD_COLORS)
