@@ -244,7 +244,6 @@ func (things *ThingPool) Iter() ThingsIter {
 
 // PacketHandler is called whenever a new packet arrives
 type PacketHandler func(data mc.Decoder)
-
 type ScreenInGameState struct {
 	s *State
 	// STATE BOOK KEEPING
@@ -272,8 +271,8 @@ type ScreenInGameState struct {
 	LastTimeUpdate time.Time
 
 	// RENDERING DATA
-	Stars       gfx.Mesh // Initialized
-	SunMesh     gfx.Mesh // Also used for moon
+	Stars   gfx.Mesh // Initialized
+	SunMesh gfx.Mesh // Also used for moon
 
 	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte
@@ -287,6 +286,9 @@ type ScreenInGameState struct {
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.
 	PersistentArena mem.Arena
+
+	Chunks        maps.Map[[2]int32, *mc.DecompressedChunkData]
+	ChunkFreeList []*mc.DecompressedChunkData
 }
 
 // Max number of sound effects that can be loaded at a time.

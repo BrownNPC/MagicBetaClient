@@ -2,7 +2,9 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/net/mc"
 
+	"solod.dev/so/maps"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
@@ -21,6 +23,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
+	state.Chunks = maps.New[[2]int32, *mc.DecompressedChunkData](mem.System, 1000)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
