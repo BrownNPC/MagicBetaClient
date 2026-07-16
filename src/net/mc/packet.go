@@ -1287,9 +1287,10 @@ type DecompressedChunkData struct {
 	SkyLight   [CHUNK_SIZE]uint8
 }
 
-func (d *DecompressedChunkData) SetBlock(x, y, z uint8, id BlockID) {
-	d.Blocks[(uint16(y)<<8)|(uint16(z)<<4)|uint16(x)] = id
-}
+func ChunkLocalCoord(v int) int { return v & 15 }
+
+// Local chunk coordinate to index.
+func ChunkIndex(x, y, z int) int { return (y << 8) | ((z & 15) << 4) | (x & 15) }
 
 // each block contains 1 byte block id 1.5 bytes (3 nibbles) lighting and metadata.
 var chunkDataDecompressBuffer [CHUNK_SIZE +
@@ -1336,14 +1337,11 @@ func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
 	for x := range width {
 		for z := range length {
 			for y := range height {
-				// c.X, c.Y, and c.Z represent the absolute block coordinates of the update volume.
-				// Calculate the local coordinates within this specific 16x128x16 chunk bounds:
-				localX := (int(c.X) + x) & 15 // Bitwise AND 15 handles modulo 16 perfectly, even for negatives
-				localZ := (int(c.Z) + z) & 15
+				localX := ChunkLocalCoord(int(c.X) + x)
+				localZ := ChunkLocalCoord(int(c.Z) + z)
 				localY := int(c.Y) + y
 
-				// Match the 1D index mapping defined in your SetBlock function
-				idx := (localY << 8) | (localZ << 4) | localX
+				idx := ChunkIndex(localX, localY, localZ)
 
 				// copy over the data.
 				d.Blocks[idx] = BlockID(blockData[i])
