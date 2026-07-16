@@ -2,6 +2,7 @@ package mc
 
 import (
 	"mbc/net"
+	"mbc/net/zlib"
 
 	"solod.dev/so/io"
 	"solod.dev/so/mem"
@@ -1272,6 +1273,90 @@ type ClientboundChunk struct {
 	CompressedData []byte // Zlib compressed data.
 
 	stage int
+}
+
+const CHUNK_SIZE_XZ = 16 // chunk width
+const CHUNK_SIZE_Y = 128 // chunk height
+const CHUNK_SIZE = CHUNK_SIZE_XZ * CHUNK_SIZE_XZ * CHUNK_SIZE_Y
+
+type DecompressedChunkData struct {
+	X, Y, Z    int
+	Blocks     [CHUNK_SIZE]BlockID
+	Metadata   [CHUNK_SIZE]uint8
+	BlockLight [CHUNK_SIZE]uint8
+	SkyLight   [CHUNK_SIZE]uint8
+}
+
+func (d *DecompressedChunkData) SetBlock(x, y, z uint8, id BlockID) {
+	d.Blocks[(uint16(y)<<8)|(uint16(z)<<4)|uint16(x)] = id
+}
+
+// each block contains 1 byte block id 1.5 bytes (3 nibbles) lighting and metadata.
+var chunkDataDecompressBuffer [CHUNK_SIZE +
+	// 3 nibbles
+	3*(CHUNK_SIZE/2)]uint8
+
+func readNibble(data []byte, i int) uint8 {
+	b := data[i>>1]
+	if i&1 == 0 {
+		return b & 0x0F
+	}
+	return b >> 4
+}
+
+// Process clientbound chunk data.
+func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
+	if c == nil {
+		return nil
+	}
+	// Decompress chunk data
+	n, err := zlib.DecompressData(c.CompressedData, chunkDataDecompressBuffer[:])
+	if err != nil {
+		return err
+	}
+	uncompressed := chunkDataDecompressBuffer[:n]
+
+	// Reference: https://github.com/OfficialPixelBrush/BetrockPlusPlus/blob/7e18479c055a9d7b43871d00b7026944053b2faf/src/bpp_server/chunk_IO/chunk_serializer.h#L15
+	width := int(c.Width) + 1
+	height := int(c.Height) + 1
+	length := int(c.Length) + 1
+
+	blocks := width * height * length
+	nibbles := (blocks + 1) / 2
+
+	blockData := uncompressed[:blocks]
+	metaData := uncompressed[blocks : blocks+nibbles]
+	blockLight := uncompressed[blocks+nibbles : blocks+2*nibbles]
+	skyLight := uncompressed[blocks+2*nibbles : blocks+3*nibbles]
+
+	// WIKI: https://pixelbrush.dev/beta-wiki/worlds/chunk#block-ordering
+	// Blocks are stored as vertical columns (Y-Axis).
+	// We iterate up to width/length/height to safely support partial chunk updates.
+	var i int
+	for x := range width {
+		for z := range length {
+			for y := range height {
+				// c.X, c.Y, and c.Z represent the absolute block coordinates of the update volume.
+				// Calculate the local coordinates within this specific 16x128x16 chunk bounds:
+				localX := (int(c.X) + x) & 15 // Bitwise AND 15 handles modulo 16 perfectly, even for negatives
+				localZ := (int(c.Z) + z) & 15
+				localY := int(c.Y) + y
+
+				// Match the 1D index mapping defined in your SetBlock function
+				idx := (localY << 8) | (localZ << 4) | localX
+
+				// copy over the data.
+				d.Blocks[idx] = BlockID(blockData[i])
+				d.Metadata[idx] = readNibble(metaData, i)
+				d.BlockLight[idx] = readNibble(blockLight, i)
+				d.SkyLight[idx] = readNibble(skyLight, i)
+
+				i++
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *ClientboundChunk) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
