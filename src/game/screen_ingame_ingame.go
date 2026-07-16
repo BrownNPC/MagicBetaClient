@@ -23,7 +23,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
-	state.Chunks = maps.New[[2]int32, *mc.DecompressedChunkData](mem.System, 1000)
+	state.Chunks = maps.New[ChunkCoordinate, *mc.DecompressedChunkData](mem.System, 1000)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
@@ -57,6 +57,28 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	state.DrawSky3D(state.Cam)
 	// draw cube (floor)
 	gfx.DrawCube(gfx.NewVector3(0, 0, 0), 200, 2, 200, gfx.Red)
+	{
+		it := state.Chunks.Iter()
+		for it.Next() {
+			chunk := it.Value()
+			gfx.DrawCube(
+				gfx.NewVector3(float32(chunk.X*16), 0, float32(chunk.Z*16)), 1, 128, 1, gfx.Green,
+			)
+		}
+	}
+	{
+		it := state.Things.Iter()
+		for it.Next() {
+			e := it.Thing()
+			if e.Kind == KindEntity {
+				println("----")
+				println(e.Position.X, e.Position.Y, e.Position.Z)
+				println("----")
+				gfx.DrawCube(e.Position, 5, 10, 5, gfx.Blue)
+			}
+		}
+	}
+
 	gfx.EndMode3D()
 }
 

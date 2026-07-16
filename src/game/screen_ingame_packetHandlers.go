@@ -24,6 +24,10 @@ func (state *ScreenInGameState) OnSetTime(data mc.Decoder) error {
 
 func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSpawnMob)
+	ref := state.Things.New(KindEntity)
+	e := state.Things.Get(ref)
+	e.EntityID = pkt.EntityID
+	e.Position = gfx.NewVector3(float32(pkt.X), float32(pkt.Y), float32(pkt.Z))
 	_ = pkt // nothing for now.
 }
 func (state *ScreenInGameState) OnPlayerRotation(pitch, yaw float32) {
@@ -41,9 +45,21 @@ func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) 
 	diff := gfx.Vector3Subtract(newPos, oldPos)
 	state.Cam.Update(diff, gfx.Vector3{}, 0)
 }
+func (state *ScreenInGameState) OnEntityPosition(entityID int32, pos mc.ClientboundEntityPosition) {
+	i := state.Things.Iter()
+	for i.Next() {
+		e := i.Thing()
+		if e.EntityID == entityID {
+			// Add the unquantized packet movement delta directly to the entity
+			movementDelta := gfx.NewVector3(pos.X, pos.Y, pos.Z)
+			e.Position = e.Position.Add(movementDelta)
+			return
+		}
+	}
+}
 func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSetChunkVisibility)
-	coord := [2]int32{pkt.X, pkt.Y}
+	coord := ChunkCoordinate{pkt.X, pkt.Y}
 	if !pkt.Load { // unload
 		if chunk := state.Chunks.Get(coord); chunk != nil {
 			state.Chunks.Delete(coord)
@@ -60,13 +76,15 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	}
 	// allocate
 	chunk := mem.Alloc[mc.DecompressedChunkData](mem.System)
+	chunk.X = int(coord.X)
+	chunk.Z = int(coord.Z)
 	state.Chunks.Set(coord, chunk)
 }
 func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	pkt := data.(*mc.ClientboundChunk)
-	chunkX := pkt.X / 16
-	chunkZ := pkt.Z / 16
-	coord := [2]int32{chunkX, chunkZ}
+	chunkX := pkt.X >> 4 // using bitwise here does floor division
+	chunkZ := pkt.Z >> 4 // for cases like -15/16. Thanks Gemini!
+	coord := ChunkCoordinate{chunkX, chunkZ}
 	var chunk *mc.DecompressedChunkData = state.Chunks.Get(coord)
 	if chunk == nil {
 		sdl.Log("WARNING: server sent chunk data for unloaded chunk")
@@ -98,6 +116,12 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
 	case mc.PKT_SetChunkVisibility:
 		state.OnSetChunkVisibility(data)
+	case mc.PKT_EntityPosition:
+		pkt := data.(*mc.ClientboundEntityPosition)
+		state.OnEntityPosition(pkt.EntityID, *pkt)
+	case mc.PKT_EntityPositionAndRotation:
+		pkt := data.(*mc.ClientboundEntityPositionAndRotation)
+		state.OnEntityPosition(pkt.EntityID, pkt.Pos)
 	case mc.PKT_Chunk:
 		return state.OnChunk(data)
 	}

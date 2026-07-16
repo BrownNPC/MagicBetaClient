@@ -154,8 +154,8 @@ type ScreenConnectServerState struct {
 }
 type Kind int
 type Thing struct {
-	Kind Kind
-
+	Kind     Kind
+	EntityID int32 // minecraft server EntityID
 	Position gfx.Vector3
 }
 type ThingRef struct {
@@ -168,6 +168,7 @@ const MAX_THINGS = 1024
 
 const (
 	KindNull Kind = iota
+	KindEntity
 	KindPlayer
 )
 
@@ -242,8 +243,7 @@ func (things *ThingPool) Iter() ThingsIter {
 	return ThingsIter{p: things}
 }
 
-// PacketHandler is called whenever a new packet arrives
-type PacketHandler func(data mc.Decoder)
+type ChunkCoordinate struct{ X, Z int32 }
 type ScreenInGameState struct {
 	s *State
 	// STATE BOOK KEEPING
@@ -287,7 +287,7 @@ type ScreenInGameState struct {
 	// PersistentArena lives for as long as the user is on this screen.
 	PersistentArena mem.Arena
 
-	Chunks        maps.Map[[2]int32, *mc.DecompressedChunkData]
+	Chunks        maps.Map[ChunkCoordinate, *mc.DecompressedChunkData]
 	ChunkFreeList []*mc.DecompressedChunkData
 }
 

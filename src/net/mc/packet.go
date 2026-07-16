@@ -408,7 +408,7 @@ func (p *ClientboundSetTime) Step(_ mem.Allocator, rd *net.BufferedReader) (bool
 type ClientboundSpawnMob struct {
 	EntityID int32
 	MobType  MobType
-	X, Y, Z  int32
+	X, Y, Z  float32
 
 	Yaw, Pitch float32
 
@@ -430,17 +430,23 @@ func (p *ClientboundSpawnMob) Step(a mem.Allocator, rd *net.BufferedReader) (boo
 				return false, rd.Err()
 			}
 		case 2:
-			if !rd.ReadInt32(&p.X) {
+			var coord int32
+			if !rd.ReadInt32(&coord) {
 				return false, rd.Err()
 			}
+			p.X = UnquantizeCoordinate(coord)
 		case 3:
-			if !rd.ReadInt32(&p.Y) {
+			var coord int32
+			if !rd.ReadInt32(&coord) {
 				return false, rd.Err()
 			}
+			p.Y = UnquantizeCoordinate(coord)
 		case 4:
-			if !rd.ReadInt32(&p.Z) {
+			var coord int32
+			if !rd.ReadInt32(&coord) {
 				return false, rd.Err()
 			}
+			p.Z = UnquantizeCoordinate(coord)
 		case 5:
 			var angle int8
 			if !rd.ReadInt8(&angle) {
@@ -1262,6 +1268,7 @@ func (p *ClientboundEntityMetadata) Step(a mem.Allocator, rd *net.BufferedReader
 	}
 }
 
+// The X,Y,Z coordinates are in world block space.
 type ClientboundChunk struct {
 	X int32
 	Y int16
@@ -1280,7 +1287,7 @@ const CHUNK_SIZE_Y = 128 // chunk height
 const CHUNK_SIZE = CHUNK_SIZE_XZ * CHUNK_SIZE_XZ * CHUNK_SIZE_Y
 
 type DecompressedChunkData struct {
-	X, Y, Z    int
+	X, Z       int
 	Blocks     [CHUNK_SIZE]BlockID
 	Metadata   [CHUNK_SIZE]uint8
 	BlockLight [CHUNK_SIZE]uint8
