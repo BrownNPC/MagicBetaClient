@@ -1287,8 +1287,6 @@ type DecompressedChunkData struct {
 	SkyLight   [CHUNK_SIZE]uint8
 }
 
-func ChunkLocalCoord(v int) int { return v & 15 }
-
 // Local chunk coordinate to index.
 func ChunkIndex(x, y, z int) int { return (y << 8) | ((z & 15) << 4) | (x & 15) }
 
@@ -1337,8 +1335,8 @@ func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
 	for x := range width {
 		for z := range length {
 			for y := range height {
-				localX := ChunkLocalCoord(int(c.X) + x)
-				localZ := ChunkLocalCoord(int(c.Z) + z)
+				localX := int(c.X) + x
+				localZ := int(c.Z) + z
 				localY := int(c.Y) + y
 
 				idx := ChunkIndex(localX, localY, localZ)

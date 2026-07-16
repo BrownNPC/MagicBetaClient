@@ -3,7 +3,10 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/net/mc"
+	"mbc/sdl"
 
+	"solod.dev/so/mem"
+	"solod.dev/so/slices"
 	"solod.dev/so/time"
 )
 
@@ -38,6 +41,39 @@ func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) 
 	diff := gfx.Vector3Subtract(newPos, oldPos)
 	state.Cam.Update(diff, gfx.Vector3{}, 0)
 }
+func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
+	pkt := data.(*mc.ClientboundSetChunkVisibility)
+	coord := [2]int32{pkt.X, pkt.Y}
+	if !pkt.Load { // unload
+		if chunk := state.Chunks.Get(coord); chunk != nil {
+			state.Chunks.Delete(coord)
+			state.ChunkFreeList = slices.Append(mem.System, state.ChunkFreeList, chunk)
+		}
+		return
+	}
+	// load
+	if len(state.ChunkFreeList) > 0 {
+		chunk := state.ChunkFreeList[len(state.ChunkFreeList)-1]
+		state.ChunkFreeList = state.ChunkFreeList[:len(state.ChunkFreeList)-1] // pop
+		state.Chunks.Set(coord, chunk)
+		return
+	}
+	// allocate
+	chunk := mem.Alloc[mc.DecompressedChunkData](mem.System)
+	state.Chunks.Set(coord, chunk)
+}
+func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
+	pkt := data.(*mc.ClientboundChunk)
+	chunkX := pkt.X / 16
+	chunkZ := pkt.Z / 16
+	coord := [2]int32{chunkX, chunkZ}
+	var chunk *mc.DecompressedChunkData = state.Chunks.Get(coord)
+	if chunk == nil {
+		sdl.Log("WARNING: server sent chunk data for unloaded chunk")
+		return nil
+	}
+	return chunk.ProcessChunkData(pkt)
+}
 
 // register packet handlers here
 func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.Decoder) error {
@@ -60,6 +96,10 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
+	case mc.PKT_SetChunkVisibility:
+		state.OnSetChunkVisibility(data)
+	case mc.PKT_Chunk:
+		return state.OnChunk(data)
 	}
 	return nil
 }
