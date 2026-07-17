@@ -191,5 +191,4 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 	return sdl.APP_CONTINUE
 }
 
-func AppQuit(appState any, result sdl.AppResult) {
-}
+func AppQuit(appState any, result sdl.AppResult) {}

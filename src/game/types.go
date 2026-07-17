@@ -155,9 +155,19 @@ type ScreenConnectServerState struct {
 type Kind int
 type Thing struct {
 	Kind     Kind
+	Username string
 	EntityID int32 // minecraft server EntityID
+	CameraY  float32
 	Position gfx.Vector3
 }
+
+// deallocate any heap memory used by this thing.
+func (thing *Thing) deallocateHeapMemoryIfUsed() {
+	if thing.Username != "" {
+		mem.FreeString(mem.System, thing.Username)
+	}
+}
+
 type ThingRef struct {
 	idx, gen uint
 }
@@ -199,6 +209,7 @@ func (things *ThingPool) New(kind Kind) ThingRef {
 }
 func (things *ThingPool) Delete(ref ThingRef) {
 	if ref.gen == things.gen[ref.idx] {
+		things.Things[ref.idx].deallocateHeapMemoryIfUsed()
 		things.used[ref.idx] = false
 		things.gen[ref.idx] += 1
 		things.SlotsUsed--

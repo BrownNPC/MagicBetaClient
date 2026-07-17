@@ -7,6 +7,7 @@ import (
 
 	"solod.dev/so/mem"
 	"solod.dev/so/slices"
+	"solod.dev/so/strings"
 	"solod.dev/so/time"
 )
 
@@ -28,7 +29,27 @@ func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
 	e := state.Things.Get(ref)
 	e.EntityID = pkt.EntityID
 	e.Position = gfx.NewVector3(float32(pkt.X), float32(pkt.Y), float32(pkt.Z))
-	_ = pkt // nothing for now.
+}
+func (state *ScreenInGameState) OnDespawnEntity(data mc.Decoder) {
+	pkt := data.(*mc.ClientboundDespawnEntity)
+	it := state.Things.Iter()
+	for it.Next() {
+		e := it.Thing()
+		if e.Kind == KindEntity && e.EntityID == pkt.EntityID {
+			state.Things.Delete(it.Ref())
+			return
+		}
+	}
+}
+
+// spawn player entity
+func (state *ScreenInGameState) OnSpawnPlayer(data mc.Decoder) {
+	pkt := data.(*mc.ClientboundSpawnPlayer)
+	ref := state.Things.New(KindEntity)
+	plr := state.Things.Get(ref)
+	plr.Position = gfx.NewVector3(float32(pkt.X), float32(pkt.Y), float32(pkt.Z))
+	plr.EntityID = pkt.EntityID
+	plr.Username = strings.Clone(mem.System, string(pkt.Username))
 }
 func (state *ScreenInGameState) OnPlayerRotation(pitch, yaw float32) {
 	state.LastPlayerPitch = pitch
@@ -38,7 +59,9 @@ func (state *ScreenInGameState) OnPlayerRotation(pitch, yaw float32) {
 
 func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) {
 	state.LastPlayerPosition = state.Things.Get(state.Player).Position
-	state.Things.Get(state.Player).Position = gfx.NewVector3(X, Y, Z)
+	plr := state.Things.Get(state.Player)
+	plr.Position = gfx.NewVector3(X, Y, Z)
+	plr.CameraY = camY
 
 	oldPos := state.Cam.Position
 	newPos := gfx.NewVector3(X, Y+camY, Z)
@@ -53,6 +76,18 @@ func (state *ScreenInGameState) OnEntityPosition(entityID int32, pos mc.Clientbo
 			// Add the unquantized packet movement delta directly to the entity
 			movementDelta := gfx.NewVector3(pos.X, pos.Y, pos.Z)
 			e.Position = e.Position.Add(movementDelta)
+			return
+		}
+	}
+}
+func (state *ScreenInGameState) OnTeleportEntity(data mc.Decoder) {
+	pkt := data.(*mc.ClientboundTeleportEntity)
+	i := state.Things.Iter()
+	for i.Next() {
+		e := i.Thing()
+		if e.EntityID == pkt.EntityID {
+			// Add the unquantized packet movement delta directly to the entity
+			e.Position = gfx.NewVector3(pkt.X, pkt.Y, pkt.Z)
 			return
 		}
 	}
@@ -124,6 +159,12 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		state.OnEntityPosition(pkt.EntityID, pkt.Pos)
 	case mc.PKT_Chunk:
 		return state.OnChunk(data)
+	case mc.PKT_DespawnEntity:
+		state.OnDespawnEntity(data)
+	case mc.PKT_SpawnPlayer:
+		state.OnSpawnPlayer(data)
+	case mc.PKT_TeleportEntity:
+		state.OnTeleportEntity(data)
 	}
 	return nil
 }

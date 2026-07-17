@@ -14,7 +14,7 @@ func (state *ScreenInGameState) Init(s *State) {
 		Position: gfx.Vector3{Y: 2},
 		Target:   gfx.Vector3{Y: 2, Z: -1},
 		Up:       gfx.Vector3{Y: 1},
-		Fovy:     70,
+		Fovy:     90,
 	}
 	state.s = s
 	state.CurrentScreen = SCREEN_INGAME
@@ -52,11 +52,12 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	}
 
 	// RENDER SKY
-
+	plr := state.Things.Get(state.Player)
+	state.Cam.Position = gfx.NewVector3(plr.Position.X, plr.CameraY, plr.Position.Z)
 	gfx.BeginMode3D(state.Cam)
 	state.DrawSky3D(state.Cam)
 	// draw cube (floor)
-	gfx.DrawCube(gfx.NewVector3(0, 0, 0), 200, 2, 200, gfx.Red)
+	gfx.DrawCube(gfx.NewVector3(0, 0, 0), 2, 2, 2, gfx.Red)
 	{
 		it := state.Chunks.Iter()
 		for it.Next() {
@@ -70,11 +71,13 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		it := state.Things.Iter()
 		for it.Next() {
 			e := it.Thing()
-			if e.Kind == KindEntity {
-				println("----")
-				println(e.Position.X, e.Position.Y, e.Position.Z)
-				println("----")
-				gfx.DrawCube(e.Position, 5, 10, 5, gfx.Blue)
+			switch e.Kind {
+			case KindEntity:
+				if e.Username != "" { // if it has a username then it's a player entity.
+					gfx.DrawCube(e.Position, 1, 2, 1, gfx.Yellow)
+				} else {
+					gfx.DrawCube(e.Position, 5, 10, 5, gfx.Blue)
+				}
 			}
 		}
 	}
