@@ -110,7 +110,7 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 		return
 	}
 	// allocate
-	chunk := mem.Alloc[mc.DecompressedChunkData](mem.System)
+	chunk := mem.Alloc[mc.DecompressedChunk](mem.System)
 	chunk.X = int(coord.X)
 	chunk.Z = int(coord.Z)
 	state.Chunks.Set(coord, chunk)
@@ -120,7 +120,7 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	chunkX := pkt.X >> 4 // using bitwise here does floor division
 	chunkZ := pkt.Z >> 4 // for cases like -15/16. Thanks Gemini!
 	coord := ChunkCoordinate{chunkX, chunkZ}
-	var chunk *mc.DecompressedChunkData = state.Chunks.Get(coord)
+	var chunk *mc.DecompressedChunk = state.Chunks.Get(coord)
 	if chunk == nil {
 		sdl.Log("WARNING: server sent chunk data for unloaded chunk")
 		return nil

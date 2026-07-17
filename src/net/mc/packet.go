@@ -1286,7 +1286,9 @@ const CHUNK_SIZE_XZ = 16 // chunk width
 const CHUNK_SIZE_Y = 128 // chunk height
 const CHUNK_SIZE = CHUNK_SIZE_XZ * CHUNK_SIZE_XZ * CHUNK_SIZE_Y
 
-type DecompressedChunkData struct {
+// A chunk containing blocks.
+// Different from the Chunk packet which contains compressed data.
+type DecompressedChunk struct {
 	X, Z       int
 	Blocks     [CHUNK_SIZE]BlockID
 	Metadata   [CHUNK_SIZE]uint8
@@ -1311,7 +1313,7 @@ func readNibble(data []byte, i int) uint8 {
 }
 
 // Process clientbound chunk data.
-func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
+func (d *DecompressedChunk) ProcessChunkData(c *ClientboundChunk) error {
 	if c == nil {
 		return nil
 	}

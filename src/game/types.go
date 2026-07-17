@@ -298,8 +298,8 @@ type ScreenInGameState struct {
 	// PersistentArena lives for as long as the user is on this screen.
 	PersistentArena mem.Arena
 
-	Chunks        maps.Map[ChunkCoordinate, *mc.DecompressedChunkData]
-	ChunkFreeList []*mc.DecompressedChunkData
+	Chunks        maps.Map[ChunkCoordinate, *mc.DecompressedChunk]
+	ChunkFreeList []*mc.DecompressedChunk
 }
 
 // Max number of sound effects that can be loaded at a time.
