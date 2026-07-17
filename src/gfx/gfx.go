@@ -1023,7 +1023,8 @@ func (m *Mesh) Destroy() {
 	m.Reset()
 }
 
-// Reset de-allocates GPU memory.
+// Reset de-allocates ONLY GPU memory.
+// CPU memory is not free'd.
 // Allows Mesh to be reused.
 func (m *Mesh) Reset() {
 	m.vertices = m.vertices[:0]

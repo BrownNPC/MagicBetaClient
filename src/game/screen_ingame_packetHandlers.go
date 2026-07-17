@@ -94,12 +94,16 @@ func (state *ScreenInGameState) OnTeleportEntity(data mc.Decoder) {
 }
 func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSetChunkVisibility)
+	// this packet uses chunk space while the other Chunk packet uses block space/world space
 	coord := ChunkCoordinate{pkt.X, pkt.Y}
 	if !pkt.Load { // unload
-		if chunk := state.Chunks.Get(coord); chunk != nil {
-			state.Chunks.Delete(coord)
-			state.ChunkFreeList = slices.Append(mem.System, state.ChunkFreeList, chunk)
+		if !state.Chunks.Has(coord) {
+			sdl.Log("WARNING: Server told us to unload a chunk we dont have loaded.")
+			return
 		}
+		chunk := state.Chunks.Get(coord)
+		state.Chunks.Delete(coord)
+		state.ChunkFreeList = slices.Append(mem.System, state.ChunkFreeList, chunk)
 		return
 	}
 	// load
@@ -110,22 +114,27 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 		return
 	}
 	// allocate
-	chunk := mem.Alloc[mc.DecompressedChunk](mem.System)
-	chunk.X = int(coord.X)
-	chunk.Z = int(coord.Z)
+	chunk := Chunk{
+		data: mem.Alloc[mc.DecompressedChunkData](mem.System),
+		mesh: gfx.NewMesh(mem.System),
+	}
+	chunk.data.X = int(coord.X)
+	chunk.data.Z = int(coord.Z)
 	state.Chunks.Set(coord, chunk)
 }
 func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	pkt := data.(*mc.ClientboundChunk)
+	// block space to chunk space
 	chunkX := pkt.X >> 4 // using bitwise here does floor division
 	chunkZ := pkt.Z >> 4 // for cases like -15/16. Thanks Gemini!
 	coord := ChunkCoordinate{chunkX, chunkZ}
-	var chunk *mc.DecompressedChunk = state.Chunks.Get(coord)
-	if chunk == nil {
+	var chunk Chunk = state.Chunks.Get(coord)
+	if chunk.data == nil {
 		sdl.Log("WARNING: server sent chunk data for unloaded chunk")
 		return nil
 	}
-	return chunk.ProcessChunkData(pkt)
+	chunk.NeedMeshRebuild = true
+	return chunk.data.ProcessChunkData(pkt)
 }
 
 // register packet handlers here

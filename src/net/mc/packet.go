@@ -1288,12 +1288,19 @@ const CHUNK_SIZE = CHUNK_SIZE_XZ * CHUNK_SIZE_XZ * CHUNK_SIZE_Y
 
 // A chunk containing blocks.
 // Different from the Chunk packet which contains compressed data.
-type DecompressedChunk struct {
+type DecompressedChunkData struct {
 	X, Z       int
 	Blocks     [CHUNK_SIZE]BlockID
 	Metadata   [CHUNK_SIZE]uint8
 	BlockLight [CHUNK_SIZE]uint8
 	SkyLight   [CHUNK_SIZE]uint8
+}
+
+func (c *DecompressedChunkData) IsAir(x, y, z int) bool {
+	if y < 0 || y >= CHUNK_SIZE_Y {
+		return true
+	}
+	return c.Blocks[ChunkIndex(x, y, z)] == BLOCK_Air
 }
 
 // Local chunk coordinate to index.
@@ -1313,7 +1320,7 @@ func readNibble(data []byte, i int) uint8 {
 }
 
 // Process clientbound chunk data.
-func (d *DecompressedChunk) ProcessChunkData(c *ClientboundChunk) error {
+func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
 	if c == nil {
 		return nil
 	}
