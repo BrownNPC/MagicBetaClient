@@ -44,18 +44,12 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		state.LastMovementUpdateSent = time.Now()
 		plr := state.Things.Get(state.Player)
 		pkt := mc.PacketPlayerPositionAndRotation{
-			Pos: mc.PacketPlayerPosition{
-				X:        float64(plr.Position.X),
-				Y:        float64(plr.Position.Y),
-				CameraY:  float64(state.Cam.Position.Y),
-				Z:        float64(plr.Position.Z),
-				OnGround: true,
-			},
-			Rot: mc.PacketPlayerRotation{
-				Yaw:      state.Cam.GetYaw() * 360,
-				Pitch:    state.Cam.GetPitch() * 360,
-				OnGround: true,
-			},
+			X:       float64(plr.Position.X),
+			Y:       float64(plr.Position.Y + 10),
+			CameraY: float64(state.Cam.Position.Y),
+			Z:       float64(plr.Position.Z),
+			Yaw:     state.Cam.GetYaw() * 360,
+			Pitch:   state.Cam.GetPitch() * 360,
 		}
 		err := pkt.Write(&s.ServerBound)
 		if err != nil {

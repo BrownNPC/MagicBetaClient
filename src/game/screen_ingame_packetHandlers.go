@@ -155,10 +155,8 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		state.OnPlayerPosition(float32(pkt.X), float32(pkt.Y), float32(pkt.Z), float32(pkt.CameraY))
 	case mc.PKT_PlayerPositionAndRotation:
 		pkt := data.(*mc.PacketPlayerPositionAndRotation)
-		pos := pkt.Pos
-		rot := pkt.Rot
-		state.OnPlayerPosition(float32(pos.X), float32(pos.Y), float32(pos.Z), float32(pos.CameraY))
-		state.OnPlayerRotation(rot.Pitch, rot.Yaw)
+		state.OnPlayerPosition(float32(pkt.X), float32(pkt.Y), float32(pkt.Z), float32(pkt.CameraY))
+		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)

@@ -644,7 +644,6 @@ type PacketPlayerPosition struct {
 	CameraY,
 	Z float64
 	OnGround bool
-	nested   bool // nested inside another packet
 	stage    int
 }
 
@@ -668,10 +667,8 @@ func (p *PacketPlayerPosition) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 				return false, rd.Err()
 			}
 		case 4:
-			if !p.nested {
-				if !rd.ReadBool(&p.OnGround) {
-					return false, rd.Err()
-				}
+			if !rd.ReadBool(&p.OnGround) {
+				return false, rd.Err()
 			}
 		case 5:
 			return true, nil
@@ -680,10 +677,8 @@ func (p *PacketPlayerPosition) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 	}
 }
 func (p *PacketPlayerPosition) Write(w io.Writer) error {
-	if !p.nested {
-		if err := WriteByte(w, PKT_PlayerPosition); err != nil {
-			return err
-		}
+	if err := WriteByte(w, PKT_PlayerPosition); err != nil {
+		return err
 	}
 	if err := WriteFloat64(w, p.X); err != nil {
 		return err
@@ -697,10 +692,8 @@ func (p *PacketPlayerPosition) Write(w io.Writer) error {
 	if err := WriteFloat64(w, p.Z); err != nil {
 		return err
 	}
-	if !p.nested {
-		if err := WriteBool(w, p.OnGround); err != nil {
-			return err
-		}
+	if err := WriteBool(w, p.OnGround); err != nil {
+		return err
 	}
 	return nil
 }
@@ -708,7 +701,6 @@ func (p *PacketPlayerPosition) Write(w io.Writer) error {
 type PacketPlayerRotation struct {
 	Yaw, Pitch float32
 	OnGround   bool
-	nested     bool //packet is nested inside another packet
 	stage      int
 }
 
@@ -734,10 +726,8 @@ func (p *PacketPlayerRotation) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 	}
 }
 func (p *PacketPlayerRotation) Write(w io.Writer) error {
-	if !p.nested {
-		if err := WriteByte(w, PKT_PlayerRotation); err != nil {
-			return err
-		}
+	if err := WriteByte(w, PKT_PlayerRotation); err != nil {
+		return err
 	}
 	if err := WriteFloat32(w, p.Yaw); err != nil {
 		return err
@@ -752,40 +742,72 @@ func (p *PacketPlayerRotation) Write(w io.Writer) error {
 }
 
 type PacketPlayerPositionAndRotation struct {
-	Pos   PacketPlayerPosition
-	Rot   PacketPlayerRotation
-	stage int
+	X, Y,
+	CameraY,
+	Z float64
+	Yaw, Pitch float32
+	OnGround   bool
+	stage      int
 }
 
 func (p *PacketPlayerPositionAndRotation) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
-	p.Pos.nested = true
-	p.Rot.nested = true
 	for {
 		switch p.stage {
 		case 0:
-			if ok, err := p.Pos.Step(a, rd); !ok {
-				return false, err
+			if !rd.ReadFloat64(&p.X) {
+				return false, rd.Err()
 			}
 		case 1:
-			if ok, err := p.Rot.Step(a, rd); !ok {
-				return false, err
+			if !rd.ReadFloat64(&p.Y) {
+				return false, rd.Err()
+			}
+		case 2:
+			if !rd.ReadFloat64(&p.CameraY) {
+				return false, rd.Err()
 			}
 		case 3:
-			return true, nil
+			if !rd.ReadFloat64(&p.Z) {
+				return false, rd.Err()
+			}
+		case 4:
+			if !rd.ReadFloat32(&p.Yaw) {
+				return false, rd.Err()
+			}
+		case 5:
+			if !rd.ReadFloat32(&p.Pitch) {
+				return false, rd.Err()
+			}
+		case 6:
+			if !rd.ReadBool(&p.OnGround) {
+				return false, rd.Err()
+			}
 		}
 		p.stage++
 	}
 }
 func (p *PacketPlayerPositionAndRotation) Write(w io.Writer) error {
-	p.Pos.nested = true // stop the packets from writing their own id
-	p.Rot.nested = true
 	if err := WriteByte(w, PKT_PlayerPositionAndRotation); err != nil {
 		return err
 	}
-	if err := p.Pos.Write(w); err != nil {
+	if err := WriteFloat64(w, p.X); err != nil {
 		return err
 	}
-	if err := p.Rot.Write(w); err != nil {
+	if err := WriteFloat64(w, p.Y); err != nil {
+		return err
+	}
+	if err := WriteFloat64(w, p.CameraY); err != nil {
+		return err
+	}
+	if err := WriteFloat64(w, p.Z); err != nil {
+		return err
+	}
+	if err := WriteFloat32(w, p.Yaw); err != nil {
+		return err
+	}
+	if err := WriteFloat32(w, p.Pitch); err != nil {
+		return err
+	}
+	if err := WriteBool(w, p.OnGround); err != nil {
 		return err
 	}
 	return nil
@@ -1568,6 +1590,90 @@ func (p *ClientboundSetEquipment) Step(a mem.Allocator, rd *net.BufferedReader) 
 	}
 }
 
+type PacketAnimation struct {
+	PlayerID  int32
+	Animation int8
+	stage     int
+}
+
+func (p *PacketAnimation) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.PlayerID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt8(&p.Animation) {
+				return false, rd.Err()
+			}
+		case 2:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundWorldEvent struct {
+	EffectID int32
+	X, Y, Z  int32
+	Data     int32
+	stage    int
+}
+
+func (p *ClientboundWorldEvent) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EffectID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt32(&p.X) {
+				return false, rd.Err()
+			}
+		case 2:
+			if !rd.ReadInt32(&p.Y) {
+				return false, rd.Err()
+			}
+		case 3:
+			if !rd.ReadInt32(&p.Z) {
+				return false, rd.Err()
+			}
+		case 4:
+			if !rd.ReadInt32(&p.Data) {
+				return false, rd.Err()
+			}
+		case 5:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
+type ClientboundCollectItem struct {
+	EntityID, Collector int32
+	stage               int
+}
+
+func (p *ClientboundCollectItem) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt32(&p.Collector) {
+				return false, rd.Err()
+			}
+		case 2:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
 // Returns a decoder for the given packet id. It is the user's job to free the decoder.
 // Returns nil if packetID is invalid.
 func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
@@ -1634,6 +1740,13 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 	case PKT_SetEquipment:
 		return mem.Alloc[ClientboundSetEquipment](a)
 		// end of bare minimum packets
+	case PKT_Animation:
+		return mem.Alloc[PacketAnimation](a)
+	case PKT_WorldEvent:
+		return mem.Alloc[ClientboundWorldEvent](a)
+	case PKT_CollectItem:
+		return mem.Alloc[ClientboundCollectItem](a)
+
 	}
 	return nil
 }
