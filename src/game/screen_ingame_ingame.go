@@ -40,16 +40,17 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		state.HandleError(err)
 		return
 	}
-	if time.Since(state.LastMovementUpdateSent) > time.Second/20 {
+	if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second/5 {
 		state.LastMovementUpdateSent = time.Now()
 		plr := state.Things.Get(state.Player)
 		pkt := mc.PacketPlayerPositionAndRotation{
-			X:       float64(plr.Position.X),
-			Y:       float64(plr.Position.Y + 10),
-			CameraY: float64(state.Cam.Position.Y),
-			Z:       float64(plr.Position.Z),
-			Yaw:     state.Cam.GetYaw() * 360,
-			Pitch:   state.Cam.GetPitch() * 360,
+			X:        float64(plr.Position.X),
+			Y:        float64(plr.Position.Y + 10),
+			CameraY:  float64(state.Cam.Position.Y),
+			Z:        float64(plr.Position.Z),
+			Yaw:      state.Cam.GetYaw() * 360,
+			Pitch:    state.Cam.GetPitch() * 360,
+			OnGround: true,
 		}
 		err := pkt.Write(&s.ServerBound)
 		if err != nil {
@@ -69,8 +70,6 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	state.Cam.Position = gfx.NewVector3(plr.Position.X, plr.CameraY, plr.Position.Z)
 	gfx.BeginMode3D(state.Cam)
 	state.DrawSky3D(state.Cam)
-	// draw cube (floor)
-	gfx.DrawCube(gfx.NewVector3(0, 0, 0), 2, 2, 2, gfx.Red)
 	{
 		it := state.Chunks.Iter()
 		for it.Next() {

@@ -781,6 +781,8 @@ func (p *PacketPlayerPositionAndRotation) Step(a mem.Allocator, rd *net.Buffered
 			if !rd.ReadBool(&p.OnGround) {
 				return false, rd.Err()
 			}
+		case 7:
+			return true, nil
 		}
 		p.stage++
 	}
@@ -1105,6 +1107,15 @@ func (p *PacketPlayerMovment) Step(a mem.Allocator, rd *net.BufferedReader) (boo
 		}
 		p.stage++
 	}
+}
+func (p *PacketPlayerMovment) Write(w io.Writer) error {
+	if err := WriteByte(w, PKT_PlayerMovement); err != nil {
+		return err
+	}
+	if err := WriteBool(w, p.OnGround); err != nil {
+		return err
+	}
+	return nil
 }
 
 type ClientboundTeleportEntity struct {
@@ -1676,6 +1687,22 @@ func (p *ClientboundCollectItem) Step(a mem.Allocator, rd *net.BufferedReader) (
 	}
 }
 
+type ClientboundSetHealth struct {
+	Health int16
+	stage  int
+}
+
+func (p *ClientboundSetHealth) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt16(&p.Health) {
+				return false, rd.Err()
+			}
+		}
+	}
+}
+
 // Returns a decoder for the given packet id. It is the user's job to free the decoder.
 // Returns nil if packetID is invalid.
 func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
@@ -1748,6 +1775,8 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientboundWorldEvent](a)
 	case PKT_CollectItem:
 		return mem.Alloc[ClientboundCollectItem](a)
+	case PKT_SetHealth:
+		return mem.Alloc[ClientboundSetHealth](a)
 
 	}
 	return nil

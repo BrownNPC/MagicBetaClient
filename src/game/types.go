@@ -286,6 +286,7 @@ type ScreenInGameState struct {
 	GameTimeFloat  float32 // In game time but it's a float
 	GameTicksInt   int64   // game time in ticks.
 	LastTimeUpdate time.Time
+	acked          bool // acknowledged the first PlayerPositionAndRotation packet sent by server.
 	// send player position and rotation 20 times per second.
 	LastMovementUpdateSent time.Time
 

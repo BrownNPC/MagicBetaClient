@@ -20,6 +20,7 @@ func (state *ScreenInGameState) OnSetTime(data mc.Decoder) error {
 	state.LastTimeUpdate = time.Now()
 	state.GameTicksInt = pkt.Time
 	// Send keep alive every tick
+	return nil
 	return mc.PacketKeepAlive{}.Write(&state.s.ServerBound)
 }
 
@@ -137,7 +138,6 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	if err == nil {
 		chunk.NeedMeshRebuild = true
 	}
-	println("chunk data recieved")
 	return err
 }
 
@@ -157,6 +157,27 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		pkt := data.(*mc.PacketPlayerPositionAndRotation)
 		state.OnPlayerPosition(float32(pkt.X), float32(pkt.Y), float32(pkt.Z), float32(pkt.CameraY))
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
+		// send ack maybe?
+		err := pkt.Write(&state.s.ServerBound)
+		if err != nil {
+			return err
+		}
+		ack := mc.PacketPlayerPosition{
+			X:        pkt.X,
+			Y:        pkt.Y,
+			CameraY:  pkt.CameraY,
+			Z:        pkt.Z,
+			OnGround: false,
+		}
+		err = ack.Write(&state.s.ServerBound)
+		if err != nil {
+			return err
+		}
+		err = state.s.ServerBound.Flush()
+		if err != nil {
+			return err
+		}
+		state.acked = true
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
@@ -169,6 +190,7 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		pkt := data.(*mc.ClientboundEntityPositionAndRotation)
 		state.OnEntityPosition(pkt.EntityID, pkt.Pos)
 	case mc.PKT_Chunk:
+		println("chunk data")
 		return state.OnChunk(data)
 	case mc.PKT_DespawnEntity:
 		state.OnDespawnEntity(data)
