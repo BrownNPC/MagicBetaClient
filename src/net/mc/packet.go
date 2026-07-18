@@ -592,13 +592,13 @@ func (p *ClientboundSpawnItem) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 			if !rd.ReadInt8(&angle) {
 				return false, rd.Err()
 			}
-			p.Pitch = UnquantizeAngle(angle)
+			p.Yaw = UnquantizeAngle(angle)
 		case 8:
 			var angle int8
 			if !rd.ReadInt8(&angle) {
 				return false, rd.Err()
 			}
-			p.Yaw = UnquantizeAngle(angle)
+			p.Pitch = UnquantizeAngle(angle)
 		case 9:
 			var angle int8
 			if !rd.ReadInt8(&angle) {
@@ -1633,9 +1633,11 @@ func (p *ClientboundWorldEvent) Step(a mem.Allocator, rd *net.BufferedReader) (b
 				return false, rd.Err()
 			}
 		case 2:
-			if !rd.ReadInt32(&p.Y) {
+			var y int8
+			if !rd.ReadInt8(&y) {
 				return false, rd.Err()
 			}
+			p.Y = int32(y)
 		case 3:
 			if !rd.ReadInt32(&p.Z) {
 				return false, rd.Err()
