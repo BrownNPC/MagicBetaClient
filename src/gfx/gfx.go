@@ -962,10 +962,10 @@ func (m *Mesh) QuadEndVertex(vertex, texcoord, color bool) {
 }
 
 // No-op if on opengl 1.1
-func (m *Mesh) Upload(dynamic bool) Mesh {
+func (m *Mesh) Upload(dynamic bool) {
 	version := rlGetVersion()
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
-		return *m
+		return
 	}
 	m.vboID = [5]int{} // reset
 
@@ -1014,7 +1014,6 @@ func (m *Mesh) Upload(dynamic bool) Mesh {
 	}
 	sdl.Log("Vertices: %d", len(m.vertices))
 	rlDisableVertexArray()
-	return *m
 }
 func (m *Mesh) Destroy() {
 	mem.FreeSlice(m.a, m.vertices)
@@ -1175,16 +1174,19 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 	}
 	rlDisableShader()
 }
-func NewMesh(a mem.Allocator) Mesh {
+func NewMesh(a mem.Allocator) *Mesh {
 	var size = 1024
 	var m Mesh
 	m.a = a
 	m.vertices = slices.MakeCap[VertexCoord](a, 0, size)
 	m.texCoords = slices.MakeCap[VertexTexcoord](a, 0, size)
 	m.colors = slices.MakeCap[VertexColor](a, 0, size)
-	return m
+
+	ptr := mem.Alloc[Mesh](mem.System)
+	*ptr = m
+	return ptr
 }
-func GenMeshPlane(a mem.Allocator, width, length float32, resX, resZ int) Mesh {
+func GenMeshPlane(a mem.Allocator, width, length float32, resX, resZ int) *Mesh {
 	var mesh = NewMesh(a)
 
 	if resX < 1 {

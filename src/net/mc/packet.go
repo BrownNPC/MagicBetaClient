@@ -697,8 +697,10 @@ func (p *PacketPlayerPosition) Write(w io.Writer) error {
 	if err := WriteFloat64(w, p.Z); err != nil {
 		return err
 	}
-	if err := WriteBool(w, p.OnGround); err != nil {
-		return err
+	if !p.nested {
+		if err := WriteBool(w, p.OnGround); err != nil {
+			return err
+		}
 	}
 	return nil
 }

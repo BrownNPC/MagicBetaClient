@@ -23,7 +23,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
-	state.Chunks = maps.New[ChunkCoordinate, Chunk](mem.System, 1000)
+	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
@@ -32,17 +32,36 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// read packets.
 	_, err := state.DecodeRecievedPackets(s)
 	if err != nil {
-		state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
-		state.Error = err
-		s.Conn.Close()
+		state.HandleError(err)
 		return
 	}
 	// send buffered packets
 	if err := s.ServerBound.Flush(); err != nil {
-		state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
-		state.Error = err
-		s.Conn.Close()
+		state.HandleError(err)
 		return
+	}
+	if time.Since(state.LastMovementUpdateSent) > time.Second/20 {
+		state.LastMovementUpdateSent = time.Now()
+		plr := state.Things.Get(state.Player)
+		pkt := mc.PacketPlayerPositionAndRotation{
+			Pos: mc.PacketPlayerPosition{
+				X:        float64(plr.Position.X),
+				Y:        float64(plr.Position.Y),
+				CameraY:  float64(state.Cam.Position.Y),
+				Z:        float64(plr.Position.Z),
+				OnGround: true,
+			},
+			Rot: mc.PacketPlayerRotation{
+				Yaw:      state.Cam.GetYaw() * 360,
+				Pitch:    state.Cam.GetPitch() * 360,
+				OnGround: true,
+			},
+		}
+		err := pkt.Write(&s.ServerBound)
+		if err != nil {
+			state.HandleError(err)
+			return
+		}
 	}
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
@@ -62,9 +81,17 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		it := state.Chunks.Iter()
 		for it.Next() {
 			chunk := it.Value()
-			gfx.DrawCube(
-				gfx.NewVector3(float32(chunk.X*16), 0, float32(chunk.Z*16)), 1, 128, 1, gfx.Green,
-			)
+			// TODO: in the future check if chunk is in render distance.
+			if chunk.NeedMeshRebuild {
+				println("needs rebuild")
+				chunk.NeedMeshRebuild = false
+				chunk.mesh.Reset()
+				state.BuildChunkMesh(chunk)
+				state.Chunks.Set(it.Key(), chunk)
+			}
+			chunk.mesh.Draw(gfx.DefaultTexture(), gfx.Green, gfx.MatrixTranslate(
+				float32(chunk.data.X)*16, -127, float32(chunk.data.Z)*16,
+			))
 		}
 	}
 	{
@@ -83,6 +110,11 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	}
 
 	gfx.EndMode3D()
+}
+func (state *ScreenInGameState) HandleError(err error) {
+	state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
+	state.Error = err
+	state.s.Conn.Close()
 }
 
 // delta is mouse delta movement.

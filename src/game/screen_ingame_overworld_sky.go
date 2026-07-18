@@ -10,7 +10,7 @@ import (
 	"solod.dev/so/math/rand"
 )
 
-func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
+func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) *gfx.Mesh {
 	const starAttempts = 1500
 	var mesh = gfx.NewMesh(a)
 
@@ -63,7 +63,8 @@ func (state *ScreenInGameState) GenMeshStars(a mem.Allocator) gfx.Mesh {
 			mesh.QuadEndVertex(true, false, false)
 		}
 	}
-	return mesh.Upload(false)
+	mesh.Upload(false)
+	return mesh
 }
 
 // from notch code

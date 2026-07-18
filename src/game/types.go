@@ -257,7 +257,7 @@ func (things *ThingPool) Iter() ThingsIter {
 type ChunkCoordinate struct{ X, Z int32 }
 type Chunk struct {
 	NeedMeshRebuild bool
-	mesh gfx.Mesh
+	mesh            *gfx.Mesh
 	// to avoid huge mem copies. mesh is already a fat struct of pointers.
 	data *mc.DecompressedChunkData
 }
@@ -286,10 +286,12 @@ type ScreenInGameState struct {
 	GameTimeFloat  float32 // In game time but it's a float
 	GameTicksInt   int64   // game time in ticks.
 	LastTimeUpdate time.Time
+	// send player position and rotation 20 times per second.
+	LastMovementUpdateSent time.Time
 
 	// RENDERING DATA
-	Stars   gfx.Mesh // Initialized
-	SunMesh gfx.Mesh // Also used for moon
+	Stars   *gfx.Mesh // Initialized
+	SunMesh *gfx.Mesh // Also used for moon
 
 	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte
@@ -304,8 +306,8 @@ type ScreenInGameState struct {
 	// PersistentArena lives for as long as the user is on this screen.
 	PersistentArena mem.Arena
 
-	Chunks        maps.Map[ChunkCoordinate, Chunk]
-	ChunkFreeList []Chunk
+	Chunks        maps.Map[ChunkCoordinate, *Chunk]
+	ChunkFreeList []*Chunk
 }
 
 // Max number of sound effects that can be loaded at a time.

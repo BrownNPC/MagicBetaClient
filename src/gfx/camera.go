@@ -16,12 +16,24 @@ func (camera *Camera) GetUp() Vector3 {
 	return Vector3Normalize(camera.Up)
 }
 
-// Returns Pitch in radians.
-func (camera *Camera) GetPitch() float32 {
-	direction := camera.Target.Subtract(camera.Position)
-	distance := math.Sqrt(float64(direction.X*direction.X + direction.Z*direction.Z))
-	pitch := math.Atan2(float64(direction.Y), distance)
-	return float32(pitch)
+// Returns pitch in Turns
+func (c Camera) GetPitch() float32 {
+	dir := c.Target.Subtract(c.Position).Normalize()
+	pitch := float32(math.Asin(
+		float64(dir.Y),
+	))
+
+	return pitch / Tau
+}
+
+// Returns Yaw in Turns
+func (c Camera) GetYaw() float32 {
+	dir := c.Target.Subtract(c.Position).Normalize()
+	yaw := float32(math.Atan2(
+		float64(dir.X),
+		float64(dir.Z),
+	))
+	return yaw / Tau
 }
 
 // GetRight - Returns the cameras right vector (normalized)

@@ -6,7 +6,7 @@ import (
 )
 
 // Helper that also checks neighbour chunks if needed.
-func (state *ScreenInGameState) IsAir(c Chunk, x, y, z int) bool {
+func (state *ScreenInGameState) IsAir(c *Chunk, x, y, z int) bool {
 	if y < 0 || y >= mc.CHUNK_SIZE_Y {
 		return true
 	}
@@ -14,27 +14,27 @@ func (state *ScreenInGameState) IsAir(c Chunk, x, y, z int) bool {
 	switch {
 	case x < 0:
 		left := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X - 1), Z: int32(c.data.Z)})
-		return left.data == nil || left.data.IsAir(15, y, z)
+		return left == nil || left.data.IsAir(15, y, z)
 
 	case x >= mc.CHUNK_SIZE_XZ:
 		right := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X + 1), Z: int32(c.data.Z)})
-		return right.data == nil || right.data.IsAir(0, y, z)
+		return right == nil || right.data.IsAir(0, y, z)
 
 	case z < 0:
 		back := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X), Z: int32(c.data.Z - 1)})
-		return back.data == nil || back.data.IsAir(x, y, 15)
+		return back == nil || back.data.IsAir(x, y, 15)
 
 	case z >= mc.CHUNK_SIZE_XZ:
 		front := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X), Z: int32(c.data.Z + 1)})
-		return front.data == nil || front.data.IsAir(x, y, 0)
+		return front == nil || front.data.IsAir(x, y, 0)
 
 	default:
 		return c.data.IsAir(x, y, z)
 	}
 }
-func (state *ScreenInGameState) BuildChunkMesh(c Chunk) {
+func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 	// reference: https://github.com/BrownNPC/Mine/blob/master/scenes/start/buildChunkMesh.go
-	var mesh *gfx.Mesh = &c.mesh
+	var mesh *gfx.Mesh = c.mesh
 	for x := range mc.CHUNK_SIZE_XZ {
 		for z := range mc.CHUNK_SIZE_XZ {
 			for y := range mc.CHUNK_SIZE_Y {
@@ -113,5 +113,6 @@ func (state *ScreenInGameState) BuildChunkMesh(c Chunk) {
 			}
 		}
 	}
+	println("uploading chunk mesh")
 	mesh.Upload(false)
 }
