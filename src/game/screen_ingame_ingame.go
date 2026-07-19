@@ -2,10 +2,8 @@ package game
 
 import (
 	"mbc/gfx"
-	"mbc/net/mc"
 
 	"solod.dev/so/maps"
-	"solod.dev/so/math/rand"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
@@ -25,6 +23,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
+	state.LastMovementUpdateSent = time.Now()
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
@@ -42,25 +41,68 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		return
 	}
 	plr := state.Things.Get(state.Player)
-	plr.Position.Y -= rand.Float32()
 	state.Cam.Position = gfx.NewVector3(plr.Position.X, plr.Position.Y+1.6, plr.Position.Z)
-	if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second*2 {
-		state.LastMovementUpdateSent = time.Now()
-		pkt := mc.PacketPlayerPosition{
-			X:       float64(plr.Position.X),
-			Y:       float64(plr.Position.Y),
-			CameraY: float64(state.Cam.Position.Y),
-			Z:       float64(plr.Position.Z),
-			// Yaw:      state.Cam.GetYaw() * 360,
-			// Pitch:    state.Cam.GetPitch() * 360,
-			OnGround: false,
-		}
-		err := pkt.Write(&s.ServerBound)
-		if err != nil {
-			state.HandleError(err)
-			return
-		}
-	}
+	//
+	// send ack maybe?
+	// if state.firstChunkdataRecieved == 1 {
+	// 	plr.OnGround = true
+	// 	ack := mc.PacketPlayerMovment{OnGround: true}
+	// 	ack.Write(&s.ServerBound)
+	// }
+	// if state.acked && state.firstChunkdataRecieved == 0 && time.Since(state.LastMovementUpdateSent) > time.Second/5 {
+	// 	state.LastMovementUpdateSent = time.Now()
+	// 	pkt := mc.PacketPlayerPosition{
+	// 		X:       float64(plr.Position.X),
+	// 		Y:       float64(plr.Position.Y),
+	// 		CameraY: float64(plr.Position.Y + 1.62),
+	// 		Z:       float64(plr.Position.Z),
+	// 		// Yaw:      state.Cam.GetYaw() * 360,
+	// 		// Pitch:    state.Cam.GetPitch() * 360,
+	// 		OnGround: plr.OnGround,
+	// 	}
+	// 	if err := pkt.Write(&state.s.ServerBound); err != nil {
+	// 		state.HandleError(err)
+	// 		return
+	// 	}
+	// }
+	// if !state.acked && time.Since(state.LastMovementUpdateSent) > time.Second*5 {
+	// 	state.acked = true
+	// 	pkt := mc.PacketPlayerPositionAndRotation{
+	// 		X:        float64(plr.Position.X),
+	// 		Y:        float64(plr.Position.Y),
+	// 		CameraY:  float64(plr.Position.Y + 1.62),
+	// 		Z:        float64(plr.Position.Z),
+	// 		Yaw:      state.Cam.GetYaw() * 360,
+	// 		Pitch:    state.Cam.GetPitch() * 360,
+	// 		OnGround: plr.OnGround,
+	// 	}
+	// 	if err := pkt.Write(&state.s.ServerBound); err != nil {
+	// 		state.HandleError(err)
+	// 		return
+	// 	}
+	// 	if err := state.s.ServerBound.Flush(); err != nil {
+	// 		state.HandleError(err)
+	// 		return
+	// 	}
+	// 	state.LastMovementUpdateSent = time.Now()
+	// }
+	// if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second/20 {
+	// 	state.LastMovementUpdateSent = time.Now()
+	// 	pkt := mc.PacketPlayerPosition{
+	// 		X:       float64(plr.Position.X),
+	// 		Y:       float64(plr.Position.Y),
+	// 		CameraY: float64(state.Cam.Position.Y),
+	// 		Z:       float64(plr.Position.Z),
+	// 		// Yaw:      state.Cam.GetYaw() * 360,
+	// 		// Pitch:    state.Cam.GetPitch() * 360,
+	// 		OnGround: false,
+	// 	}
+	// 	err := pkt.Write(&s.ServerBound)
+	// 	if err != nil {
+	// 		state.HandleError(err)
+	// 		return
+	// 	}
+	// }
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	// Process mouse look

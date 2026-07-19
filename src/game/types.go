@@ -158,6 +158,7 @@ type Thing struct {
 	Username string
 	EntityID int32 // minecraft server EntityID
 	Position gfx.Vector3
+	OnGround bool
 }
 
 // deallocate any heap memory used by this thing.
@@ -282,10 +283,11 @@ type ScreenInGameState struct {
 	acc           float32
 
 	// Used for celestial angle and day/night cycle
-	GameTimeFloat  float32 // In game time but it's a float
-	GameTicksInt   int64   // game time in ticks.
-	LastTimeUpdate time.Time
-	acked          bool // acknowledged the first PlayerPositionAndRotation packet sent by server.
+	GameTimeFloat          float32 // In game time but it's a float
+	GameTicksInt           int64   // game time in ticks.
+	LastTimeUpdate         time.Time
+	acked                  bool // acknowledged the first PlayerPositionAndRotation packet sent by server.
+	firstChunkdataRecieved int
 	// send player position and rotation 20 times per second.
 	LastMovementUpdateSent time.Time
 

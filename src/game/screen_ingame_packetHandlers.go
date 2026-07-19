@@ -115,13 +115,14 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	chunk.NeedMeshRebuild = true
 	chunk.data.X = int(coord.X)
 	chunk.data.Z = int(coord.Z)
+	state.Chunks.Set(coord, chunk)
 }
 func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
+	state.firstChunkdataRecieved++
 	pkt := data.(*mc.ClientboundChunk)
 	// block space to chunk space
 	chunkX := pkt.X >> 4 // using bitwise here does floor division
 	chunkZ := pkt.Z >> 4 // for cases like -15/16. Thanks Gemini!
-	println(chunkX, chunkZ)
 	coord := ChunkCoordinate{chunkX, chunkZ}
 	var chunk *Chunk = state.Chunks.Get(coord)
 	if chunk == nil {
@@ -151,17 +152,12 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		pkt := data.(*mc.PacketPlayerPositionAndRotation)
 		state.OnPlayerPosition(float32(pkt.X), float32(pkt.Y), float32(pkt.Z), float32(pkt.CameraY))
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
-		// send ack maybe?
 		if !state.acked {
 			state.acked = true
-			if err := pkt.Write(&state.s.ServerBound); err != nil {
-				return err
-			}
-			if err := state.s.ServerBound.Flush(); err != nil {
-				return err
-			}
+			// if err := pkt.Write(&state.s.ServerBound); err != nil {
+			// 	return err
+			// }
 		}
-		state.LastMovementUpdateSent = time.Now()
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
