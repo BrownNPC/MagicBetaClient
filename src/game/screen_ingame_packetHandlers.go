@@ -62,7 +62,6 @@ func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) 
 	state.LastPlayerPosition = state.Things.Get(state.Player).Position
 	plr := state.Things.Get(state.Player)
 	plr.Position = gfx.NewVector3(X, Y, Z)
-	plr.CameraY = camY
 }
 func (state *ScreenInGameState) OnEntityPosition(entityID int32, pos mc.ClientboundEntityPosition) {
 	i := state.Things.Iter()
@@ -153,26 +152,16 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		state.OnPlayerPosition(float32(pkt.X), float32(pkt.Y), float32(pkt.Z), float32(pkt.CameraY))
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
 		// send ack maybe?
-		// err := pkt.Write(&state.s.ServerBound)
-		// if err != nil {
-		// 	return err
-		// }
-		// ack := mc.PacketPlayerPosition{
-		// 	X:        pkt.X,
-		// 	Y:        pkt.Y,
-		// 	CameraY:  pkt.CameraY,
-		// 	Z:        pkt.Z,
-		// 	OnGround: false,
-		// }
-		// err = ack.Write(&state.s.ServerBound)
-		// if err != nil {
-		// 	return err
-		// }
-		// err = state.s.ServerBound.Flush()
-		// if err != nil {
-		// 	return err
-		// }
-		// state.acked = true
+		if !state.acked {
+			state.acked = true
+			if err := pkt.Write(&state.s.ServerBound); err != nil {
+				return err
+			}
+			if err := state.s.ServerBound.Flush(); err != nil {
+				return err
+			}
+		}
+		state.LastMovementUpdateSent = time.Now()
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)

@@ -2,8 +2,10 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/net/mc"
 
 	"solod.dev/so/maps"
+	"solod.dev/so/math/rand"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
@@ -39,24 +41,26 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		state.HandleError(err)
 		return
 	}
-	// if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second {
-	// 	state.LastMovementUpdateSent = time.Now()
-	// 	plr := state.Things.Get(state.Player)
-	// 	pkt := mc.PacketPlayerPositionAndRotation{
-	// 		X:        float64(plr.Position.X + rand.Float32()*2),
-	// 		Y:        float64(plr.Position.Y),
-	// 		CameraY:  float64(state.Cam.Position.Y),
-	// 		Z:        float64(plr.Position.Z),
-	// 		Yaw:      state.Cam.GetYaw() * 360,
-	// 		Pitch:    state.Cam.GetPitch() * 360,
-	// 		OnGround: true,
-	// 	}
-	// 	err := pkt.Write(&s.ServerBound)
-	// 	if err != nil {
-	// 		state.HandleError(err)
-	// 		return
-	// 	}
-	// }
+	plr := state.Things.Get(state.Player)
+	plr.Position.Y -= rand.Float32()
+	state.Cam.Position = gfx.NewVector3(plr.Position.X, plr.Position.Y+1.6, plr.Position.Z)
+	if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second*2 {
+		state.LastMovementUpdateSent = time.Now()
+		pkt := mc.PacketPlayerPosition{
+			X:       float64(plr.Position.X),
+			Y:       float64(plr.Position.Y),
+			CameraY: float64(state.Cam.Position.Y),
+			Z:       float64(plr.Position.Z),
+			// Yaw:      state.Cam.GetYaw() * 360,
+			// Pitch:    state.Cam.GetPitch() * 360,
+			OnGround: false,
+		}
+		err := pkt.Write(&s.ServerBound)
+		if err != nil {
+			state.HandleError(err)
+			return
+		}
+	}
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	// Process mouse look
@@ -65,8 +69,6 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	}
 
 	// RENDER SKY
-	plr := state.Things.Get(state.Player)
-	state.Cam.Position = gfx.NewVector3(plr.Position.X, plr.CameraY, plr.Position.Z)
 	gfx.BeginMode3D(state.Cam)
 	state.DrawSky3D(state.Cam)
 	{

@@ -654,14 +654,12 @@ func (p *PacketPlayerPosition) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 			if !rd.ReadFloat64(&p.X) {
 				return false, rd.Err()
 			}
-			// apparently according to old wiki.vg this has to be flipped for clientbound:
-			// https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol?oldid=2769763#Player_Position_&_Look_(0x0D)
 		case 1:
-			if !rd.ReadFloat64(&p.CameraY) {
+			if !rd.ReadFloat64(&p.Y) {
 				return false, rd.Err()
 			}
 		case 2:
-			if !rd.ReadFloat64(&p.Y) {
+			if !rd.ReadFloat64(&p.CameraY) {
 				return false, rd.Err()
 			}
 		case 3:
@@ -762,11 +760,11 @@ func (p *PacketPlayerPositionAndRotation) Step(a mem.Allocator, rd *net.Buffered
 			// Need to flip these according to old wiki.vg
 			//https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol?oldid=2769763#Player_Position_&_Look_(0x0D)
 		case 1:
-			if !rd.ReadFloat64(&p.CameraY) {
+			if !rd.ReadFloat64(&p.Y) {
 				return false, rd.Err()
 			}
 		case 2:
-			if !rd.ReadFloat64(&p.Y) {
+			if !rd.ReadFloat64(&p.CameraY) {
 				return false, rd.Err()
 			}
 		case 3:

@@ -157,7 +157,6 @@ type Thing struct {
 	Kind     Kind
 	Username string
 	EntityID int32 // minecraft server EntityID
-	CameraY  float32
 	Position gfx.Vector3
 }
 
