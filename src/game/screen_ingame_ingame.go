@@ -2,7 +2,6 @@ package game
 
 import (
 	"mbc/gfx"
-	"mbc/net/mc"
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
@@ -40,24 +39,24 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		state.HandleError(err)
 		return
 	}
-	if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second/5 {
-		state.LastMovementUpdateSent = time.Now()
-		plr := state.Things.Get(state.Player)
-		pkt := mc.PacketPlayerPositionAndRotation{
-			X:        float64(plr.Position.X),
-			Y:        float64(plr.Position.Y + 10),
-			CameraY:  float64(state.Cam.Position.Y),
-			Z:        float64(plr.Position.Z),
-			Yaw:      state.Cam.GetYaw() * 360,
-			Pitch:    state.Cam.GetPitch() * 360,
-			OnGround: true,
-		}
-		err := pkt.Write(&s.ServerBound)
-		if err != nil {
-			state.HandleError(err)
-			return
-		}
-	}
+	// if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second {
+	// 	state.LastMovementUpdateSent = time.Now()
+	// 	plr := state.Things.Get(state.Player)
+	// 	pkt := mc.PacketPlayerPositionAndRotation{
+	// 		X:        float64(plr.Position.X + rand.Float32()*2),
+	// 		Y:        float64(plr.Position.Y),
+	// 		CameraY:  float64(state.Cam.Position.Y),
+	// 		Z:        float64(plr.Position.Z),
+	// 		Yaw:      state.Cam.GetYaw() * 360,
+	// 		Pitch:    state.Cam.GetPitch() * 360,
+	// 		OnGround: true,
+	// 	}
+	// 	err := pkt.Write(&s.ServerBound)
+	// 	if err != nil {
+	// 		state.HandleError(err)
+	// 		return
+	// 	}
+	// }
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	// Process mouse look

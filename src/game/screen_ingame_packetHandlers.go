@@ -21,7 +21,7 @@ func (state *ScreenInGameState) OnSetTime(data mc.Decoder) error {
 	state.GameTicksInt = pkt.Time
 	// Send keep alive every tick
 	return nil
-	return mc.PacketKeepAlive{}.Write(&state.s.ServerBound)
+	// return mc.PacketKeepAlive{}.Write(&state.s.ServerBound)
 }
 
 func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
@@ -63,11 +63,6 @@ func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) 
 	plr := state.Things.Get(state.Player)
 	plr.Position = gfx.NewVector3(X, Y, Z)
 	plr.CameraY = camY
-
-	oldPos := state.Cam.Position
-	newPos := gfx.NewVector3(X, Y+camY, Z)
-	diff := gfx.Vector3Subtract(newPos, oldPos)
-	state.Cam.Update(diff, gfx.Vector3{}, 0)
 }
 func (state *ScreenInGameState) OnEntityPosition(entityID int32, pos mc.ClientboundEntityPosition) {
 	i := state.Things.Iter()
@@ -95,7 +90,6 @@ func (state *ScreenInGameState) OnTeleportEntity(data mc.Decoder) {
 }
 func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSetChunkVisibility)
-	println("chunk visiblity recieved. load=", pkt.Load)
 	// this packet uses chunk space while the other Chunk packet uses block space/world space
 	coord := ChunkCoordinate{pkt.X, pkt.Y}
 	if !pkt.Load { // unload
@@ -128,9 +122,10 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	// block space to chunk space
 	chunkX := pkt.X >> 4 // using bitwise here does floor division
 	chunkZ := pkt.Z >> 4 // for cases like -15/16. Thanks Gemini!
+	println(chunkX, chunkZ)
 	coord := ChunkCoordinate{chunkX, chunkZ}
 	var chunk *Chunk = state.Chunks.Get(coord)
-	if chunk.data == nil {
+	if chunk == nil {
 		sdl.Log("WARNING: server sent chunk data for unloaded chunk")
 		return nil
 	}
@@ -158,26 +153,26 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		state.OnPlayerPosition(float32(pkt.X), float32(pkt.Y), float32(pkt.Z), float32(pkt.CameraY))
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
 		// send ack maybe?
-		err := pkt.Write(&state.s.ServerBound)
-		if err != nil {
-			return err
-		}
-		ack := mc.PacketPlayerPosition{
-			X:        pkt.X,
-			Y:        pkt.Y,
-			CameraY:  pkt.CameraY,
-			Z:        pkt.Z,
-			OnGround: false,
-		}
-		err = ack.Write(&state.s.ServerBound)
-		if err != nil {
-			return err
-		}
-		err = state.s.ServerBound.Flush()
-		if err != nil {
-			return err
-		}
-		state.acked = true
+		// err := pkt.Write(&state.s.ServerBound)
+		// if err != nil {
+		// 	return err
+		// }
+		// ack := mc.PacketPlayerPosition{
+		// 	X:        pkt.X,
+		// 	Y:        pkt.Y,
+		// 	CameraY:  pkt.CameraY,
+		// 	Z:        pkt.Z,
+		// 	OnGround: false,
+		// }
+		// err = ack.Write(&state.s.ServerBound)
+		// if err != nil {
+		// 	return err
+		// }
+		// err = state.s.ServerBound.Flush()
+		// if err != nil {
+		// 	return err
+		// }
+		// state.acked = true
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
@@ -190,7 +185,6 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		pkt := data.(*mc.ClientboundEntityPositionAndRotation)
 		state.OnEntityPosition(pkt.EntityID, pkt.Pos)
 	case mc.PKT_Chunk:
-		println("chunk data")
 		return state.OnChunk(data)
 	case mc.PKT_DespawnEntity:
 		state.OnDespawnEntity(data)
