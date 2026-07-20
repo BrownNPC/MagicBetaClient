@@ -113,6 +113,5 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 			}
 		}
 	}
-	println("uploading chunk mesh")
 	mesh.Upload(false)
 }

@@ -870,8 +870,7 @@ type VertexColor struct {
 }
 
 type Mesh struct {
-	a  mem.Allocator
-	sz int
+	a mem.Allocator
 
 	vertices  []VertexCoord
 	texCoords []VertexTexcoord
@@ -1040,7 +1039,7 @@ func (m *Mesh) Reset() {
 			m.vboID[i] = 0
 		}
 	}
-	*m = Mesh{}
+	m.quadCount = 0
 }
 func DefaultTexture() Texture { return Texture{Width: 1, Height: 1, ID: rlGetTextureIdDefault()} }
 func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {

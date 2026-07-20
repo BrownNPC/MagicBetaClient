@@ -511,7 +511,7 @@ func (p *ClientboundEntityVelocity) Step(_ mem.Allocator, rd *net.BufferedReader
 }
 
 type ClientboundSetChunkVisibility struct {
-	X, Y  int32
+	X, Z  int32
 	Load  bool
 	stage int
 }
@@ -524,7 +524,7 @@ func (p *ClientboundSetChunkVisibility) Step(_ mem.Allocator, rd *net.BufferedRe
 				return false, rd.Err()
 			}
 		case 1:
-			if !rd.ReadInt32(&p.Y) {
+			if !rd.ReadInt32(&p.Z) {
 				return false, rd.Err()
 			}
 		case 2:
@@ -1247,8 +1247,8 @@ func (p *ClientboundSetMultipleBlocks) Step(a mem.Allocator, rd *net.BufferedRea
 			}
 			p.TotalBlocks = int(l)
 
-			p.Block = slices.MakeCap[BlockID](a, 0, p.TotalBlocks)
 			p.BlockPosition = slices.MakeCap[PackedCoordinate](a, 0, p.TotalBlocks)
+			p.Block = slices.MakeCap[BlockID](a, 0, p.TotalBlocks)
 			p.Metadata = slices.MakeCap[int8](a, 0, p.TotalBlocks)
 		case 3:
 			for len(p.BlockPosition) < p.TotalBlocks {
@@ -1311,12 +1311,59 @@ type ClientboundChunk struct {
 	Y int16
 	Z int32
 
-	Width, Height, Length int8
+	Width, Height, Length uint8
 
 	compressedSize int32
 	CompressedData []byte // Zlib compressed data.
 
 	stage int
+}
+
+func (p *ClientboundChunk) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.X) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadInt16(&p.Y) {
+				return false, rd.Err()
+			}
+		case 2:
+			if !rd.ReadInt32(&p.Z) {
+				return false, rd.Err()
+			}
+		case 3:
+			if !rd.ReadUint8(&p.Width) {
+				return false, rd.Err()
+			}
+		case 4:
+			if !rd.ReadUint8(&p.Height) {
+				return false, rd.Err()
+			}
+		case 5:
+			if !rd.ReadUint8(&p.Length) {
+				return false, rd.Err()
+			}
+		case 6:
+			if !rd.ReadInt32(&p.compressedSize) {
+				return false, rd.Err()
+			}
+			p.CompressedData = slices.MakeCap[byte](a, 0, int(p.compressedSize))
+		case 7:
+			for len(p.CompressedData) < int(p.compressedSize) {
+				var b byte
+				if !rd.ReadUint8(&b) {
+					return false, rd.Err()
+				}
+				p.CompressedData = append(p.CompressedData, b)
+			}
+		case 8:
+			return true, nil
+		}
+		p.stage++
+	}
 }
 
 const CHUNK_SIZE_XZ = 16 // chunk width
@@ -1341,7 +1388,7 @@ func (c *DecompressedChunkData) IsAir(x, y, z int) bool {
 }
 
 // Local chunk coordinate to index.
-func ChunkIndex(x, y, z int) int { return (y << 8) | ((z & 15) << 4) | (x & 15) }
+func ChunkIndex(x, y, z int) int { return y + (z * CHUNK_SIZE_Y) + (x * CHUNK_SIZE) }
 
 // each block contains 1 byte block id 1.5 bytes (3 nibbles) lighting and metadata.
 var chunkDataDecompressBuffer [CHUNK_SIZE +
@@ -1350,7 +1397,7 @@ var chunkDataDecompressBuffer [CHUNK_SIZE +
 
 func readNibble(data []byte, i int) uint8 {
 	b := data[i>>1]
-	if i&1 == 0 {
+	if i&2 == 0 {
 		return b & 0x0F
 	}
 	return b >> 4
@@ -1359,7 +1406,7 @@ func readNibble(data []byte, i int) uint8 {
 // Process clientbound chunk data.
 func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
 	if c == nil {
-		return nil
+		panic("chunk passed in is nil")
 	}
 	// Decompress chunk data
 	n, err := zlib.DecompressData(c.CompressedData, chunkDataDecompressBuffer[:])
@@ -1380,79 +1427,29 @@ func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
 	metaData := uncompressed[blocks : blocks+nibbles]
 	blockLight := uncompressed[blocks+nibbles : blocks+2*nibbles]
 	skyLight := uncompressed[blocks+2*nibbles : blocks+3*nibbles]
+	println("Recieved", len(blockData), "blocks.")
 
 	// WIKI: https://pixelbrush.dev/beta-wiki/worlds/chunk#block-ordering
 	// Blocks are stored as vertical columns (Y-Axis).
 	// We iterate up to width/length/height to safely support partial chunk updates.
-	var i int
-	for x := range width {
-		for z := range length {
-			for y := range height {
-				localX := int(c.X) + x
-				localZ := int(c.Z) + z
-				localY := int(c.Y) + y
-
-				idx := ChunkIndex(localX, localY, localZ)
-
+	startX := int(c.X & 15)
+	startY := int(c.Y & 127)
+	startZ := int(c.Z & 15)
+	for x := startX; x < width; x++ {
+		for z := startZ; z < length; z++ {
+			for y := startY; y < height; y++ {
+				i := y + (z * height) + (x * height * length)
+				idx := ChunkIndex(x, y, z)
 				// copy over the data.
 				d.Blocks[idx] = BlockID(blockData[i])
 				d.Metadata[idx] = readNibble(metaData, i)
 				d.BlockLight[idx] = readNibble(blockLight, i)
 				d.SkyLight[idx] = readNibble(skyLight, i)
-
-				i++
 			}
 		}
 	}
 
 	return nil
-}
-
-func (p *ClientboundChunk) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
-	for {
-		switch p.stage {
-		case 0:
-			if !rd.ReadInt32(&p.X) {
-				return false, rd.Err()
-			}
-		case 1:
-			if !rd.ReadInt16(&p.Y) {
-				return false, rd.Err()
-			}
-		case 2:
-			if !rd.ReadInt32(&p.Z) {
-				return false, rd.Err()
-			}
-		case 3:
-			if !rd.ReadInt8(&p.Width) {
-				return false, rd.Err()
-			}
-		case 4:
-			if !rd.ReadInt8(&p.Height) {
-				return false, rd.Err()
-			}
-		case 5:
-			if !rd.ReadInt8(&p.Length) {
-				return false, rd.Err()
-			}
-		case 6:
-			if !rd.ReadInt32(&p.compressedSize) {
-				return false, rd.Err()
-			}
-			p.CompressedData = slices.MakeCap[byte](a, 0, int(p.compressedSize))
-		case 7:
-			for len(p.CompressedData) < int(p.compressedSize) {
-				var b byte
-				if !rd.ReadUint8(&b) {
-					return false, rd.Err()
-				}
-				p.CompressedData = append(p.CompressedData, b)
-			}
-		case 8:
-			return true, nil
-		}
-		p.stage++
-	}
 }
 
 type ClientboundIncrementStatistic struct {
@@ -1629,9 +1626,10 @@ func (p *PacketAnimation) Step(a mem.Allocator, rd *net.BufferedReader) (bool, e
 
 type ClientboundWorldEvent struct {
 	EffectID int32
-	X, Y, Z  int32
-	Data     int32
-	stage    int
+	// Y is int8 but it's converted to int32 after reading for convenience.
+	X, Y, Z int32
+	Data    int32
+	stage   int
 }
 
 func (p *ClientboundWorldEvent) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
@@ -1701,7 +1699,78 @@ func (p *ClientboundSetHealth) Step(a mem.Allocator, rd *net.BufferedReader) (bo
 			if !rd.ReadInt16(&p.Health) {
 				return false, rd.Err()
 			}
+		case 1:
+			return true, nil
 		}
+		p.stage++
+	}
+}
+
+type ClientboundSpawnObject struct {
+	EntityID   int32
+	ObjectType ObjectType
+
+	X, Y, Z float32
+
+	OwnerEntityId int32
+
+	VX, VY, VZ int16
+
+	stage int
+}
+
+func (p *ClientboundSpawnObject) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadUint8(&p.ObjectType) {
+				return false, rd.Err()
+			}
+		case 2:
+			var coord int32
+			if !rd.ReadInt32(&coord) {
+				return false, rd.Err()
+			}
+			p.X = UnquantizeCoordinate(coord)
+		case 3:
+			var coord int32
+			if !rd.ReadInt32(&coord) {
+				return false, rd.Err()
+			}
+			p.Y = UnquantizeCoordinate(coord)
+		case 4:
+			var coord int32
+			if !rd.ReadInt32(&coord) {
+				return false, rd.Err()
+			}
+			p.Z = UnquantizeCoordinate(coord)
+		case 5:
+			if !rd.ReadInt32(&p.OwnerEntityId) {
+				return false, rd.Err()
+			}
+			if p.OwnerEntityId <= 0 {
+				return true, nil
+			}
+		case 6:
+			if !rd.ReadInt16(&p.VX) {
+				return false, rd.Err()
+			}
+		case 7:
+			if !rd.ReadInt16(&p.VY) {
+				return false, rd.Err()
+			}
+		case 8:
+			if !rd.ReadInt16(&p.VZ) {
+				return false, rd.Err()
+			}
+		case 9:
+			return true, nil
+		}
+		p.stage++
 	}
 }
 
@@ -1779,7 +1848,8 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientboundCollectItem](a)
 	case PKT_SetHealth:
 		return mem.Alloc[ClientboundSetHealth](a)
-
+	case PKT_SpawnObject:
+		return mem.Alloc[ClientboundSpawnObject](a)
 	}
 	return nil
 }

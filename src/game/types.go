@@ -254,7 +254,13 @@ func (things *ThingPool) Iter() ThingsIter {
 	return ThingsIter{p: things}
 }
 
+// A ChunkCoordinate represents a chunk in Chunk space.
+// To convert world chunk coordinates to Chunk space:
+//
+//	X >> 4
+//	Z >> 4
 type ChunkCoordinate struct{ X, Z int32 }
+
 type Chunk struct {
 	NeedMeshRebuild bool
 	mesh            *gfx.Mesh
@@ -283,13 +289,9 @@ type ScreenInGameState struct {
 	acc           float32
 
 	// Used for celestial angle and day/night cycle
-	GameTimeFloat          float32 // In game time but it's a float
-	GameTicksInt           int64   // game time in ticks.
-	LastTimeUpdate         time.Time
-	acked                  bool // acknowledged the first PlayerPositionAndRotation packet sent by server.
-	firstChunkdataRecieved int
-	// send player position and rotation 20 times per second.
-	LastMovementUpdateSent time.Time
+	GameTimeFloat  float32 // In game time but it's a float
+	GameTicksInt   int64   // game time in ticks.
+	LastTimeUpdate time.Time
 
 	// RENDERING DATA
 	Stars   *gfx.Mesh // Initialized

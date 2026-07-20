@@ -19,9 +19,7 @@ func (state *ScreenInGameState) OnSetTime(data mc.Decoder) error {
 	pkt := data.(*mc.ClientboundSetTime)
 	state.LastTimeUpdate = time.Now()
 	state.GameTicksInt = pkt.Time
-	// Send keep alive every tick
-	return nil
-	// return mc.PacketKeepAlive{}.Write(&state.s.ServerBound)
+	return mc.PacketKeepAlive{}.Write(&state.s.ServerBound)
 }
 
 func (state *ScreenInGameState) OnSpawnMob(data mc.Decoder) {
@@ -90,7 +88,7 @@ func (state *ScreenInGameState) OnTeleportEntity(data mc.Decoder) {
 func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	pkt := data.(*mc.ClientboundSetChunkVisibility)
 	// this packet uses chunk space while the other Chunk packet uses block space/world space
-	coord := ChunkCoordinate{pkt.X, pkt.Y}
+	coord := ChunkCoordinate{pkt.X, pkt.Z}
 	if !pkt.Load { // unload
 		if !state.Chunks.Has(coord) {
 			sdl.Log("WARNING: Server told us to unload a chunk we dont have loaded.")
@@ -112,21 +110,17 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	chunk := mem.Alloc[Chunk](mem.System)
 	chunk.data = mem.Alloc[mc.DecompressedChunkData](mem.System)
 	chunk.mesh = gfx.NewMesh(mem.System)
-	chunk.NeedMeshRebuild = true
-	chunk.data.X = int(coord.X)
-	chunk.data.Z = int(coord.Z)
 	state.Chunks.Set(coord, chunk)
 }
 func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
-	state.firstChunkdataRecieved++
 	pkt := data.(*mc.ClientboundChunk)
 	// block space to chunk space
-	chunkX := pkt.X >> 4 // using bitwise here does floor division
-	chunkZ := pkt.Z >> 4 // for cases like -15/16. Thanks Gemini!
+	chunkX := pkt.X >> 4
+	chunkZ := pkt.Z >> 4
 	coord := ChunkCoordinate{chunkX, chunkZ}
 	var chunk *Chunk = state.Chunks.Get(coord)
 	if chunk == nil {
-		sdl.Log("WARNING: server sent chunk data for unloaded chunk")
+		sdl.Log("WARNING: we have chunk data but chunk is unloaded.")
 		return nil
 	}
 	err := chunk.data.ProcessChunkData(pkt)
@@ -152,12 +146,6 @@ func (state *ScreenInGameState) dispatchPacketHandler(id mc.PacketID, data mc.De
 		pkt := data.(*mc.PacketPlayerPositionAndRotation)
 		state.OnPlayerPosition(float32(pkt.X), float32(pkt.Y), float32(pkt.Z), float32(pkt.CameraY))
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)
-		if !state.acked {
-			state.acked = true
-			// if err := pkt.Write(&state.s.ServerBound); err != nil {
-			// 	return err
-			// }
-		}
 	case mc.PKT_PlayerRotation:
 		pkt := data.(*mc.PacketPlayerRotation)
 		state.OnPlayerRotation(pkt.Pitch, pkt.Yaw)

@@ -23,7 +23,6 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
-	state.LastMovementUpdateSent = time.Now()
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.Inputs[InputClose].Released {
@@ -119,14 +118,12 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 			chunk := it.Value()
 			// TODO: in the future check if chunk is in render distance.
 			if chunk.NeedMeshRebuild {
-				println("needs rebuild")
 				chunk.NeedMeshRebuild = false
 				chunk.mesh.Reset()
 				state.BuildChunkMesh(chunk)
-				state.Chunks.Set(it.Key(), chunk)
 			}
 			chunk.mesh.Draw(gfx.DefaultTexture(), gfx.Green, gfx.MatrixTranslate(
-				float32(chunk.data.X)*16, -127, float32(chunk.data.Z)*16,
+				float32(chunk.data.X)*16, 127, float32(chunk.data.Z)*16,
 			))
 		}
 	}

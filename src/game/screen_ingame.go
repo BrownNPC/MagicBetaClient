@@ -33,7 +33,6 @@ func (state *ScreenInGameState) SendQuittingPacket(s *State) {
 	dc := mc.PacketDisconnect{
 		Reason: []rune("Quitting"),
 	}
-	println("Quitting")
 	dc.Write(&s.ServerBound)
 	s.ServerBound.Flush()
 	s.Conn.Close()
