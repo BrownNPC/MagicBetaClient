@@ -1,5 +1,7 @@
 package mc
 
+import "mbc/sdl"
+
 type BlockID = uint8
 
 const (
@@ -104,3 +106,63 @@ const (
 	BLOCK_LockedChest         BlockID = 95
 	BLOCK_Trapdoor            BlockID = 96
 )
+
+//so:include math_include.h
+type Direction = uint8
+
+type AtlasUV struct {
+	UV [4]float32
+}
+
+// algorithm that minecraft uses.
+func getUV(id int) AtlasUV {
+	const (
+		atlasSize = 256.0
+		tileSize  = 16.0
+	)
+
+	x := float32(id & 15)
+	y := float32(id >> 4)
+
+	var a [4]float32
+
+	a[0] = x * tileSize / atlasSize
+	a[1] = y * tileSize / atlasSize
+	a[2] = (x*tileSize + tileSize) / atlasSize
+	a[3] = (y*tileSize + tileSize) / atlasSize
+
+	return AtlasUV{UV: a}
+}
+
+const (
+	DIRECTION_Down  Direction = 0
+	DIRECTION_Up    Direction = 1
+	DIRECTION_North Direction = 2
+	DIRECTION_South Direction = 3
+	DIRECTION_West  Direction = 4
+	DIRECTION_East  Direction = 5
+)
+
+func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) AtlasUV {
+	// Ref: https://github.com/search?q=repo%3Ajacobo-mc%2Fmc_b1.7.3_release+getBlockTextureFromSideAndMetadata&type=code
+	switch b {
+	case BLOCK_Log:
+		if side == DIRECTION_Up || side == DIRECTION_Down {
+			return getUV(21)
+		} else if metadata == 1 {
+			return getUV(116)
+		} else {
+			// wood type
+			switch metadata {
+			case 1:
+				return getUV(116)
+			case 2:
+				return getUV(117)
+			default:
+				return getUV(20)
+			}
+		}
+	}
+	sdl.Log("mc: could not find atlas uv for %d", b)
+	panic("Atlas mapping not available")
+}
