@@ -263,8 +263,9 @@ type ChunkCoordinate struct{ X, Z int32 }
 
 type Chunk struct {
 	NeedMeshRebuild bool
-	mesh            *gfx.Mesh
-	// to avoid huge mem copies. mesh is already a fat struct of pointers.
+
+	coord ChunkCoordinate
+	mesh *gfx.Mesh
 	data *mc.DecompressedChunkData
 }
 type ScreenInGameState struct {

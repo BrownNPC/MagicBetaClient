@@ -103,7 +103,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 				state.BuildChunkMesh(chunk)
 			}
 			chunk.mesh.Draw(gfx.DefaultTexture(), gfx.Green, gfx.MatrixTranslate(
-				float32(chunk.data.X), 127, float32(chunk.data.Z),
+				float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
 			))
 		}
 	}

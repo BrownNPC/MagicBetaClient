@@ -1373,8 +1373,6 @@ const CHUNK_SIZE = CHUNK_SIZE_XZ * CHUNK_SIZE_XZ * CHUNK_SIZE_Y
 // A chunk containing blocks.
 // Different from the Chunk packet which contains compressed data.
 type DecompressedChunkData struct {
-	// Coordinate is in block space.
-	X, Z       int
 	Blocks     [CHUNK_SIZE]BlockID
 	Metadata   [CHUNK_SIZE]uint8
 	BlockLight [CHUNK_SIZE]uint8

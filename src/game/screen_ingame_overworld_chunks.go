@@ -13,19 +13,19 @@ func (state *ScreenInGameState) IsAir(c *Chunk, x, y, z int) bool {
 
 	switch {
 	case x < 0:
-		left := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X - 1), Z: int32(c.data.Z)})
+		left := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X - 1), Z: int32(c.coord.Z)})
 		return left == nil || left.data.IsAir(15, y, z)
 
 	case x >= mc.CHUNK_SIZE_XZ:
-		right := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X + 1), Z: int32(c.data.Z)})
+		right := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X + 1), Z: int32(c.coord.Z)})
 		return right == nil || right.data.IsAir(0, y, z)
 
 	case z < 0:
-		back := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X), Z: int32(c.data.Z - 1)})
+		back := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X), Z: int32(c.coord.Z - 1)})
 		return back == nil || back.data.IsAir(x, y, 15)
 
 	case z >= mc.CHUNK_SIZE_XZ:
-		front := state.Chunks.Get(ChunkCoordinate{X: int32(c.data.X), Z: int32(c.data.Z + 1)})
+		front := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X), Z: int32(c.coord.Z + 1)})
 		return front == nil || front.data.IsAir(x, y, 0)
 
 	default:

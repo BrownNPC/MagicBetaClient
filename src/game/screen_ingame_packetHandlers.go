@@ -96,6 +96,8 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 		}
 		chunk := state.Chunks.Get(coord)
 		state.Chunks.Delete(coord)
+		chunk.mesh.Reset()
+		chunk.coord = ChunkCoordinate{}
 		state.ChunkFreeList = slices.Append(mem.System, state.ChunkFreeList, chunk)
 		return
 	}
@@ -103,6 +105,7 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	if len(state.ChunkFreeList) > 0 {
 		chunk := state.ChunkFreeList[len(state.ChunkFreeList)-1]
 		state.ChunkFreeList = state.ChunkFreeList[:len(state.ChunkFreeList)-1] // pop
+		chunk.coord = coord
 		state.Chunks.Set(coord, chunk)
 		return
 	}
@@ -110,6 +113,7 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 	chunk := mem.Alloc[Chunk](mem.System)
 	chunk.data = mem.Alloc[mc.DecompressedChunkData](mem.System)
 	chunk.mesh = gfx.NewMesh(mem.System)
+	chunk.coord = coord
 	state.Chunks.Set(coord, chunk)
 }
 func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
