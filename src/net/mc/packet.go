@@ -1373,6 +1373,7 @@ const CHUNK_SIZE = CHUNK_SIZE_XZ * CHUNK_SIZE_XZ * CHUNK_SIZE_Y
 // A chunk containing blocks.
 // Different from the Chunk packet which contains compressed data.
 type DecompressedChunkData struct {
+	// Coordinate is in block space.
 	X, Z       int
 	Blocks     [CHUNK_SIZE]BlockID
 	Metadata   [CHUNK_SIZE]uint8
@@ -1388,7 +1389,7 @@ func (c *DecompressedChunkData) IsAir(x, y, z int) bool {
 }
 
 // Local chunk coordinate to index.
-func ChunkIndex(x, y, z int) int { return y + (z * CHUNK_SIZE_Y) + (x * CHUNK_SIZE) }
+func ChunkIndex(x, y, z int) int { return y + (z * 128) + (x * 16 * 128) }
 
 // each block contains 1 byte block id 1.5 bytes (3 nibbles) lighting and metadata.
 var chunkDataDecompressBuffer [CHUNK_SIZE +
@@ -1435,11 +1436,12 @@ func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
 	startX := int(c.X & 15)
 	startY := int(c.Y & 127)
 	startZ := int(c.Z & 15)
-	for x := startX; x < width; x++ {
-		for z := startZ; z < length; z++ {
-			for y := startY; y < height; y++ {
+	for x := range width {
+		for z := range length {
+			for y := range height {
 				i := y + (z * height) + (x * height * length)
-				idx := ChunkIndex(x, y, z)
+
+				idx := ChunkIndex(startX+x, startY+y, startZ+z)
 				// copy over the data.
 				d.Blocks[idx] = BlockID(blockData[i])
 				d.Metadata[idx] = readNibble(metaData, i)

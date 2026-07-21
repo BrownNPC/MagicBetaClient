@@ -2,6 +2,7 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/net/mc"
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
@@ -64,44 +65,23 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// 		return
 	// 	}
 	// }
-	// if !state.acked && time.Since(state.LastMovementUpdateSent) > time.Second*5 {
-	// 	state.acked = true
-	// 	pkt := mc.PacketPlayerPositionAndRotation{
-	// 		X:        float64(plr.Position.X),
-	// 		Y:        float64(plr.Position.Y),
-	// 		CameraY:  float64(plr.Position.Y + 1.62),
-	// 		Z:        float64(plr.Position.Z),
-	// 		Yaw:      state.Cam.GetYaw() * 360,
-	// 		Pitch:    state.Cam.GetPitch() * 360,
-	// 		OnGround: plr.OnGround,
-	// 	}
-	// 	if err := pkt.Write(&state.s.ServerBound); err != nil {
-	// 		state.HandleError(err)
-	// 		return
-	// 	}
-	// 	if err := state.s.ServerBound.Flush(); err != nil {
-	// 		state.HandleError(err)
-	// 		return
-	// 	}
-	// 	state.LastMovementUpdateSent = time.Now()
-	// }
-	// if state.acked && time.Since(state.LastMovementUpdateSent) > time.Second/20 {
-	// 	state.LastMovementUpdateSent = time.Now()
-	// 	pkt := mc.PacketPlayerPosition{
-	// 		X:       float64(plr.Position.X),
-	// 		Y:       float64(plr.Position.Y),
-	// 		CameraY: float64(state.Cam.Position.Y),
-	// 		Z:       float64(plr.Position.Z),
-	// 		// Yaw:      state.Cam.GetYaw() * 360,
-	// 		// Pitch:    state.Cam.GetPitch() * 360,
-	// 		OnGround: false,
-	// 	}
-	// 	err := pkt.Write(&s.ServerBound)
-	// 	if err != nil {
-	// 		state.HandleError(err)
-	// 		return
-	// 	}
-	// }
+	if time.Since(state.LastPositionUpdate) > time.Second/20 {
+		state.LastPositionUpdate = time.Now()
+		pkt := mc.PacketPlayerPosition{
+			X:       float64(plr.Position.X),
+			Y:       float64(plr.Position.Y),
+			CameraY: float64(state.Cam.Position.Y),
+			Z:       float64(plr.Position.Z),
+			// Yaw:      state.Cam.GetYaw() * 360,
+			// Pitch:    state.Cam.GetPitch() * 360,
+			OnGround: false,
+		}
+		err := pkt.Write(&s.ServerBound)
+		if err != nil {
+			state.HandleError(err)
+			return
+		}
+	}
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	// Process mouse look
@@ -123,7 +103,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 				state.BuildChunkMesh(chunk)
 			}
 			chunk.mesh.Draw(gfx.DefaultTexture(), gfx.Green, gfx.MatrixTranslate(
-				float32(chunk.data.X)*16, 127, float32(chunk.data.Z)*16,
+				float32(chunk.data.X), 127, float32(chunk.data.Z),
 			))
 		}
 	}

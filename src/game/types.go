@@ -284,6 +284,8 @@ type ScreenInGameState struct {
 	LastPlayerPosition             gfx.Vector3
 	LastPlayerYaw, LastPlayerPitch float32
 
+	LastPositionUpdate time.Time
+
 	// Player spawn position
 	SpawnPosition gfx.Vector3
 	acc           float32
