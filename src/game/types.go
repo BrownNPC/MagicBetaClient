@@ -390,7 +390,7 @@ type State struct {
 
 func (s *State) InputPressed(i InputType) bool  { return s.InputsPrevFrame[i].Up && s.Inputs[i].Down }
 func (s *State) InputReleased(i InputType) bool { return s.InputsPrevFrame[i].Down && s.Inputs[i].Up }
-func (s *State) InputHeld(i InputType) bool     { return s.InputsPrevFrame[i].Down && s.Inputs[i].Down }
+func (s *State) InputHeld(i InputType) bool     { return s.Inputs[i].Down }
 
 // ProcessDpadUIInput updates the selected UI element.
 func (s *State) ProcessDpadUIInput(nInteractables int, selected *int) {

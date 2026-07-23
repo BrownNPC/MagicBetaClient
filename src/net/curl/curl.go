@@ -52,6 +52,9 @@ const CURLOPT_URL = 0
 //so:extern CURLOPT_CONNECT_ONLY
 const CURLOPT_CONNECT_ONLY = 0
 
+//so:extern CURLOPT_CONNECTTIMEOUT
+const CURLOPT_CONNECTTIMEOUT = 0
+
 //so:extern CURLOPT_TCP_NODELAY
 const CURLOPT_TCP_NODELAY = 0
 
@@ -73,6 +76,7 @@ func CreateSocket(hostname string) (*CURL, error) {
 	curl := curl_easy_init()
 	curl_easy_setopt(curl, CURLOPT_URL, c.CString(hostname))
 	curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, c.Long(1))
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1)
 
 	code := curl_easy_perform(curl)
 	if code != 0 {

@@ -27,7 +27,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
-	if s.Inputs[InputClose].Up {
+	if s.InputPressed(InputClose) {
 		state.CurrentScreen = SCREEN_INGAME_PAUSED_SCREEN
 	}
 	// read packets.
@@ -42,7 +42,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		return
 	}
 	plr := state.Things.Get(state.Player)
-	state.Cam.Position = gfx.NewVector3(plr.Position.X, plr.Position.Y+1.6, plr.Position.Z)
+	state.Cam.Update(state.Cam.Position.Subtract(plr.Position).Add(gfx.Vector3{Y: 1.6}), gfx.Vector3{}, 0)
 	//
 	// send ack maybe?
 	// if state.firstChunkdataRecieved == 1 {
@@ -86,12 +86,10 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	// Process mouse look
-	if s.Inputs[InputLook].Down {
+	if s.InputPressed(InputLook) {
 		state.ProcessLook(s.Inputs[InputLook].Direction)
 	}
-	if s.Inputs[InputMove].Down {
-		state.ProcessMovementInput(s.Inputs[InputMove].Direction)
-	}
+	state.ProcessMovementInput()
 
 	// RENDER SKY
 	gfx.BeginMode3D(state.Cam)
@@ -140,10 +138,20 @@ func (state *ScreenInGameState) ProcessLook(delta gfx.Vector2) {
 	state.Cam.Yaw(-delta.X*sensitivity, false)
 	state.Cam.Pitch(-delta.Y*sensitivity, true, false, false)
 }
-func (state *ScreenInGameState) ProcessMovementInput(move gfx.Vector2) {
+func (state *ScreenInGameState) ProcessMovementInput() {
+	var moveNorm gfx.Vector3
+	if state.s.InputHeld(InputMoveForward) {
+		moveNorm.Z = 1
+	} else if state.s.InputHeld(InputMoveBackward) {
+		moveNorm.Z = -1
+	} else if state.s.InputHeld(InputMoveLeft) {
+		moveNorm.X = -1
+	} else if state.s.InputHeld(InputMoveRight) {
+		moveNorm.X = 1
+	}
 	plr := state.Things.Get(state.Player)
-	plr.Position.X += move.X
-	plr.Position.Z += move.Y
+	plr.Position.X += moveNorm.X
+	plr.Position.Z += moveNorm.Y
 }
 func (state *ScreenInGameState) DecodeRecievedPackets(s *State) (bool, error) {
 	// drain packets from buffer

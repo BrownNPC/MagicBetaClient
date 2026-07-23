@@ -208,9 +208,9 @@ func (camera *Camera) ProjectionMatrix(aspect float32) Matrix {
 
 // Update - Update camera movement, movement/rotation values should be provided by user
 // Required values
-// movement.X - Move forward/backward
-// movement.Y - Move right/left
-// movement.Z - Move up/down
+// movement.X - Move right/left
+// movement.Y - Move up/down
+// movement.Z - Move forward/backward
 // rotation.X - yaw
 // rotation.Y - pitch
 // rotation.Z - roll
@@ -228,9 +228,9 @@ func (camera *Camera) Update(movement Vector3, rotation Vector3, zoom float32) {
 	camera.Roll(rotation.Z * (Pi / 180.0))
 
 	// Camera movement
-	camera.MoveForward(movement.X, moveInWorldPlane)
-	camera.MoveRight(movement.Y, moveInWorldPlane)
-	camera.MoveUp(movement.Z)
+	camera.MoveForward(movement.Z, moveInWorldPlane)
+	camera.MoveRight(movement.X, moveInWorldPlane)
+	camera.MoveUp(movement.Y)
 
 	// Zoom target distance
 	camera.MoveToTarget(zoom)

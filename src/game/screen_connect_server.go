@@ -50,10 +50,10 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	bbox = bbox.Anchor(screen, .5, .5)
 	bbox.Y += bbox.H
 	bbox.Y += 4 * gui.Scale
-	clicked := s.Inputs[InputTap].Up
+	clicked := s.InputReleased(InputTap)
 	hovered := bbox.Contains(s.Cursor)
 	if s.UIDpadMode {
-		clicked = s.Inputs[InputReturn].Up
+		clicked = s.InputReleased(InputReturn)
 		hovered = state.selected == 0
 	}
 	if clicked && hovered {
@@ -86,7 +86,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		}
 	}
 	// go back if back is pressed
-	if s.Inputs[InputClose].Down {
+	if s.InputPressed(InputClose) {
 		state.ShouldTransision = true
 		state.TransisionTo = SCREEN_JOIN_SERVER
 		return
