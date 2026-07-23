@@ -91,9 +91,9 @@ func (state *ScreenInGameState) ScreenDisconnected(s *State, screen gfx.Rectangl
 	s.InteractingWithUI = true
 	state.selected = 0
 	s.MouseLock = false
-	clicked := s.Inputs[InputTap].Released
+	clicked := s.Inputs[InputTap].Up
 	if s.UIDpadMode {
-		clicked = s.Inputs[InputReturn].Released
+		clicked = s.Inputs[InputReturn].Up
 	}
 	// Draw dirt background
 	bg := s.Pack.GetTexture(assets.Gui_background)
@@ -142,7 +142,7 @@ func (state *ScreenInGameState) ScreenDisconnected(s *State, screen gfx.Rectangl
 }
 
 func (state *ScreenInGameState) ScreenPaused(s *State, screen gfx.Rectangle) {
-	if s.Inputs[InputClose].Released {
+	if s.Inputs[InputClose].Up {
 		state.CurrentScreen = SCREEN_INGAME
 		return
 	}
@@ -165,9 +165,9 @@ func (state *ScreenInGameState) ScreenPaused(s *State, screen gfx.Rectangle) {
 	buttons := gui.ButtonSize.Scale(gui.Scale).Anchor(screen, .5, .5)
 
 	resumeButton := gfx.Rectangle{W: buttons.W, H: buttons.H, X: buttons.X, Y: buttons.Y}
-	clicked := s.Inputs[InputTap].Released
+	clicked := s.Inputs[InputTap].Up
 	if s.UIDpadMode {
-		clicked = s.Inputs[InputReturn].Released
+		clicked = s.Inputs[InputReturn].Up
 	}
 	buttons.Y += buttons.H + 1
 	{ // resume button

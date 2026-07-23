@@ -43,7 +43,7 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 	}
 
 	// go back if close input
-	if s.Inputs[InputClose].Updated {
+	if s.Inputs[InputClose].Down {
 		state.ShouldTransition = true
 		state.switchToScreen = SCREEN_MENU_SELECT_SERVER
 	}
@@ -83,9 +83,9 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 	// --- Interaction Logic ---
 
 	// Establish a unified click state for this frame
-	clicked := s.Inputs[InputTap].Released
+	clicked := s.Inputs[InputTap].Up
 	if s.UIDpadMode {
-		clicked = s.Inputs[InputReturn].Released
+		clicked = s.Inputs[InputReturn].Up
 	}
 
 	// Determine hover/visual selection states
@@ -169,7 +169,7 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 		if input != 0 && tf.Len < 70 {
 			tf.Add(input)
 		}
-		if s.Inputs[InputBackspace].Updated {
+		if s.Inputs[InputBackspace].Down {
 			tf.Pop()
 		}
 	}

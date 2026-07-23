@@ -55,10 +55,10 @@ func (s *State) Screen_MenuMain(state *ScreenMainMenuState, screen gfx.Rectangle
 			btn.Y += 2 * gui.Scale //padding
 		}
 		hovered := btn.Contains(s.Cursor)
-		clicked := s.Inputs[InputTap].Released
+		clicked := s.Inputs[InputTap].Up
 		if s.UIDpadMode {
 			hovered = state.selected == i
-			clicked = s.Inputs[InputReturn].Released
+			clicked = s.Inputs[InputReturn].Up
 		}
 		// selected :=
 		if hovered && clicked {

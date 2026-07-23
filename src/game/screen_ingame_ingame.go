@@ -2,6 +2,7 @@ package game
 
 import (
 	"mbc/gfx"
+	"mbc/gfx/assets"
 	"mbc/net/mc"
 
 	"solod.dev/so/maps"
@@ -26,7 +27,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
-	if s.Inputs[InputClose].Released {
+	if s.Inputs[InputClose].Up {
 		state.CurrentScreen = SCREEN_INGAME_PAUSED_SCREEN
 	}
 	// read packets.
@@ -85,8 +86,11 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	// Process mouse look
-	if s.Inputs[InputLook].Updated {
+	if s.Inputs[InputLook].Down {
 		state.ProcessLook(s.Inputs[InputLook].Direction)
+	}
+	if s.Inputs[InputMove].Down {
+		state.ProcessMovementInput(s.Inputs[InputMove].Direction)
 	}
 
 	// RENDER SKY
@@ -102,7 +106,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 				chunk.mesh.Reset()
 				state.BuildChunkMesh(chunk)
 			}
-			chunk.mesh.Draw(gfx.DefaultTexture(), gfx.Green, gfx.MatrixTranslate(
+			chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
 				float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
 			))
 		}
@@ -135,6 +139,11 @@ func (state *ScreenInGameState) ProcessLook(delta gfx.Vector2) {
 	const sensitivity = 0.001
 	state.Cam.Yaw(-delta.X*sensitivity, false)
 	state.Cam.Pitch(-delta.Y*sensitivity, true, false, false)
+}
+func (state *ScreenInGameState) ProcessMovementInput(move gfx.Vector2) {
+	plr := state.Things.Get(state.Player)
+	plr.Position.X += move.X
+	plr.Position.Z += move.Y
 }
 func (state *ScreenInGameState) DecodeRecievedPackets(s *State) (bool, error) {
 	// drain packets from buffer

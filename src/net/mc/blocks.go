@@ -1,7 +1,5 @@
 package mc
 
-import "mbc/sdl"
-
 type BlockID = uint8
 
 const (
@@ -107,7 +105,6 @@ const (
 	BLOCK_Trapdoor            BlockID = 96
 )
 
-//so:include math_include.h
 type Direction = uint8
 
 type AtlasUV struct {
@@ -124,14 +121,12 @@ func getUV(id int) AtlasUV {
 	x := float32(id & 15)
 	y := float32(id >> 4)
 
-	var a [4]float32
-
-	a[0] = x * tileSize / atlasSize
-	a[1] = y * tileSize / atlasSize
-	a[2] = (x*tileSize + tileSize) / atlasSize
-	a[3] = (y*tileSize + tileSize) / atlasSize
-
-	return AtlasUV{UV: a}
+	return AtlasUV{UV: [4]float32{
+		x * tileSize / atlasSize,
+		y * tileSize / atlasSize,
+		(x*tileSize + tileSize) / atlasSize,
+		(y*tileSize + tileSize) / atlasSize,
+	}}
 }
 
 const (
@@ -144,13 +139,38 @@ const (
 )
 
 func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) AtlasUV {
-	// Ref: https://github.com/search?q=repo%3Ajacobo-mc%2Fmc_b1.7.3_release+getBlockTextureFromSideAndMetadata&type=code
 	switch b {
+	case BLOCK_Grass:
+		switch side {
+		case DIRECTION_Up:
+			return getUV(0)
+		case DIRECTION_Down:
+			return getUV(2)
+		}
+		return getUV(3) // Grass Side
+	case BLOCK_Dirt:
+		return getUV(2)
+	case BLOCK_Stone:
+		return getUV(1)
+	case BLOCK_Cobblestone:
+		return getUV(16)
+	case BLOCK_Planks:
+		return getUV(4)
+	case BLOCK_Sand:
+		return getUV(18)
+	case BLOCK_Gravel:
+		return getUV(19)
+	case BLOCK_Bedrock:
+		return getUV(17)
+	case BLOCK_Leaves:
+		return getUV(52) // Oak leaves
+	case BLOCK_Glass:
+		return getUV(49)
+	case BLOCK_Sponge:
+		return getUV(48)
 	case BLOCK_Log:
 		if side == DIRECTION_Up || side == DIRECTION_Down {
 			return getUV(21)
-		} else if metadata == 1 {
-			return getUV(116)
 		} else {
 			// wood type
 			switch metadata {
@@ -163,6 +183,5 @@ func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) Atla
 			}
 		}
 	}
-	sdl.Log("mc: could not find atlas uv for %d", b)
-	panic("Atlas mapping not available")
+	return getUV(31) // fallback
 }

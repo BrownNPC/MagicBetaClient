@@ -1007,11 +1007,10 @@ func (m *Mesh) Upload(dynamic bool) {
 		rlDisableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR)
 	}
 	if m.vaoID > 0 {
-		sdl.Log("VAO: [ID %i] Mesh uploaded successfully to VRAM (GPU)", m.vaoID)
+		sdl.Log("VAO: [ID %i] Mesh uploaded successfully to VRAM (GPU) %d triangles", m.vaoID, len(m.vertices)/3)
 	} else {
 		sdl.Log("VBO: Mesh uploaded successfully to VRAM (GPU)")
 	}
-	sdl.Log("Vertices: %d", len(m.vertices))
 	rlDisableVertexArray()
 }
 func (m *Mesh) Destroy() {

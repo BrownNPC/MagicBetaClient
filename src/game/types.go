@@ -82,12 +82,11 @@ const (
 
 type InputType uint32
 type Input struct {
-	Updated  bool
-	Released bool
-	Text     rune // for text input
-	// Direction is delta mouse movment in InputLook
-	// and movement vector in InputMove
-	Direction gfx.Vector2 // input look and move
+	Down bool
+	Up   bool
+	Text rune // for text input
+	// used for input look
+	Direction gfx.Vector2
 }
 
 const (
@@ -105,7 +104,10 @@ const (
 	InputBackspace
 	InputClose
 	InputLook
-	InputMove
+	InputMoveForward
+	InputMoveBackward
+	InputMoveLeft
+	InputMoveRight
 	InputTextInput // Text input
 	TotalInputs
 )
@@ -265,8 +267,8 @@ type Chunk struct {
 	NeedMeshRebuild bool
 
 	coord ChunkCoordinate
-	mesh *gfx.Mesh
-	data *mc.DecompressedChunkData
+	mesh  *gfx.Mesh
+	data  *mc.DecompressedChunkData
 }
 type ScreenInGameState struct {
 	s *State
@@ -349,11 +351,14 @@ type State struct {
 	Scratch mem.Arena
 	Storage *sdl.Storage // Title storage
 
-	Cursor         gfx.Vector2
+	Cursor gfx.Vector2
+
 	ShowCursor     bool
 	CurrentScreeen int
 	// Inputs are parsed from SDL events in main.go
-	Inputs     [TotalInputs]Input
+	Inputs          [TotalInputs]Input
+	InputsPrevFrame [TotalInputs]Input
+
 	SplashText string // splash text shown on main menu
 
 	Mixer *mix.Mixer // global mixer
@@ -378,9 +383,14 @@ type State struct {
 	__bufioReaderBuffer   [net.DefaultBufSize + 1000]byte
 	__arenaForServerbound mem.Arena
 	__arenaForClientbound mem.Arena
-	ServerBound           bufio.Writer
-	ClientBound           net.BufferedReader
+
+	ServerBound bufio.Writer
+	ClientBound net.BufferedReader
 }
+
+func (s *State) InputPressed(i InputType) bool  { return s.InputsPrevFrame[i].Up && s.Inputs[i].Down }
+func (s *State) InputReleased(i InputType) bool { return s.InputsPrevFrame[i].Down && s.Inputs[i].Up }
+func (s *State) InputHeld(i InputType) bool     { return s.InputsPrevFrame[i].Down && s.Inputs[i].Down }
 
 // ProcessDpadUIInput updates the selected UI element.
 func (s *State) ProcessDpadUIInput(nInteractables int, selected *int) {
@@ -390,9 +400,9 @@ func (s *State) ProcessDpadUIInput(nInteractables int, selected *int) {
 
 	delta := 0
 
-	if s.Inputs[InputDown].Updated || s.Inputs[InputRight].Updated {
+	if s.Inputs[InputDown].Down || s.Inputs[InputRight].Down {
 		delta = 1
-	} else if s.Inputs[InputUp].Updated || s.Inputs[InputLeft].Updated {
+	} else if s.Inputs[InputUp].Down || s.Inputs[InputLeft].Down {
 		delta = -1
 	}
 

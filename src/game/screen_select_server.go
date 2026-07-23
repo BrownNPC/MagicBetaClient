@@ -21,7 +21,7 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		gfx.White.Tint(gfx.Black, 75),
 	)
 	// go to main menu if close input
-	if s.Inputs[InputClose].Updated {
+	if s.Inputs[InputClose].Down {
 		s.CurrentScreeen = SCREEN_MENU_MAIN
 	}
 	const NInteractables = 5 + 2 + 1
@@ -53,10 +53,10 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		}
 
 		hovered := btn.Contains(s.Cursor)
-		clicked := s.Inputs[InputTap].Released
+		clicked := s.Inputs[InputTap].Up
 		if s.UIDpadMode {
 			hovered = state.selected == i
-			clicked = s.Inputs[InputReturn].Released
+			clicked = s.Inputs[InputReturn].Up
 		}
 		if idx >= len(s.Config.Servers) {
 			panic("screen_join_server: how is this possible?")
@@ -104,11 +104,11 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 	)
 	{ // previous button click
 		hovered := prevBtn.Contains(s.Cursor)
-		clicked := s.Inputs[InputTap].Released
+		clicked := s.Inputs[InputTap].Up
 		enabled := state.PageIndex != 0
 		if s.UIDpadMode {
 			hovered = state.selected == 5
-			clicked = s.Inputs[InputReturn].Released
+			clicked = s.Inputs[InputReturn].Up
 		}
 
 		if enabled && hovered && clicked {
@@ -119,10 +119,10 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 	}
 	{ // next button click
 		hovered := nextBtn.Contains(s.Cursor)
-		clicked := s.Inputs[InputTap].Released
+		clicked := s.Inputs[InputTap].Up
 		if s.UIDpadMode {
 			hovered = state.selected == 6
-			clicked = s.Inputs[InputReturn].Released
+			clicked = s.Inputs[InputReturn].Up
 		}
 		enabled := state.PageIndex != maxPage
 		if enabled && hovered && clicked {
@@ -137,10 +137,10 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 
 	backButton.Y += nextBtn.H
 	hovered := backButton.Contains(s.Cursor)
-	clicked := s.Inputs[InputTap].Released
+	clicked := s.Inputs[InputTap].Up
 	if s.UIDpadMode {
 		hovered = state.selected == 7
-		clicked = s.Inputs[InputReturn].Released
+		clicked = s.Inputs[InputReturn].Up
 	}
 	if hovered && clicked {
 		s.CurrentScreeen = SCREEN_MENU_MAIN

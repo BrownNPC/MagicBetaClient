@@ -64,7 +64,10 @@ func AppIterate(appState any) sdl.AppResult {
 	state.game.Dt = float32(frameTime.Seconds())
 	state.game.FrameTime = frameTime
 	state.lastTime = now
-	state.game.Inputs = [game.TotalInputs]game.Input{} // clear inputs after they're used.
+	// update input state
+	state.game.InputsPrevFrame = state.game.Inputs
+	// explicitly reset look input
+	state.game.Inputs[game.InputLook] = game.Input{}
 
 	// FPS cap
 	targetFrameTime := time.Second / time.Duration(state.game.TargetFPS)
@@ -96,7 +99,7 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		// store the input
 		state.game.Inputs[typ] = game.Input{
 			Direction: gfx.Vector2{X: m.Xrel, Y: m.Yrel},
-			Updated:   true,
+			Down:      true,
 		}
 
 	case sdl.EVENT_MOUSE_BUTTON_UP, sdl.EVENT_MOUSE_BUTTON_DOWN:
@@ -112,16 +115,16 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			typ = game.InputRightClick
 		}
 		state.game.Inputs[typ] = game.Input{
-			Updated:  m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN,
-			Released: m.Type == sdl.EVENT_MOUSE_BUTTON_UP,
+			Down: m.Type == sdl.EVENT_MOUSE_BUTTON_DOWN,
+			Up:   m.Type == sdl.EVENT_MOUSE_BUTTON_UP,
 		}
 	case sdl.EVENT_TEXT_EDITING:
 	case sdl.EVENT_TEXT_INPUT:
 		t := e.TextInput()
 		typ := game.InputTextInput
 		state.game.Inputs[typ] = game.Input{
-			Text:    t.Rune(),
-			Updated: true,
+			Text: t.Rune(),
+			Down: true,
 		}
 
 	case sdl.EVENT_KEY_DOWN, sdl.EVENT_KEY_UP:
@@ -139,13 +142,27 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 				state.game.UIDpadMode = true
 			}
 			typ = (game.InputRight) + game.InputType(sdl.KeyRIGHT-key.Key)
+		case sdl.KeyW, sdl.KeyA, sdl.KeyS, sdl.KeyD:
+			var typ game.InputType
+			switch key.Key {
+			case sdl.KeyW:
+				typ = game.InputMoveForward
+			case sdl.KeyS:
+				typ = game.InputMoveBackward
+			case sdl.KeyD:
+				typ = game.InputMoveRight
+			case sdl.KeyA:
+				typ = game.InputMoveLeft
+			}
+			state.game.Inputs[typ].Down = key.Type == sdl.EVENT_KEY_DOWN
+			state.game.Inputs[typ].Up = key.Type == sdl.EVENT_KEY_UP
 		case sdl.KeyRETURN:
 			typ = game.InputReturn
 		}
 
 		state.game.Inputs[typ] = game.Input{
-			Updated:  key.Type == sdl.EVENT_KEY_DOWN,
-			Released: key.Type == sdl.EVENT_KEY_UP,
+			Down: key.Type == sdl.EVENT_KEY_DOWN,
+			Up:   key.Type == sdl.EVENT_KEY_UP,
 		}
 	case sdl.EVENT_GAMEPAD_ADDED:
 		added := e.GamepadDevice()
@@ -183,8 +200,8 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		}
 		state.game.UIDpadMode = state.game.InteractingWithUI
 		state.game.Inputs[typ] = game.Input{
-			Updated:  btn.Type == sdl.EVENT_GAMEPAD_BUTTON_DOWN,
-			Released: btn.Type == sdl.EVENT_GAMEPAD_BUTTON_UP,
+			Down: btn.Type == sdl.EVENT_GAMEPAD_BUTTON_DOWN,
+			Up:   btn.Type == sdl.EVENT_GAMEPAD_BUTTON_UP,
 		}
 	}
 
