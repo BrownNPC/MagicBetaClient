@@ -275,9 +275,27 @@ func init() {
 type Chunk struct {
 	NeedMeshRebuild bool
 
-	coord ChunkCoordinate
-	mesh  *gfx.Mesh
-	data  *mc.DecompressedChunkData
+	coord  ChunkCoordinate
+	Layer0 *gfx.Mesh
+	Layer1 *gfx.Mesh
+	data   *mc.DecompressedChunkData
+}
+
+func NewChunk(a mem.Allocator, coord ChunkCoordinate) *Chunk {
+	chunk := mem.Alloc[Chunk](a)
+	chunk.data = mem.Alloc[mc.DecompressedChunkData](a)
+	chunk.Layer0 = gfx.NewMesh(a) // opaque
+	chunk.Layer1 = gfx.NewMesh(a) // semi transparent (leaves, glass panes etc.)
+	chunk.coord = coord
+	return chunk
+}
+func (c *Chunk) ResetMeshes() {
+	if c.Layer0 != nil {
+		c.Layer0.Reset()
+	}
+	if c.Layer1 != nil {
+		c.Layer1.Reset()
+	}
 }
 
 // GetPosition returns chunk position in world coordinates.
@@ -293,8 +311,15 @@ func (chunk *Chunk) GetCenter() gfx.Vector3 {
 		float32(chunk.coord.Z*16+8),
 	)
 }
-func (chunk *Chunk) Render() {
-
+func (chunk *Chunk) DrawMeshes(terrain gfx.Texture) {
+	pos := chunk.GetPosition()
+	matPos := gfx.MatrixTranslate(pos.X, pos.Y, pos.Z)
+	chunk.Layer0.Draw(terrain, gfx.White, matPos)
+	gfx.BeginBlendMode(gfx.BLEND_ALPHA)
+	gfx.DisableBackfaceCulling()
+	chunk.Layer1.Draw(terrain, gfx.White, matPos)
+	gfx.EnableBackfaceCulling()
+	gfx.EndBlendMode()
 }
 
 type ScreenInGameState struct {
@@ -339,8 +364,6 @@ type ScreenInGameState struct {
 
 	Chunks        maps.Map[ChunkCoordinate, *Chunk]
 	ChunkFreeList []*Chunk
-
-	GrassChunk *Chunk
 }
 
 // Max number of sound effects that can be loaded at a time.

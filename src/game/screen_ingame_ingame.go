@@ -20,18 +20,6 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
-	state.GrassChunk = mem.Alloc[Chunk](mem.System)
-	state.GrassChunk.data = mem.Alloc[mc.DecompressedChunkData](mem.System)
-	state.GrassChunk.mesh = mem.Alloc[gfx.Mesh](mem.System)
-	for z := range 16 {
-		for x := range 16 {
-			for y := range 128 {
-				idx := mc.ChunkIndex(x, y, z)
-				state.GrassChunk.data.Blocks[idx] = mc.BLOCK_Grass
-			}
-		}
-	}
-	state.BuildChunkMesh(state.GrassChunk)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.InputPressed(InputClose) {
@@ -73,33 +61,19 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// RENDER SKY
 	gfx.BeginMode3D(state.Cam)
 	state.DrawSky3D(state.Cam)
-	// chunk := state.GrassChunk
-	// chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
-	// 	float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
-	// ))
-	// // draw chunk boundaries
-	// for i := range 2 {
-	// 	y := float32(i) * 128
-	// 	gfx.DrawCube(gfx.NewVector3(0, y, 0), 1, 1, 1, gfx.Green)
-	// 	gfx.DrawCube(gfx.NewVector3(16, y, 0), 1, 1, 1, gfx.Green)
-	// 	gfx.DrawCube(gfx.NewVector3(0, y, 16), 1, 1, 1, gfx.Green)
-	// 	gfx.DrawCube(gfx.NewVector3(16, y, 16), 1, 1, 1, gfx.Green)
-	// }
 	{
 		it := state.Chunks.Iter()
 		for it.Next() {
 			chunk := it.Value()
 			// TODO: in the future check if chunk is in render distance.
-			pos := chunk.GetPosition()
 			center := chunk.GetCenter()
 			if state.Cam.IsSphereInFrustum(center, CHUNK_SPHERE_RADIUS) {
 				if chunk.NeedMeshRebuild {
 					chunk.NeedMeshRebuild = false
-					chunk.mesh.Reset()
+					chunk.ResetMeshes()
 					state.BuildChunkMesh(chunk)
 				}
-				chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain),
-					gfx.White, gfx.MatrixTranslate(pos.X, pos.Y, pos.Z))
+				chunk.DrawMeshes(state.s.Pack.GetTexture(assets.Terrain))
 			} else {
 				println("skipped chunk rendering")
 			}

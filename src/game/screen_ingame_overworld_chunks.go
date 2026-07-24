@@ -52,8 +52,6 @@ func (c *Chunk) emitQuad(
 	}
 }
 func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
-	var mesh *gfx.Mesh = c.mesh
-
 	type Face struct {
 		Direction  mc.Direction
 		Dx, Dy, Dz int // world coordinate to check where air is
@@ -95,10 +93,16 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 				if block == mc.BLOCK_Air {
 					continue
 				}
-
 				metadata := c.data.Metadata[idx]
 				X, Y, Z := float32(x), float32(y), float32(z)
-				const grassColor = 0x62c742// taken from misc/grasscolor.png
+				const grassColor = 0x62c742 // taken from misc/grasscolor.png
+				mesh := c.Layer0
+
+				switch block {
+				case mc.BLOCK_Leaves:
+					mesh = c.Layer1
+				}
+
 				for _, face := range Faces {
 					if state.IsAir(c, x+face.Dx, y+face.Dy, z+face.Dz) {
 						var color = gfx.White
@@ -117,5 +121,6 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 		}
 	}
 
-	mesh.Upload(false)
+	c.Layer0.Upload(false)
+	c.Layer1.Upload(false)
 }

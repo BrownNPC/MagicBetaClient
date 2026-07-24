@@ -1439,11 +1439,11 @@ func rlClearScreenBuffers()
 //so:extern rlDisableDepthTest
 func rlDisableDepthTest()
 
-//so:extern
-func rlDisableBackfaceCulling()
+//so:extern rlDisableBackfaceCulling
+func DisableBackfaceCulling()
 
-//so:extern
-func rlEnableBackfaceCulling()
+//so:extern rlEnableBackfaceCulling
+func EnableBackfaceCulling()
 
 //so:extern rlPopMatrix
 func rlPopMatrix() {}
