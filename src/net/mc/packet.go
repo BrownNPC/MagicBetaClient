@@ -1774,6 +1774,44 @@ func (p *ClientboundSpawnObject) Step(a mem.Allocator, rd *net.BufferedReader) (
 	}
 }
 
+type ClientboundLightningBolt struct {
+	EntityID   int32
+	EntityType uint8
+	X, Y, Z    int32
+
+	stage int
+}
+
+func (p *ClientboundLightningBolt) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
+	for {
+		switch p.stage {
+		case 0:
+			if !rd.ReadInt32(&p.EntityID) {
+				return false, rd.Err()
+			}
+		case 1:
+			if !rd.ReadUint8(&p.EntityType) {
+				return false, rd.Err()
+			}
+		case 2:
+			if !rd.ReadInt32(&p.X) {
+				return false, rd.Err()
+			}
+		case 3:
+			if !rd.ReadInt32(&p.Y) {
+				return false, rd.Err()
+			}
+		case 4:
+			if !rd.ReadInt32(&p.Z) {
+				return false, rd.Err()
+			}
+		case 5:
+			return true, nil
+		}
+		p.stage++
+	}
+}
+
 // Returns a decoder for the given packet id. It is the user's job to free the decoder.
 // Returns nil if packetID is invalid.
 func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
@@ -1850,6 +1888,8 @@ func NewDecoder(a mem.Allocator, packetID PacketID) Decoder {
 		return mem.Alloc[ClientboundSetHealth](a)
 	case PKT_SpawnObject:
 		return mem.Alloc[ClientboundSpawnObject](a)
+	case PKT_LightningBolt:
+		return mem.Alloc[ClientboundLightningBolt](a)
 	}
 	return nil
 }
