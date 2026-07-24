@@ -135,7 +135,15 @@ func (c *Chunk) emitQuad(
 ) {
 	var AOValues = [4]float32{1.0, .5, .25, .1}
 
-	for i := range 4 {
+	// Anisotropy fix: flip the quad diagonal when AO interpolation
+	// would produce artifacts along the default triangulation.
+	flip := AO.AO[0]+AO.AO[2] > AO.AO[1]+AO.AO[3]
+
+	for vi := range 4 {
+		i := vi
+		if flip {
+			i = (vi + 1) % 4
+		}
 		mesh.QuadVertex3f(
 			x+vertices[i].X,
 			y+vertices[i].Y,
