@@ -165,7 +165,7 @@ func (state *ScreenInGameState) UpdateCamera(pos gfx.Vector3) {
 		moveLocal.X -= 1
 	}
 
-	const speed = 0.5
+	var speed = 50  * state.s.Dt
 	camPos := state.Cam.Position
 
 	if state.s.InputHeld(InputJump) {

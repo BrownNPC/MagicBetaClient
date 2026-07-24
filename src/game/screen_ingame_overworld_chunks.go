@@ -102,26 +102,35 @@ func (state *ScreenInGameState) IsTransparent(c *Chunk, x, y, z int) bool {
 		return true
 	}
 
-	switch {
-	case x < 0:
-		left := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X - 1), Z: int32(c.coord.Z)})
-		return left == nil || left.data.IsTransparent(15, y, z)
+	cx := int32(c.coord.X)
+	cz := int32(c.coord.Z)
 
-	case x >= mc.CHUNK_SIZE_XZ:
-		right := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X + 1), Z: int32(c.coord.Z)})
-		return right == nil || right.data.IsTransparent(0, y, z)
-
-	case z < 0:
-		back := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X), Z: int32(c.coord.Z - 1)})
-		return back == nil || back.data.IsTransparent(x, y, 15)
-
-	case z >= mc.CHUNK_SIZE_XZ:
-		front := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X), Z: int32(c.coord.Z + 1)})
-		return front == nil || front.data.IsTransparent(x, y, 0)
-
-	default:
-		return c.data.IsTransparent(x, y, z)
+	if x < 0 {
+		cx--
+		x += mc.CHUNK_SIZE_XZ
+	} else if x >= mc.CHUNK_SIZE_XZ {
+		cx++
+		x -= mc.CHUNK_SIZE_XZ
 	}
+
+	if z < 0 {
+		cz--
+		z += mc.CHUNK_SIZE_XZ
+	} else if z >= mc.CHUNK_SIZE_XZ {
+		cz++
+		z -= mc.CHUNK_SIZE_XZ
+	}
+
+	// If the coordinates point to a different chunk, fetch the neighbor
+	if cx != int32(c.coord.X) || cz != int32(c.coord.Z) {
+		neighbor := state.Chunks.Get(ChunkCoordinate{X: cx, Z: cz})
+		if neighbor == nil {
+			return true
+		}
+		return neighbor.data.IsTransparent(x, y, z)
+	}
+
+	return c.data.IsTransparent(x, y, z)
 }
 
 func (chunk *Chunk) emitQuad(
@@ -157,6 +166,7 @@ func (chunk *Chunk) emitQuad(
 		mesh.QuadEndVertex(true, true, true)
 	}
 }
+
 // NOTE: set NeedsRebuilt properly before calling.
 func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 	type Face struct {
