@@ -312,6 +312,8 @@ type ScreenInGameState struct {
 
 	Chunks        maps.Map[ChunkCoordinate, *Chunk]
 	ChunkFreeList []*Chunk
+
+	GrassChunk *Chunk
 }
 
 // Max number of sound effects that can be loaded at a time.
@@ -383,9 +385,11 @@ type State struct {
 	ClientBound net.BufferedReader
 }
 
-func (s *State) InputPressed(i InputType) bool  { return !s.InputsPrevFrame[i].Down && s.Inputs[i].Down }
-func (s *State) InputReleased(i InputType) bool { return s.InputsPrevFrame[i].Down && !s.Inputs[i].Down }
-func (s *State) InputHeld(i InputType) bool     { return s.Inputs[i].Down }
+func (s *State) InputPressed(i InputType) bool { return !s.InputsPrevFrame[i].Down && s.Inputs[i].Down }
+func (s *State) InputReleased(i InputType) bool {
+	return s.InputsPrevFrame[i].Down && !s.Inputs[i].Down
+}
+func (s *State) InputHeld(i InputType) bool { return s.Inputs[i].Down }
 
 // ProcessDpadUIInput updates the selected UI element.
 func (s *State) ProcessDpadUIInput(nInteractables int, selected *int) {
