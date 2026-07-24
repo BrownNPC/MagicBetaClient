@@ -84,7 +84,6 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		gfx.DrawCube(gfx.NewVector3(16, y, 0), 1, 1, 1, gfx.Green)
 		gfx.DrawCube(gfx.NewVector3(0, y, 16), 1, 1, 1, gfx.Green)
 		gfx.DrawCube(gfx.NewVector3(16, y, 16), 1, 1, 1, gfx.Green)
-		// gfx.DrawCube(gfx.NewVector3(0, y, -16), 1, 1, 1, gfx.Green)
 	}
 	// {
 	// 	it := state.Chunks.Iter()

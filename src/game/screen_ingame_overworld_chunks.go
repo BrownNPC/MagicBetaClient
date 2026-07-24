@@ -88,10 +88,15 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 							vx := X + face.Vertices[i].X
 							vy := Y + face.Vertices[i].Y
 							vz := Z + face.Vertices[i].Z
-
 							mesh.QuadVertex3f(vx, vy, vz)
 							mesh.QuadTexCoord2f(t.Corners[i][0], t.Corners[i][1])
-							mesh.QuadEndVertex(true, true, false)
+							c := gfx.White
+
+							if block == mc.BLOCK_Grass && face.Direction == mc.DIRECTION_Up {
+								c = gfx.NewColor(2, 105, 28, 255)
+							}
+							mesh.QuadColor4ub(c.R, c.G, c.B, c.A)
+							mesh.QuadEndVertex(true, true, true)
 						}
 					}
 				}

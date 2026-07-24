@@ -134,10 +134,10 @@ func getUV(id int, rotation ...int) AtlasUV {
 	vMax := (y*tileSize + tileSize) / atlasSize
 
 	corners := [4][2]float32{
-		{uMin, vMin},
-		{uMax, vMin},
-		{uMax, vMax},
 		{uMin, vMax},
+		{uMax, vMax},
+		{uMax, vMin},
+		{uMin, vMin},
 	}
 	var result AtlasUV
 	rot = min(max(rot, 0), 3)
