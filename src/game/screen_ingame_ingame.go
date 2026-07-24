@@ -73,33 +73,33 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// RENDER SKY
 	gfx.BeginMode3D(state.Cam)
 	state.DrawSky3D(state.Cam)
-	chunk := state.GrassChunk
-	chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
-		float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
-	))
-	// draw chunk boundaries
-	for i := range 2 {
-		y := float32(i) * 128
-		gfx.DrawCube(gfx.NewVector3(0, y, 0), 1, 1, 1, gfx.Green)
-		gfx.DrawCube(gfx.NewVector3(16, y, 0), 1, 1, 1, gfx.Green)
-		gfx.DrawCube(gfx.NewVector3(0, y, 16), 1, 1, 1, gfx.Green)
-		gfx.DrawCube(gfx.NewVector3(16, y, 16), 1, 1, 1, gfx.Green)
-	}
-	// {
-	// 	it := state.Chunks.Iter()
-	// 	for it.Next() {
-	// 		chunk := it.Value()
-	// 		// TODO: in the future check if chunk is in render distance.
-	// 		if chunk.NeedMeshRebuild {
-	// 			chunk.NeedMeshRebuild = false
-	// 			chunk.mesh.Reset()
-	// 			state.BuildChunkMesh(chunk)
-	// 		}
-	// 		chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
-	// 			float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
-	// 		))
-	// 	}
+	// chunk := state.GrassChunk
+	// chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
+	// 	float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
+	// ))
+	// // draw chunk boundaries
+	// for i := range 2 {
+	// 	y := float32(i) * 128
+	// 	gfx.DrawCube(gfx.NewVector3(0, y, 0), 1, 1, 1, gfx.Green)
+	// 	gfx.DrawCube(gfx.NewVector3(16, y, 0), 1, 1, 1, gfx.Green)
+	// 	gfx.DrawCube(gfx.NewVector3(0, y, 16), 1, 1, 1, gfx.Green)
+	// 	gfx.DrawCube(gfx.NewVector3(16, y, 16), 1, 1, 1, gfx.Green)
 	// }
+	{
+		it := state.Chunks.Iter()
+		for it.Next() {
+			chunk := it.Value()
+			// TODO: in the future check if chunk is in render distance.
+			if chunk.NeedMeshRebuild {
+				chunk.NeedMeshRebuild = false
+				chunk.mesh.Reset()
+				state.BuildChunkMesh(chunk)
+			}
+			chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
+				float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
+			))
+		}
+	}
 	{
 		it := state.Things.Iter()
 		for it.Next() {

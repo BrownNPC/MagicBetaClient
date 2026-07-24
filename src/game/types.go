@@ -10,6 +10,7 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/bufio"
+	"solod.dev/so/math"
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
@@ -264,6 +265,8 @@ func (things *ThingPool) Iter() ThingsIter {
 //	X >> 4
 //	Z >> 4
 type ChunkCoordinate struct{ X, Z int32 }
+
+var CHUNK_SPHERE_RADIUS = float32((16 * 16 * 128) * math.Sqrt(3))
 
 type Chunk struct {
 	NeedMeshRebuild bool

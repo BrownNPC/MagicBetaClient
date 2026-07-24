@@ -2,8 +2,8 @@ package gfx
 
 import "solod.dev/so/math"
 
-var CameraCullDistanceNear = 0.05
-var CameraCullDistanceFar = 4000.0
+const CameraCullDistanceNear = 0.05
+const CameraCullDistanceFar = 4000.0
 
 // convert fov in degrees to radians and get vertical and horizontal fov
 func (c *Camera) CalculateFOV(degFOV float32) {
@@ -37,7 +37,19 @@ func (c *Camera) Update(pos Vector3, yaw, pitch float32) {
 		c.Pitch = -pitchLimit
 	}
 	c.LookVector = c.CalculateLookVector()
+	c.Forward = c.LookVector.Normalize()
+	c.Right = c.Forward.CrossProduct(Vector3{Y: 1}).Normalize()
+	c.Up = c.Right.CrossProduct(c.Forward).Normalize()
 
+	half := Vector2{c.FovxRad, c.FovyRad}.Scale(.5)
+	c.factor = Vector2{
+		Y: 1.0 / float32(math.Cos(float64(half.Y))),
+		X: 1.0 / float32(math.Cos(float64(half.X))),
+	}
+	c.tan = Vector2{
+		X: float32(math.Tan(float64(half.X))),
+		Y: float32(math.Tan(float64(half.Y))),
+	}
 
 	c.Position = pos
 	c.Target = pos.Add(c.LookVector)
@@ -65,4 +77,32 @@ func GetCameraMatrix2D(cam Camera2D) Matrix {
 
 	matTransform := MatrixMultiply(MatrixMultiply(matOrigin, MatrixMultiply(matScale, matRotation)), matTranslation)
 	return matTransform
+}
+
+// Checks if a Sphere is inside the camera's view frustum.
+func (c *Camera) IsSphereInFrustum(center Vector3, radius float32) bool {
+	// REF:https://github.com/BrownNPC/Mine/blob/master/components/camera.go
+	sz := center.DotProduct(c.Forward)
+
+	// outside NEAR and FAR planes?
+	if sz < CameraCullDistanceNear-radius || sz > CameraCullDistanceFar+radius {
+		return false
+	}
+
+	// outside TOP and BOTTOM planes?
+	sy := center.DotProduct(c.Up)
+	dist := c.factor.Y*radius + sz*c.tan.Y
+
+	if sy < -dist || sy > dist {
+		return false
+	}
+
+	sx := float64(center.DotProduct(c.Right))
+	// outside the LEFT and RIGHT plane?
+	dist = c.factor.X*radius + sz*c.tan.X
+	if sx < -dist || sx > dist {
+		return false
+	}
+
+	return true
 }

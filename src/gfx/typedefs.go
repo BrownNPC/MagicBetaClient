@@ -1,6 +1,7 @@
 package gfx
 
 import (
+	"mbc/gfx"
 	"mbc/gfx/assets"
 )
 
@@ -166,6 +167,14 @@ type Camera struct {
 	Aspect     float32
 
 	FovyRad, FovxRad float32
+
+	Forward Vector3
+	Right   Vector3
+	Up      Vector3
+
+	// for frustum culling
+	factor Vector2
+	tan    gfx.Vector2
 }
 
 // NewCamera3D - Returns new Camera3D
