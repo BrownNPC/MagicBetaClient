@@ -33,6 +33,24 @@ func (state *ScreenInGameState) IsAir(c *Chunk, x, y, z int) bool {
 	}
 }
 
+func (c *Chunk) emitQuad(
+	mesh *gfx.Mesh,
+	vertices [4]gfx.Vector3,
+	x, y, z float32,
+	uv mc.AtlasUV,
+	color gfx.Color,
+) {
+	for i := range 4 {
+		mesh.QuadVertex3f(
+			x+vertices[i].X,
+			y+vertices[i].Y,
+			z+vertices[i].Z,
+		)
+		mesh.QuadTexCoord2f(uv.Corners[i][0], uv.Corners[i][1])
+		mesh.QuadColor4ub(color.R, color.G, color.B, color.A)
+		mesh.QuadEndVertex(true, true, true)
+	}
+}
 func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 	var mesh *gfx.Mesh = c.mesh
 
@@ -80,28 +98,24 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 
 				metadata := c.data.Metadata[idx]
 				X, Y, Z := float32(x), float32(y), float32(z)
-
+				const grassColor = 0x62c742// taken from misc/grasscolor.png
 				for _, face := range Faces {
 					if state.IsAir(c, x+face.Dx, y+face.Dy, z+face.Dz) {
-						t := mc.GetUVFromBlockSideAndMetadata(block, face.Direction, int(metadata))
-						for i := range 4 { // 4 vertices to make a quad
-							vx := X + face.Vertices[i].X
-							vy := Y + face.Vertices[i].Y
-							vz := Z + face.Vertices[i].Z
-							mesh.QuadVertex3f(vx, vy, vz)
-							mesh.QuadTexCoord2f(t.Corners[i][0], t.Corners[i][1])
-							c := gfx.White
-
-							if block == mc.BLOCK_Grass && face.Direction == mc.DIRECTION_Up {
-								c = gfx.NewColor(2, 105, 28, 255)
-							}
-							mesh.QuadColor4ub(c.R, c.G, c.B, c.A)
-							mesh.QuadEndVertex(true, true, true)
+						var color = gfx.White
+						uv := mc.GetUVFromBlockSideAndMetadata(block, face.Direction, int(metadata))
+						if block == mc.BLOCK_Grass && face.Direction == mc.DIRECTION_Up {
+							color = gfx.NewColorHex(grassColor)
+						}
+						c.emitQuad(mesh, face.Vertices, X, Y, Z, uv, color)
+						if block == mc.BLOCK_Grass && face.Direction != mc.DIRECTION_Up && face.Direction != mc.DIRECTION_Down {
+							c.emitQuad(mesh, face.Vertices, X, Y, Z,
+								mc.GetUV(38), gfx.NewColorHex(grassColor))
 						}
 					}
 				}
 			}
 		}
 	}
+
 	mesh.Upload(false)
 }

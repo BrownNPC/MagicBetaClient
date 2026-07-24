@@ -114,7 +114,7 @@ type AtlasUV struct {
 }
 
 // rot is an integer 0-3
-func getUV(id int, rotation ...int) AtlasUV {
+func GetUV(id int, rotation ...int) AtlasUV {
 	var rot = 0
 	if len(rotation) > 0 {
 		rot = rotation[0]
@@ -161,45 +161,45 @@ func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) Atla
 	case BLOCK_Grass:
 		switch side {
 		case DIRECTION_Up:
-			return getUV(0, rand.IntN(3))
+			return GetUV(0, rand.IntN(3))
 		case DIRECTION_Down:
-			return getUV(2)
+			return GetUV(2)
 		}
-		return getUV(3) // Grass Side
+		return GetUV(3) // Grass Side
 	case BLOCK_Dirt:
-		return getUV(2)
+		return GetUV(2, rand.IntN(3))
 	case BLOCK_Stone:
-		return getUV(1)
+		return GetUV(1)
 	case BLOCK_Cobblestone:
-		return getUV(16)
+		return GetUV(16)
 	case BLOCK_Planks:
-		return getUV(4)
+		return GetUV(4)
 	case BLOCK_Sand:
-		return getUV(18)
+		return GetUV(18)
 	case BLOCK_Gravel:
-		return getUV(19)
+		return GetUV(19)
 	case BLOCK_Bedrock:
-		return getUV(17)
+		return GetUV(17)
 	case BLOCK_Leaves:
-		return getUV(52) // Oak leaves
+		return GetUV(52) // Oak leaves
 	case BLOCK_Glass:
-		return getUV(49)
+		return GetUV(49)
 	case BLOCK_Sponge:
-		return getUV(48)
+		return GetUV(48)
 	case BLOCK_Log:
 		if side == DIRECTION_Up || side == DIRECTION_Down {
-			return getUV(21)
+			return GetUV(21)
 		} else {
 			// wood type
 			switch metadata {
 			case 1:
-				return getUV(116)
+				return GetUV(116)
 			case 2:
-				return getUV(117)
+				return GetUV(117)
 			default:
-				return getUV(20)
+				return GetUV(20)
 			}
 		}
 	}
-	return getUV(31) // fallback
+	return GetUV(31) // fallback
 }

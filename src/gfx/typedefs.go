@@ -91,7 +91,15 @@ func (c Color) Tint(target Color, percent int) Color {
 	}
 }
 
-// NewColor - Returns new Color
+// NewColorHex returns a Color from a hex value.
+func NewColorHex(hex uint32) Color {
+	return Color{
+		R: uint8((hex >> 16) & 0xFF),
+		G: uint8((hex >> 8) & 0xFF),
+		B: uint8(hex & 0xFF),
+		A: 255,
+	}
+}
 func NewColor(r, g, b, a uint8) Color { return Color{r, g, b, a} }
 func NewColor4f(v Vector4) Color {
 	return NewColor(
