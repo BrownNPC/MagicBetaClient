@@ -1,7 +1,6 @@
 package gfx
 
 import (
-	"mbc/gfx"
 	"mbc/gfx/assets"
 )
 
@@ -174,7 +173,7 @@ type Camera struct {
 
 	// for frustum culling
 	factor Vector2
-	tan    gfx.Vector2
+	tan    Vector2
 }
 
 // NewCamera3D - Returns new Camera3D

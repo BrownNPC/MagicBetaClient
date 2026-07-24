@@ -116,9 +116,9 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	pkt := data.(*mc.ClientboundChunk)
 	// block space to chunk space
-	chunkX := pkt.X >> 4
-	chunkZ := pkt.Z >> 4
-	coord := ChunkCoordinate{chunkX, chunkZ}
+	X := pkt.X >> 4
+	Z := pkt.Z >> 4
+	coord := ChunkCoordinate{X, Z}
 	var chunk *Chunk = state.Chunks.Get(coord)
 	if chunk == nil {
 		sdl.Log("WARNING: we have chunk data but chunk is unloaded.")
@@ -127,6 +127,18 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	err := chunk.data.ProcessChunkData(pkt)
 	if err == nil {
 		chunk.NeedMeshRebuild = true
+	}
+	// set neighbours to rebuild aswell.
+	neighbours := [4]ChunkCoordinate{
+		{X, Z + 1},
+		{X, Z - 1},
+		{X + 1, Z},
+		{X - 1, Z},
+	}
+	for _, coord := range neighbours {
+		if chunk := state.Chunks.Get(coord); chunk != nil {
+			chunk.NeedMeshRebuild = true
+		}
 	}
 	return err
 }

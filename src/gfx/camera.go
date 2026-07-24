@@ -82,6 +82,7 @@ func GetCameraMatrix2D(cam Camera2D) Matrix {
 // Checks if a Sphere is inside the camera's view frustum.
 func (c *Camera) IsSphereInFrustum(center Vector3, radius float32) bool {
 	// REF:https://github.com/BrownNPC/Mine/blob/master/components/camera.go
+	center = center.Subtract(c.Position)
 	sz := center.DotProduct(c.Forward)
 
 	// outside NEAR and FAR planes?
@@ -91,13 +92,13 @@ func (c *Camera) IsSphereInFrustum(center Vector3, radius float32) bool {
 
 	// outside TOP and BOTTOM planes?
 	sy := center.DotProduct(c.Up)
-	dist := c.factor.Y*radius + sz*c.tan.Y
+	dist := (c.factor.Y*radius + sz*c.tan.Y)
 
 	if sy < -dist || sy > dist {
 		return false
 	}
 
-	sx := float64(center.DotProduct(c.Right))
+	sx := float32(center.DotProduct(c.Right))
 	// outside the LEFT and RIGHT plane?
 	dist = c.factor.X*radius + sz*c.tan.X
 	if sx < -dist || sx > dist {

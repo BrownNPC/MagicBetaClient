@@ -266,7 +266,11 @@ func (things *ThingPool) Iter() ThingsIter {
 //	Z >> 4
 type ChunkCoordinate struct{ X, Z int32 }
 
-var CHUNK_SPHERE_RADIUS = float32((16 * 16 * 128) * math.Sqrt(3))
+var CHUNK_SPHERE_RADIUS float32
+
+func init() {
+	CHUNK_SPHERE_RADIUS = float32(math.Sqrt(8*8 + 64*64 + 8*8))
+}
 
 type Chunk struct {
 	NeedMeshRebuild bool
@@ -275,6 +279,24 @@ type Chunk struct {
 	mesh  *gfx.Mesh
 	data  *mc.DecompressedChunkData
 }
+
+// GetPosition returns chunk position in world coordinates.
+func (chunk *Chunk) GetPosition() gfx.Vector3 {
+	return gfx.NewVector3(float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16))
+}
+
+// GetCenter returns chunk center in world coordinates.
+func (chunk *Chunk) GetCenter() gfx.Vector3 {
+	return gfx.NewVector3(
+		float32(chunk.coord.X*16+8),
+		64,
+		float32(chunk.coord.Z*16+8),
+	)
+}
+func (chunk *Chunk) Render() {
+
+}
+
 type ScreenInGameState struct {
 	s *State
 	// STATE BOOK KEEPING

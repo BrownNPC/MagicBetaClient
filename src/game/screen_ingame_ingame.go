@@ -90,14 +90,19 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		for it.Next() {
 			chunk := it.Value()
 			// TODO: in the future check if chunk is in render distance.
-			if chunk.NeedMeshRebuild {
-				chunk.NeedMeshRebuild = false
-				chunk.mesh.Reset()
-				state.BuildChunkMesh(chunk)
+			pos := chunk.GetPosition()
+			center := chunk.GetCenter()
+			if state.Cam.IsSphereInFrustum(center, CHUNK_SPHERE_RADIUS) {
+				if chunk.NeedMeshRebuild {
+					chunk.NeedMeshRebuild = false
+					chunk.mesh.Reset()
+					state.BuildChunkMesh(chunk)
+				}
+				chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain),
+					gfx.White, gfx.MatrixTranslate(pos.X, pos.Y, pos.Z))
+			} else {
+				println("skipped chunk rendering")
 			}
-			chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
-				float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
-			))
 		}
 	}
 	{
