@@ -206,9 +206,6 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 				}
 				metadata := c.data.Metadata[idx]
 				section := y >> 4
-				// if !c.NeedsRebuild[section] {
-				// 	continue
-				// }
 				X, Y, Z := float32(x), float32(y-section*16), float32(z)
 				const grassColor = 0x62c742 // taken from misc/grasscolor.png
 				const oakLeafColor = 0x63aa44

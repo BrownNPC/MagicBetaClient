@@ -82,17 +82,13 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 			center := chunk.GetSectionCenter(i)
 			sectionInFrustum[i] = state.Cam.IsSphereInFrustum(center, CHUNK_SECTION_SPHERE_RADIUS)
 		}
-		var dirty bool
-		for section, needsRebuild := range chunk.NeedsRebuild {
-			if needsRebuild && sectionInFrustum[section] {
-				chunk.Layer0[section].Reset()
-				chunk.Layer1[section].Reset()
-				dirty = true
+		for _, needed := range chunk.NeedsRebuild {
+			if needed {
+				chunk.ResetMeshes()
+				state.BuildChunkMesh(chunk)
+				chunk.NeedsRebuild = [8]bool{}
+				break
 			}
-		}
-		if dirty {
-			state.BuildChunkMesh(chunk)
-			chunk.NeedsRebuild = [8]bool{}
 		}
 		for section, inFrustum := range sectionInFrustum {
 			if !inFrustum {
