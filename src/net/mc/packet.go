@@ -1379,8 +1379,8 @@ type DecompressedChunkData struct {
 	SkyLight   [CHUNK_SIZE]uint8
 }
 
-// IsAir checks if block above is Air or some other transparent block.
-func (c *DecompressedChunkData) IsAir(x, y, z int) bool {
+// IsTransparent checks if block above is Air or some other transparent block.
+func (c *DecompressedChunkData) IsTransparent(x, y, z int) bool {
 	if y < 0 || y >= CHUNK_SIZE_Y {
 		return true
 	}

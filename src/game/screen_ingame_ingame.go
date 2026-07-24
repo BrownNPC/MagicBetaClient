@@ -60,7 +60,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	}
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
-	var sortedChunks = make([]*Chunk, 0, 1000)
+	var sortedChunks = make([]*Chunk, 0, 1000*8)
 	it := state.Chunks.Iter()
 	for it.Next() {
 		chunk := it.Value()
@@ -77,14 +77,28 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	for _, chunk := range sortedChunks {
 
 		// TODO: in the future check if chunk is in render distance.
-		center := chunk.GetCenter()
-		if state.Cam.IsSphereInFrustum(center, CHUNK_SPHERE_RADIUS) {
-			if chunk.NeedMeshRebuild {
-				chunk.NeedMeshRebuild = false
-				chunk.ResetMeshes()
-				state.BuildChunkMesh(chunk)
+		var sectionInFrustum [8]bool
+		for i := range 8 {
+			center := chunk.GetSectionCenter(i)
+			sectionInFrustum[i] = state.Cam.IsSphereInFrustum(center, CHUNK_SECTION_SPHERE_RADIUS)
+		}
+		var dirty bool
+		for section, needsRebuild := range chunk.NeedsRebuild {
+			if needsRebuild && sectionInFrustum[section] {
+				chunk.Layer0[section].Reset()
+				chunk.Layer1[section].Reset()
+				dirty = true
 			}
-			chunk.DrawMeshes(state.s.Pack.GetTexture(assets.Terrain), state.CutoutShader)
+		}
+		if dirty {
+			state.BuildChunkMesh(chunk)
+			chunk.NeedsRebuild = [8]bool{}
+		}
+		for section, inFrustum := range sectionInFrustum {
+			if !inFrustum {
+				continue
+			}
+			chunk.DrawSectionMesh(section, state.s.Pack.GetTexture(assets.Terrain), state.CutoutShader)
 		}
 	}
 	{

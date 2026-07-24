@@ -266,41 +266,74 @@ func (things *ThingPool) Iter() ThingsIter {
 //	Z >> 4
 type ChunkCoordinate struct{ X, Z int32 }
 
-var CHUNK_SPHERE_RADIUS float32
+var CHUNK_SECTION_SPHERE_RADIUS float32
 
 func init() {
-	CHUNK_SPHERE_RADIUS = float32(math.Sqrt(8*8 + 64*64 + 8*8))
+	const sectionSize = 16.0
+	const halfSize = sectionSize / 2
+
+	CHUNK_SECTION_SPHERE_RADIUS = float32(math.Sqrt(
+		halfSize*halfSize +
+			halfSize*halfSize +
+			halfSize*halfSize))
 }
 
 type Chunk struct {
-	NeedMeshRebuild bool
+	// sections to rebuild
+	NeedsRebuild [8]bool
 
-	coord  ChunkCoordinate
-	Layer0 *gfx.Mesh
-	Layer1 *gfx.Mesh
+	coord ChunkCoordinate
+	// break chunk down into 16x16x16 "render chunks" as done in 1.8.9
+	Layer0 [8]*gfx.Mesh
+	Layer1 [8]*gfx.Mesh
 	data   *mc.DecompressedChunkData
 }
 
 func NewChunk(a mem.Allocator, coord ChunkCoordinate) *Chunk {
 	chunk := mem.Alloc[Chunk](a)
 	chunk.data = mem.Alloc[mc.DecompressedChunkData](a)
-	chunk.Layer0 = gfx.NewMesh(a) // opaque
-	chunk.Layer1 = gfx.NewMesh(a) // semi transparent (leaves, glass panes etc.)
+	for i := range 8 {
+		chunk.Layer0[i] = gfx.NewMesh(a) // opaque
+		chunk.Layer1[i] = gfx.NewMesh(a) // semi transparent (leaves, glass panes etc.)
+
+	}
 	chunk.coord = coord
 	return chunk
 }
-func (c *Chunk) ResetMeshes() {
-	if c.Layer0 != nil {
-		c.Layer0.Reset()
+func (chunk *Chunk) ResetMeshes() {
+	for i := range 8 {
+		chunk.Layer0[i].Reset()
+		chunk.Layer1[i].Reset()
 	}
-	if c.Layer1 != nil {
-		c.Layer1.Reset()
+}
+
+func (chunk *Chunk) UploadMeshes() {
+	for i := range 8 {
+		chunk.Layer0[i].Upload(false)
+		chunk.Layer1[i].Upload(false)
+
 	}
 }
 
 // GetPosition returns chunk position in world coordinates.
 func (chunk *Chunk) GetPosition() gfx.Vector3 {
 	return gfx.NewVector3(float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16))
+}
+
+// GetSectionPosition returns the chunk section position in world coordinates.
+func (chunk *Chunk) GetSectionPosition(section int) gfx.Vector3 {
+	return gfx.NewVector3(
+		float32(chunk.coord.X*16),
+		float32(section*16),
+		float32(chunk.coord.Z*16),
+	)
+}
+func (chunk *Chunk) GetSectionCenter(section int) gfx.Vector3 {
+	return gfx.NewVector3(
+		float32(chunk.coord.X*16+8),
+		float32(section*16+8),
+		float32(chunk.coord.Z*16+8),
+	)
 }
 
 // GetCenter returns chunk center in world coordinates.
@@ -311,11 +344,22 @@ func (chunk *Chunk) GetCenter() gfx.Vector3 {
 		float32(chunk.coord.Z*16+8),
 	)
 }
-func (chunk *Chunk) DrawMeshes(terrain gfx.Texture, cutoutShader gfx.Shader) {
-	pos := chunk.GetPosition()
-	matPos := gfx.MatrixTranslate(pos.X, pos.Y, pos.Z)
-	chunk.Layer0.Draw(terrain, gfx.White, matPos)
-	chunk.Layer1.DrawWithShader(terrain, gfx.White, matPos, cutoutShader)
+func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture, cutoutShader gfx.Shader) {
+	basePos := chunk.GetSectionPosition(section)
+
+	mat := gfx.MatrixTranslate(
+		basePos.X,
+		basePos.Y,
+		basePos.Z,
+	)
+
+	if mesh := chunk.Layer0[section]; mesh != nil {
+		mesh.Draw(terrain, gfx.White, mat)
+	}
+
+	if mesh := chunk.Layer1[section]; mesh != nil {
+		mesh.DrawWithShader(terrain, gfx.White, mat, cutoutShader)
+	}
 }
 
 type ScreenInGameState struct {

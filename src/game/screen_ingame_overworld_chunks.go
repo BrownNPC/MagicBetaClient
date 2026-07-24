@@ -18,48 +18,48 @@ func (state *ScreenInGameState) FaceAO(chunk *Chunk, x, y, z int, dir mc.Directi
 		} else {
 			y -= 1
 		}
-		top = !state.IsAir(chunk, x+0, y, z-1)
-		bottom = !state.IsAir(chunk, x+0, y, z+1)
-		left = !state.IsAir(chunk, x-1, y, z+0)
-		right = !state.IsAir(chunk, x+1, y, z+0)
+		top = !state.IsTransparent(chunk, x+0, y, z-1)
+		bottom = !state.IsTransparent(chunk, x+0, y, z+1)
+		left = !state.IsTransparent(chunk, x-1, y, z+0)
+		right = !state.IsTransparent(chunk, x+1, y, z+0)
 
-		topLeft = !state.IsAir(chunk, x-1, y, z-1)
-		topRight = !state.IsAir(chunk, x+1, y, z-1)
+		topLeft = !state.IsTransparent(chunk, x-1, y, z-1)
+		topRight = !state.IsTransparent(chunk, x+1, y, z-1)
 
-		bottomLeft = !state.IsAir(chunk, x-1, y, z+1)
-		bottomRight = !state.IsAir(chunk, x+1, y, z+1)
+		bottomLeft = !state.IsTransparent(chunk, x-1, y, z+1)
+		bottomRight = !state.IsTransparent(chunk, x+1, y, z+1)
 	case mc.DIRECTION_West, mc.DIRECTION_East:
 		if dir == mc.DIRECTION_West {
 			x -= 1
 		} else {
 			x += 1
 		}
-		top = !state.IsAir(chunk, x+0, y+1, z)
-		bottom = !state.IsAir(chunk, x+0, y-1, z)
-		left = !state.IsAir(chunk, x, y, z+1)
-		right = !state.IsAir(chunk, x, y, z-1)
+		top = !state.IsTransparent(chunk, x+0, y+1, z)
+		bottom = !state.IsTransparent(chunk, x+0, y-1, z)
+		left = !state.IsTransparent(chunk, x, y, z+1)
+		right = !state.IsTransparent(chunk, x, y, z-1)
 
-		topLeft = !state.IsAir(chunk, x, y+1, z+1)
-		topRight = !state.IsAir(chunk, x, y+1, z-1)
+		topLeft = !state.IsTransparent(chunk, x, y+1, z+1)
+		topRight = !state.IsTransparent(chunk, x, y+1, z-1)
 
-		bottomLeft = !state.IsAir(chunk, x, y-1, z+1)
-		bottomRight = !state.IsAir(chunk, x, y-1, z-1)
+		bottomLeft = !state.IsTransparent(chunk, x, y-1, z+1)
+		bottomRight = !state.IsTransparent(chunk, x, y-1, z-1)
 	case mc.DIRECTION_South, mc.DIRECTION_North:
 		if dir == mc.DIRECTION_South {
 			z += 1
 		} else {
 			z -= 1
 		}
-		top = !state.IsAir(chunk, x+0, y+1, z)
-		bottom = !state.IsAir(chunk, x+0, y-1, z)
-		left = !state.IsAir(chunk, x-1, y, z)
-		right = !state.IsAir(chunk, x+1, y, z)
+		top = !state.IsTransparent(chunk, x+0, y+1, z)
+		bottom = !state.IsTransparent(chunk, x+0, y-1, z)
+		left = !state.IsTransparent(chunk, x-1, y, z)
+		right = !state.IsTransparent(chunk, x+1, y, z)
 
-		topLeft = !state.IsAir(chunk, x-1, y+1, z)
-		topRight = !state.IsAir(chunk, x+1, y+1, z)
+		topLeft = !state.IsTransparent(chunk, x-1, y+1, z)
+		topRight = !state.IsTransparent(chunk, x+1, y+1, z)
 
-		bottomLeft = !state.IsAir(chunk, x-1, y-1, z)
-		bottomRight = !state.IsAir(chunk, x+1, y-1, z)
+		bottomLeft = !state.IsTransparent(chunk, x-1, y-1, z)
+		bottomRight = !state.IsTransparent(chunk, x+1, y-1, z)
 	}
 	tl := calcAO(left, top, topLeft)
 	tr := calcAO(top, right, topRight)
@@ -97,7 +97,7 @@ func btoi(b bool) int {
 }
 
 // Helper that also checks neighbour chunks if needed.
-func (state *ScreenInGameState) IsAir(c *Chunk, x, y, z int) bool {
+func (state *ScreenInGameState) IsTransparent(c *Chunk, x, y, z int) bool {
 	if y < 0 || y >= mc.CHUNK_SIZE_Y {
 		return true
 	}
@@ -105,26 +105,26 @@ func (state *ScreenInGameState) IsAir(c *Chunk, x, y, z int) bool {
 	switch {
 	case x < 0:
 		left := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X - 1), Z: int32(c.coord.Z)})
-		return left == nil || left.data.IsAir(15, y, z)
+		return left == nil || left.data.IsTransparent(15, y, z)
 
 	case x >= mc.CHUNK_SIZE_XZ:
 		right := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X + 1), Z: int32(c.coord.Z)})
-		return right == nil || right.data.IsAir(0, y, z)
+		return right == nil || right.data.IsTransparent(0, y, z)
 
 	case z < 0:
 		back := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X), Z: int32(c.coord.Z - 1)})
-		return back == nil || back.data.IsAir(x, y, 15)
+		return back == nil || back.data.IsTransparent(x, y, 15)
 
 	case z >= mc.CHUNK_SIZE_XZ:
 		front := state.Chunks.Get(ChunkCoordinate{X: int32(c.coord.X), Z: int32(c.coord.Z + 1)})
-		return front == nil || front.data.IsAir(x, y, 0)
+		return front == nil || front.data.IsTransparent(x, y, 0)
 
 	default:
-		return c.data.IsAir(x, y, z)
+		return c.data.IsTransparent(x, y, z)
 	}
 }
 
-func (c *Chunk) emitQuad(
+func (chunk *Chunk) emitQuad(
 	mesh *gfx.Mesh,
 	vertices [4]gfx.Vector3,
 	x, y, z float32,
@@ -157,6 +157,7 @@ func (c *Chunk) emitQuad(
 		mesh.QuadEndVertex(true, true, true)
 	}
 }
+// NOTE: set NeedsRebuilt properly before calling.
 func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 	type Face struct {
 		Direction  mc.Direction
@@ -204,18 +205,24 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 					continue
 				}
 				metadata := c.data.Metadata[idx]
-				X, Y, Z := float32(x), float32(y), float32(z)
+				section := y >> 4
+				// if !c.NeedsRebuild[section] {
+				// 	continue
+				// }
+				X, Y, Z := float32(x), float32(y-section*16), float32(z)
 				const grassColor = 0x62c742 // taken from misc/grasscolor.png
 				const oakLeafColor = 0x63aa44
-				mesh := c.Layer0
-
-				switch block {
-				case mc.BLOCK_Leaves:
-					mesh = c.Layer1
+				// select the correct sub-mesh based on block coordinats
+				var mesh *gfx.Mesh
+				if c.data.IsTransparent(x, y, z) {
+					mesh = c.Layer1[section]
+				} else {
+					mesh = c.Layer0[section]
 				}
+
 				for _, face := range Faces {
 					// shade := faceShading[face.Direction]
-					if state.IsAir(c, x+face.Dx, y+face.Dy, z+face.Dz) {
+					if state.IsTransparent(c, x+face.Dx, y+face.Dy, z+face.Dz) {
 						var color = gfx.White
 						AO := state.FaceAO(c, x, y, z, face.Direction)
 						uv := mc.GetUVFromBlockSideAndMetadata(block, face.Direction, int(metadata))
@@ -236,6 +243,5 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 		}
 	}
 
-	c.Layer0.Upload(false)
-	c.Layer1.Upload(false)
+	c.UploadMeshes()
 }
