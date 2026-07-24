@@ -1379,11 +1379,19 @@ type DecompressedChunkData struct {
 	SkyLight   [CHUNK_SIZE]uint8
 }
 
+// IsAir checks if block above is Air or some other transparent block.
 func (c *DecompressedChunkData) IsAir(x, y, z int) bool {
 	if y < 0 || y >= CHUNK_SIZE_Y {
 		return true
 	}
-	return c.Blocks[ChunkIndex(x, y, z)] == BLOCK_Air
+	block := c.Blocks[ChunkIndex(x, y, z)]
+	switch block {
+	case BLOCK_Air:
+		return true
+	case BLOCK_Leaves:
+		return true
+	}
+	return false
 }
 
 // Local chunk coordinate to index.

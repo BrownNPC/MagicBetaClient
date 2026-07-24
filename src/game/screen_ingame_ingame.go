@@ -7,6 +7,7 @@ import (
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
+	"solod.dev/so/slices"
 	"solod.dev/so/time"
 )
 
@@ -19,6 +20,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
+	state.CutoutShader = gfx.LoadCutoutShader()
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
@@ -58,25 +60,31 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	}
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
-	// RENDER SKY
+	var sortedChunks = make([]*Chunk, 0, 1000)
+	it := state.Chunks.Iter()
+	for it.Next() {
+		chunk := it.Value()
+		if chunk != nil {
+			sortedChunks = append(sortedChunks, chunk)
+		}
+	}
+	// sort chunks far to near
+	slices.SortFunc(sortedChunks, ScreenInGameState_SortChunksFarToNear)
+
 	gfx.BeginMode3D(state.Cam)
+	// RENDER SKY
 	state.DrawSky3D(state.Cam)
-	{
-		it := state.Chunks.Iter()
-		for it.Next() {
-			chunk := it.Value()
-			// TODO: in the future check if chunk is in render distance.
-			center := chunk.GetCenter()
-			if state.Cam.IsSphereInFrustum(center, CHUNK_SPHERE_RADIUS) {
-				if chunk.NeedMeshRebuild {
-					chunk.NeedMeshRebuild = false
-					chunk.ResetMeshes()
-					state.BuildChunkMesh(chunk)
-				}
-				chunk.DrawMeshes(state.s.Pack.GetTexture(assets.Terrain))
-			} else {
-				println("skipped chunk rendering")
+	for _, chunk := range sortedChunks {
+
+		// TODO: in the future check if chunk is in render distance.
+		center := chunk.GetCenter()
+		if state.Cam.IsSphereInFrustum(center, CHUNK_SPHERE_RADIUS) {
+			if chunk.NeedMeshRebuild {
+				chunk.NeedMeshRebuild = false
+				chunk.ResetMeshes()
+				state.BuildChunkMesh(chunk)
 			}
+			chunk.DrawMeshes(state.s.Pack.GetTexture(assets.Terrain), state.CutoutShader)
 		}
 	}
 	{
@@ -93,13 +101,33 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 			}
 		}
 	}
-
 	gfx.EndMode3D()
 }
 func (state *ScreenInGameState) HandleError(err error) {
 	state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN
 	state.Error = err
 	state.s.Conn.Close()
+}
+func ScreenInGameState_SortChunksFarToNear(a, b any) int {
+	c1 := a.(*Chunk)
+	c2 := b.(*Chunk)
+
+	camPos := GlobalState.ScreenInGameState.Cam.Position
+
+	d1 := c1.GetCenter().Subtract(camPos)
+	d2 := c2.GetCenter().Subtract(camPos)
+
+	dist1 := d1.DotProduct(d1)
+	dist2 := d2.DotProduct(d2)
+
+	switch {
+	case dist1 > dist2:
+		return -1 // c1 is farther, so comes first
+	case dist1 < dist2:
+		return 1 // c2 is farther, so c1 comes after
+	default:
+		return 0
+	}
 }
 
 // delta is mouse delta movement.

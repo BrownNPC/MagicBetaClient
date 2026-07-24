@@ -311,15 +311,11 @@ func (chunk *Chunk) GetCenter() gfx.Vector3 {
 		float32(chunk.coord.Z*16+8),
 	)
 }
-func (chunk *Chunk) DrawMeshes(terrain gfx.Texture) {
+func (chunk *Chunk) DrawMeshes(terrain gfx.Texture, cutoutShader gfx.Shader) {
 	pos := chunk.GetPosition()
 	matPos := gfx.MatrixTranslate(pos.X, pos.Y, pos.Z)
 	chunk.Layer0.Draw(terrain, gfx.White, matPos)
-	gfx.BeginBlendMode(gfx.BLEND_ALPHA)
-	gfx.DisableBackfaceCulling()
-	chunk.Layer1.Draw(terrain, gfx.White, matPos)
-	gfx.EnableBackfaceCulling()
-	gfx.EndBlendMode()
+	chunk.Layer1.DrawWithShader(terrain, gfx.White, matPos, cutoutShader)
 }
 
 type ScreenInGameState struct {
@@ -346,8 +342,9 @@ type ScreenInGameState struct {
 	LastTimeUpdate time.Time
 
 	// RENDERING DATA
-	Stars   *gfx.Mesh // Initialized
-	SunMesh *gfx.Mesh // Also used for moon
+	Stars        *gfx.Mesh // Initialized
+	SunMesh      *gfx.Mesh // Also used for moon
+	CutoutShader gfx.Shader
 
 	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte

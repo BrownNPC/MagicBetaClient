@@ -1076,7 +1076,17 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 		rlDisableStatePointer(GL_COLOR_ARRAY)
 		return
 	}
-	rlEnableShader(rlGetShaderIdDefault())
+	m.drawInternal(albedo, tint, transform, rlGetShaderIdDefault(), rlgsldf())
+}
+
+func (m *Mesh) DrawWithShader(albedo Texture, tint Color, transform Matrix, sh Shader) {
+	m.drawInternal(albedo, tint, transform, sh.ID, &sh.Locs[0])
+}
+
+func getLoc(locs *c.Int, id int) int { return int(*c.PtrAt(locs, id)) }
+
+func (m *Mesh) drawInternal(albedo Texture, tint Color, transform Matrix, shaderID int, locs *c.Int) {
+	rlEnableShader(shaderID)
 	matModel := MatrixIdentity()
 	matView := rlGetMatrixModelview().Matrix()
 	matModelView := MatrixIdentity()
@@ -1090,15 +1100,15 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 			float32(tint.B) / 255,
 			float32(tint.A) / 255,
 		}
-		rlSetUniform(getShaderLocDefault(RL_SHADER_LOC_COLOR_DIFFUSE), &values[0], RL_SHADER_UNIFORM_VEC4, 1)
+		rlSetUniform(getLoc(locs, RL_SHADER_LOC_COLOR_DIFFUSE), &values[0], RL_SHADER_UNIFORM_VEC4, 1)
 	}
 
 	// Upload view and projection matrices (if locations available)
-	if getShaderLocDefault(RL_SHADER_LOC_MATRIX_VIEW) != -1 {
-		rlSetUniformMatrix(RL_SHADER_LOC_MATRIX_VIEW, matView.toRlMatrix())
+	if getLoc(locs, RL_SHADER_LOC_MATRIX_VIEW) != -1 {
+		rlSetUniformMatrix(getLoc(locs, RL_SHADER_LOC_MATRIX_VIEW), matView.toRlMatrix())
 	}
-	if getShaderLocDefault(RL_SHADER_LOC_MATRIX_PROJECTION) != -1 {
-		rlSetUniformMatrix(RL_SHADER_LOC_MATRIX_PROJECTION, matProjection.toRlMatrix())
+	if getLoc(locs, RL_SHADER_LOC_MATRIX_PROJECTION) != -1 {
+		rlSetUniformMatrix(getLoc(locs, RL_SHADER_LOC_MATRIX_PROJECTION), matProjection.toRlMatrix())
 	}
 
 	// Accumulate several model transformations:
@@ -1106,8 +1116,8 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 	//    rlGetMatrixTransform(): rlgl internal transform matrix due to push/pop matrix stack
 	matModel = MatrixMultiply(transform, rlGetMatrixTransform().Matrix())
 
-	if getShaderLocDefault(RL_SHADER_LOC_MATRIX_MODEL) != -1 {
-		rlSetUniformMatrix(RL_SHADER_LOC_MATRIX_MODEL, matModel.toRlMatrix())
+	if getLoc(locs, RL_SHADER_LOC_MATRIX_MODEL) != -1 {
+		rlSetUniformMatrix(getLoc(locs, RL_SHADER_LOC_MATRIX_MODEL), matModel.toRlMatrix())
 	}
 
 	// Get model-view matrix
@@ -1115,14 +1125,14 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 	// MVP matrix
 	matModelViewProjection := MatrixIdentity()
 	matModelViewProjection = MatrixMultiply(matModelView, matProjection)
-	rlSetUniformMatrix(getShaderLocDefault(RL_SHADER_LOC_MATRIX_MVP), matModelViewProjection.toRlMatrix())
+	rlSetUniformMatrix(getLoc(locs, RL_SHADER_LOC_MATRIX_MVP), matModelViewProjection.toRlMatrix())
 
 	// setup albedo/diffuse texture
 	rlActiveTextureSlot(0)
 	rlEnableTexture(albedo.ID)
 
 	slot := int32(0)
-	rlSetUniform(getShaderLocDefault(RL_SHADER_LOC_MAP_ALBEDO), &slot, RL_SHADER_UNIFORM_INT, 1)
+	rlSetUniform(getLoc(locs, RL_SHADER_LOC_MAP_ALBEDO), &slot, RL_SHADER_UNIFORM_INT, 1)
 
 	if m.vaoID > 0 {
 		rlEnableVertexArray(m.vaoID)
@@ -1509,6 +1519,12 @@ func rlDisableStatePointer(int)
 //so:extern
 func rlGetShaderIdDefault() int
 
+//so:extern
+func rlLoadShaderProgram(vsCode *c.Char, fsCode *c.Char) int
+
+//so:extern
+func rlGetLocationUniform(programID int, name string) int
+
 //so:extern Matrix
 type rlMatrix struct{}
 
@@ -1609,6 +1625,45 @@ func EndBlendMode()           { rlSetBlendMode(BLEND_ALPHA) }
 func rlgsldf() *c.Int
 
 func getShaderLocDefault(id int) int { return int(*c.PtrAt(rlgsldf(), id)) }
+
+type Shader struct {
+	ID   int
+	Locs [32]c.Int
+}
+
+func LoadCutoutShader() Shader {
+	fragSrc := "#version 330\n" +
+		"in vec2 fragTexCoord;\n" +
+		"in vec4 fragColor;\n" +
+		"out vec4 finalColor;\n" +
+		"uniform sampler2D texture0;\n" +
+		"uniform vec4 colDiffuse;\n" +
+		"void main() {\n" +
+		"    vec4 texelColor = texture(texture0, fragTexCoord);\n" +
+		"    if (texelColor.a < 0.5) discard;\n" +
+		"    finalColor = texelColor*colDiffuse*fragColor;\n" +
+		"}\n"
+
+	var sh Shader
+	sh.ID = rlLoadShaderProgram(nil, c.CString(fragSrc))
+
+	type locEntry struct {
+		name  string
+		index int
+	}
+	entries := [...]locEntry{
+		{"colDiffuse", RL_SHADER_LOC_COLOR_DIFFUSE},
+		{"matView", RL_SHADER_LOC_MATRIX_VIEW},
+		{"matProjection", RL_SHADER_LOC_MATRIX_PROJECTION},
+		{"matModel", RL_SHADER_LOC_MATRIX_MODEL},
+		{"mvp", RL_SHADER_LOC_MATRIX_MVP},
+		{"texture0", RL_SHADER_LOC_MAP_ALBEDO},
+	}
+	for _, e := range entries {
+		sh.Locs[e.index] = c.Int(rlGetLocationUniform(sh.ID, e.name))
+	}
+	return sh
+}
 
 //so:extern
 func rlSetUniformMatrix(locIndex int, mat rlMatrix)

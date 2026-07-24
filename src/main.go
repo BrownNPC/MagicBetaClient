@@ -20,7 +20,6 @@ type AppState struct {
 }
 
 var state AppState
-
 func AppInit(appState *any, argc c.Int, argv **c.Char) sdl.AppResult {
 	if !sdl.Init(sdl.INIT_VIDEO | sdl.INIT_GAMEPAD) {
 		sdl.Log("SDL init failed %s", sdl.GetError().Error())

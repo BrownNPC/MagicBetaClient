@@ -96,6 +96,7 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 				metadata := c.data.Metadata[idx]
 				X, Y, Z := float32(x), float32(y), float32(z)
 				const grassColor = 0x62c742 // taken from misc/grasscolor.png
+				const oakLeafColor = 0x63aa44
 				mesh := c.Layer0
 
 				switch block {
@@ -109,6 +110,9 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 						uv := mc.GetUVFromBlockSideAndMetadata(block, face.Direction, int(metadata))
 						if block == mc.BLOCK_Grass && face.Direction == mc.DIRECTION_Up {
 							color = gfx.NewColorHex(grassColor)
+						}
+						if block == mc.BLOCK_Leaves {
+							color = gfx.NewColorHex(oakLeafColor)
 						}
 						c.emitQuad(mesh, face.Vertices, X, Y, Z, uv, color)
 						if block == mc.BLOCK_Grass && face.Direction != mc.DIRECTION_Up && face.Direction != mc.DIRECTION_Down {

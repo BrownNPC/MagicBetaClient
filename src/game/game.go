@@ -12,7 +12,10 @@ import (
 	"solod.dev/so/mem"
 )
 
+var GlobalState *State
+
 func (s *State) Init() {
+	GlobalState = s
 	// init scratch arena
 	s.Scratch = mem.NewArena(s.___scratchBuf[:])
 	s.TargetFPS = 60

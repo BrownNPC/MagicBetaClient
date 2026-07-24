@@ -200,6 +200,8 @@ func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) Atla
 				return GetUV(20)
 			}
 		}
+	case BLOCK_StillWater:
+		return GetUV(14)
 	}
-	return GetUV(31) // fallback
+	return GetUV(24) 
 }
