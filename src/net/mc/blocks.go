@@ -1,5 +1,7 @@
 package mc
 
+import "solod.dev/so/math/rand"
+
 type BlockID = uint8
 
 const (
@@ -108,11 +110,16 @@ const (
 type Direction = uint8
 
 type AtlasUV struct {
-	UV [4]float32
+	Corners [4][2]float32 // UV for each quad corner
 }
 
-// algorithm that minecraft uses.
-func getUV(id int) AtlasUV {
+// rot is an integer 0-3
+func getUV(id int, rotation ...int) AtlasUV {
+	var rot = 0
+	if len(rotation) > 0 {
+		rot = rotation[0]
+	}
+
 	const (
 		atlasSize = 256.0
 		tileSize  = 16.0
@@ -121,12 +128,23 @@ func getUV(id int) AtlasUV {
 	x := float32(id & 15)
 	y := float32(id >> 4)
 
-	return AtlasUV{UV: [4]float32{
-		x * tileSize / atlasSize,
-		y * tileSize / atlasSize,
-		(x*tileSize + tileSize) / atlasSize,
-		(y*tileSize + tileSize) / atlasSize,
-	}}
+	uMin := x * tileSize / atlasSize
+	vMin := y * tileSize / atlasSize
+	uMax := (x*tileSize + tileSize) / atlasSize
+	vMax := (y*tileSize + tileSize) / atlasSize
+
+	corners := [4][2]float32{
+		{uMin, vMin},
+		{uMax, vMin},
+		{uMax, vMax},
+		{uMin, vMax},
+	}
+	var result AtlasUV
+	rot = min(max(rot, 0), 3)
+	for i := range 4 {
+		result.Corners[i] = corners[(i+rot)%4]
+	}
+	return result
 }
 
 const (
@@ -143,7 +161,7 @@ func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) Atla
 	case BLOCK_Grass:
 		switch side {
 		case DIRECTION_Up:
-			return getUV(0)
+			return getUV(0, rand.IntN(3))
 		case DIRECTION_Down:
 			return getUV(2)
 		}

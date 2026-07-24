@@ -149,6 +149,10 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			case sdl.KeyA:
 				typ = game.InputMoveLeft
 			}
+		case sdl.KeySPACE:
+			typ = game.InputJump
+		case sdl.KeyLSHIFT:
+			typ = game.InputSneak
 		case sdl.KeyRETURN:
 			typ = game.InputReturn
 		}

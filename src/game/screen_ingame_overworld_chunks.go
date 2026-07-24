@@ -35,148 +35,65 @@ func (state *ScreenInGameState) IsAir(c *Chunk, x, y, z int) bool {
 
 func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 	var mesh *gfx.Mesh = c.mesh
-	for x := range mc.CHUNK_SIZE_XZ {
-		for z := range mc.CHUNK_SIZE_XZ {
-			for y := range mc.CHUNK_SIZE_Y {
+
+	type Face struct {
+		Direction  mc.Direction
+		Dx, Dy, Dz int // world coordinate to check where air is
+
+		Vertices [4]gfx.Vector3
+	}
+	var Faces = []Face{
+		{ // Top (+Y)
+			Direction: mc.DIRECTION_Up, Dx: 0, Dy: 1, Dz: 0,
+			Vertices: [4]gfx.Vector3{{0, 1, 1}, {1, 1, 1}, {1, 1, 0}, {0, 1, 0}},
+		},
+		{ // Bottom (-Y)
+			Direction: mc.DIRECTION_Down, Dx: 0, Dy: -1, Dz: 0,
+			Vertices: [4]gfx.Vector3{{0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1}},
+		},
+		{ // North (-Z)
+			Direction: mc.DIRECTION_North, Dx: 0, Dy: 0, Dz: -1,
+			Vertices: [4]gfx.Vector3{{1, 0, 0}, {0, 0, 0}, {0, 1, 0}, {1, 1, 0}},
+		},
+		{ // South (+Z)
+			Direction: mc.DIRECTION_South, Dx: 0, Dy: 0, Dz: 1,
+			Vertices: [4]gfx.Vector3{{0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}},
+		},
+		{ // West (-X)
+			Direction: mc.DIRECTION_West, Dx: -1, Dy: 0, Dz: 0,
+			Vertices: [4]gfx.Vector3{{0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0}},
+		},
+		{ // East (+X)
+			Direction: mc.DIRECTION_East, Dx: 1, Dy: 0, Dz: 0,
+			Vertices: [4]gfx.Vector3{{1, 0, 1}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1}},
+		},
+	}
+
+	for x := range 16 {
+		for z := range 16 {
+			for y := range 128 {
 				idx := mc.ChunkIndex(x, y, z)
 				block := c.data.Blocks[idx]
 				if block == mc.BLOCK_Air {
 					continue
 				}
-				
+
 				metadata := c.data.Metadata[idx]
 				X, Y, Z := float32(x), float32(y), float32(z)
 
-				// Top face (+Y, Up)
-				if state.IsAir(c, x, y+1, z) {
-					t := mc.GetUVFromBlockSideAndMetadata(block, mc.DIRECTION_Up, int(metadata)).UV
-					u0, v0, u1, v1 := t[0], t[1], t[2], t[3] // [u_min, v_min, u_max, v_max]
+				for _, face := range Faces {
+					if state.IsAir(c, x+face.Dx, y+face.Dy, z+face.Dz) {
+						t := mc.GetUVFromBlockSideAndMetadata(block, face.Direction, int(metadata))
+						for i := range 4 { // 4 vertices to make a quad
+							vx := X + face.Vertices[i].X
+							vy := Y + face.Vertices[i].Y
+							vz := Z + face.Vertices[i].Z
 
-					mesh.QuadVertex3f(X, Y+1, Z+1)
-					mesh.QuadTexCoord2f(u0, v1)
-					mesh.QuadEndVertex(true, true, false)
-
-					mesh.QuadVertex3f(X+1, Y+1, Z+1)
-					mesh.QuadTexCoord2f(u1, v1)
-					mesh.QuadEndVertex(true, true, false)
-
-					mesh.QuadVertex3f(X+1, Y+1, Z)
-					mesh.QuadTexCoord2f(u1, v0)
-					mesh.QuadEndVertex(true, true, false)
-
-					mesh.QuadVertex3f(X, Y+1, Z)
-					mesh.QuadTexCoord2f(u0, v0)
-					mesh.QuadEndVertex(true, true, false)
-				}
-
-				// Bottom face (-Y, Down)
-				if state.IsAir(c, x, y-1, z) {
-					t := mc.GetUVFromBlockSideAndMetadata(block, mc.DIRECTION_Down, int(metadata)).UV
-					u0, v0, u1, v1 := t[0], t[1], t[2], t[3]
-
-					mesh.QuadVertex3f(X, Y, Z)
-					mesh.QuadTexCoord2f(u0, v1)
-					mesh.QuadEndVertex(true, true, false)
-
-					mesh.QuadVertex3f(X+1, Y, Z)
-					mesh.QuadTexCoord2f(u1, v1)
-					mesh.QuadEndVertex(true, true, false)
-
-					mesh.QuadVertex3f(X+1, Y, Z+1)
-					mesh.QuadTexCoord2f(u1, v0)
-					mesh.QuadEndVertex(true, true, false)
-
-					mesh.QuadVertex3f(X, Y, Z+1)
-					mesh.QuadTexCoord2f(u0, v0)
-					mesh.QuadEndVertex(true, true, false)
-				}
-
-				// Right face (+X, East)
-				if state.IsAir(c, x+1, y, z) {
-					t := mc.GetUVFromBlockSideAndMetadata(block, mc.DIRECTION_East, int(metadata)).UV
-					u0, v0, u1, v1 := t[0], t[1], t[2], t[3]
-
-					mesh.QuadVertex3f(X+1, Y, Z+1)
-					mesh.QuadTexCoord2f(u0, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X+1, Y, Z)
-					mesh.QuadTexCoord2f(u1, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X+1, Y+1, Z)
-					mesh.QuadTexCoord2f(u1, v0)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X+1, Y+1, Z+1)
-					mesh.QuadTexCoord2f(u0, v0)
-					mesh.QuadEndVertex(true, false, false)
-				}
-
-				// Left face (-X, West)
-				if state.IsAir(c, x-1, y, z) {
-					t := mc.GetUVFromBlockSideAndMetadata(block, mc.DIRECTION_West, int(metadata)).UV
-					u0, v0, u1, v1 := t[0], t[1], t[2], t[3]
-
-					mesh.QuadVertex3f(X, Y, Z)
-					mesh.QuadTexCoord2f(u0, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X, Y, Z+1)
-					mesh.QuadTexCoord2f(u1, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X, Y+1, Z+1)
-					mesh.QuadTexCoord2f(u1, v0)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X, Y+1, Z)
-					mesh.QuadTexCoord2f(u0, v0)
-					mesh.QuadEndVertex(true, false, false)
-				}
-
-				// Front face (+Z, South)
-				if state.IsAir(c, x, y, z+1) {
-					t := mc.GetUVFromBlockSideAndMetadata(block, mc.DIRECTION_South, int(metadata)).UV
-					u0, v0, u1, v1 := t[0], t[1], t[2], t[3]
-
-					mesh.QuadVertex3f(X, Y, Z+1)
-					mesh.QuadTexCoord2f(u0, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X+1, Y, Z+1)
-					mesh.QuadTexCoord2f(u1, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X+1, Y+1, Z+1)
-					mesh.QuadTexCoord2f(u1, v0)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X, Y+1, Z+1)
-					mesh.QuadTexCoord2f(u0, v0)
-					mesh.QuadEndVertex(true, false, false)
-				}
-
-				// Back face (-Z, North)
-				if state.IsAir(c, x, y, z-1) {
-					t := mc.GetUVFromBlockSideAndMetadata(block, mc.DIRECTION_North, int(metadata)).UV
-					u0, v0, u1, v1 := t[0], t[1], t[2], t[3]
-
-					mesh.QuadVertex3f(X+1, Y, Z)
-					mesh.QuadTexCoord2f(u0, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X, Y, Z)
-					mesh.QuadTexCoord2f(u1, v1)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X, Y+1, Z)
-					mesh.QuadTexCoord2f(u1, v0)
-					mesh.QuadEndVertex(true, false, false)
-
-					mesh.QuadVertex3f(X+1, Y+1, Z)
-					mesh.QuadTexCoord2f(u0, v0)
-					mesh.QuadEndVertex(true, false, false)
+							mesh.QuadVertex3f(vx, vy, vz)
+							mesh.QuadTexCoord2f(t.Corners[i][0], t.Corners[i][1])
+							mesh.QuadEndVertex(true, true, false)
+						}
+					}
 				}
 			}
 		}

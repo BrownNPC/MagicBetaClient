@@ -108,6 +108,8 @@ const (
 	InputMoveBackward
 	InputMoveLeft
 	InputMoveRight
+	InputJump
+	InputSneak
 	InputTextInput // Text input
 	TotalInputs
 )

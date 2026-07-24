@@ -6,7 +6,6 @@ import (
 	"mbc/net/mc"
 
 	"solod.dev/so/maps"
-	"solod.dev/so/math"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
@@ -78,6 +77,15 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	chunk.mesh.Draw(state.s.Pack.GetTexture(assets.Terrain), gfx.White, gfx.MatrixTranslate(
 		float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16),
 	))
+	// draw chunk boundaries
+	for i := range 2 {
+		y := float32(i) * 128
+		gfx.DrawCube(gfx.NewVector3(0, y, 0), 1, 1, 1, gfx.Green)
+		gfx.DrawCube(gfx.NewVector3(16, y, 0), 1, 1, 1, gfx.Green)
+		gfx.DrawCube(gfx.NewVector3(0, y, 16), 1, 1, 1, gfx.Green)
+		gfx.DrawCube(gfx.NewVector3(16, y, 16), 1, 1, 1, gfx.Green)
+		// gfx.DrawCube(gfx.NewVector3(0, y, -16), 1, 1, 1, gfx.Green)
+	}
 	// {
 	// 	it := state.Chunks.Iter()
 	// 	for it.Next() {
@@ -135,15 +143,21 @@ func (state *ScreenInGameState) UpdateCamera(pos gfx.Vector3) {
 		moveLocal.Z -= 1
 	}
 	if state.s.InputHeld(InputMoveLeft) {
-		moveLocal.X -= 1
-	}
-	if state.s.InputHeld(InputMoveRight) {
 		moveLocal.X += 1
 	}
+	if state.s.InputHeld(InputMoveRight) {
+		moveLocal.X -= 1
+	}
 
-
-	camPos := state.Cam.Position
 	const speed = 0.5
+	camPos := state.Cam.Position
+
+	if state.s.InputHeld(InputJump) {
+		camPos.Y += speed
+	} else if state.s.InputHeld(InputSneak) {
+		camPos.Y -= speed
+	}
+
 	if moveLocal.X != 0 || moveLocal.Z != 0 {
 		sinYaw, cosYaw := gfx.Sincos(yaw)
 
