@@ -11,12 +11,7 @@ import (
 )
 
 func (state *ScreenInGameState) Init(s *State) {
-	state.Cam = gfx.Camera{
-		Position: gfx.Vector3{Y: 2},
-		Target:   gfx.Vector3{Y: 2, Z: -1},
-		Up:       gfx.Vector3{Y: 1},
-		Fovy:     90,
-	}
+	state.Cam = gfx.NewCamera3D(gfx.Vector3{}, gfx.Vector3{Z: -1}, 90)
 	state.s = s
 	state.CurrentScreen = SCREEN_INGAME
 	state.PacketDecodeArena = mem.NewArena(state.__PacketDecodeArenaMemory[:])
@@ -42,30 +37,8 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		return
 	}
 	plr := state.Things.Get(state.Player)
-	state.Cam.Update(state.Cam.Position.Subtract(plr.Position).Add(gfx.Vector3{Y: 1.6}), gfx.Vector3{}, 0)
-	//
-	// send ack maybe?
-	// if state.firstChunkdataRecieved == 1 {
-	// 	plr.OnGround = true
-	// 	ack := mc.PacketPlayerMovment{OnGround: true}
-	// 	ack.Write(&s.ServerBound)
-	// }
-	// if state.acked && state.firstChunkdataRecieved == 0 && time.Since(state.LastMovementUpdateSent) > time.Second/5 {
-	// 	state.LastMovementUpdateSent = time.Now()
-	// 	pkt := mc.PacketPlayerPosition{
-	// 		X:       float64(plr.Position.X),
-	// 		Y:       float64(plr.Position.Y),
-	// 		CameraY: float64(plr.Position.Y + 1.62),
-	// 		Z:       float64(plr.Position.Z),
-	// 		// Yaw:      state.Cam.GetYaw() * 360,
-	// 		// Pitch:    state.Cam.GetPitch() * 360,
-	// 		OnGround: plr.OnGround,
-	// 	}
-	// 	if err := pkt.Write(&state.s.ServerBound); err != nil {
-	// 		state.HandleError(err)
-	// 		return
-	// 	}
-	// }
+	// state.UpdatePlayerMovement(plr)
+	state.UpdateCamera(plr.Position)
 	if time.Since(state.LastPositionUpdate) > time.Second/20 {
 		state.LastPositionUpdate = time.Now()
 		pkt := mc.PacketPlayerPosition{
@@ -85,12 +58,6 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	}
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
-	// Process mouse look
-	if s.InputPressed(InputLook) {
-		state.ProcessLook(s.Inputs[InputLook].Direction)
-	}
-	state.ProcessMovementInput()
-
 	// RENDER SKY
 	gfx.BeginMode3D(state.Cam)
 	state.DrawSky3D(state.Cam)
@@ -133,12 +100,17 @@ func (state *ScreenInGameState) HandleError(err error) {
 }
 
 // delta is mouse delta movement.
-func (state *ScreenInGameState) ProcessLook(delta gfx.Vector2) {
+func (state *ScreenInGameState) UpdateCamera(pos gfx.Vector3) {
+	yaw := state.Cam.Yaw
+	pitch := state.Cam.Pitch
+	delta := state.s.Inputs[InputLook].Direction
 	const sensitivity = 0.001
-	state.Cam.Yaw(-delta.X*sensitivity, false)
-	state.Cam.Pitch(-delta.Y*sensitivity, true, false, false)
+	yaw += -delta.X * sensitivity
+	pitch += -delta.Y * sensitivity
+	pos.Y += 1.6
+	state.Cam.Update(pos, yaw, pitch)
 }
-func (state *ScreenInGameState) ProcessMovementInput() {
+func (state *ScreenInGameState) UpdatePlayerMovement(plr *Thing) {
 	var moveNorm gfx.Vector3
 	if state.s.InputHeld(InputMoveForward) {
 		moveNorm.Z = 1
@@ -149,9 +121,8 @@ func (state *ScreenInGameState) ProcessMovementInput() {
 	} else if state.s.InputHeld(InputMoveRight) {
 		moveNorm.X = 1
 	}
-	plr := state.Things.Get(state.Player)
 	plr.Position.X += moveNorm.X
-	plr.Position.Z += moveNorm.Y
+	plr.Position.Z += moveNorm.Z
 }
 func (state *ScreenInGameState) DecodeRecievedPackets(s *State) (bool, error) {
 	// drain packets from buffer

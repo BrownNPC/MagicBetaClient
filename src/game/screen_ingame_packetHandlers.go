@@ -51,13 +51,10 @@ func (state *ScreenInGameState) OnSpawnPlayer(data mc.Decoder) {
 	plr.Username = strings.Clone(mem.System, string(pkt.Username))
 }
 func (state *ScreenInGameState) OnPlayerRotation(pitch, yaw float32) {
-	state.LastPlayerPitch = pitch
-	state.LastPlayerYaw = yaw
-	state.Cam.Update(gfx.Vector3{}, gfx.NewVector3(yaw, pitch, 0), 0)
+	state.Cam.Update(state.Cam.Position, gfx.Deg2rad*yaw, gfx.Deg2rad*pitch)
 }
 
 func (state *ScreenInGameState) OnPlayerPosition(X, Y, Z float32, camY float32) {
-	state.LastPlayerPosition = state.Things.Get(state.Player).Position
 	plr := state.Things.Get(state.Player)
 	plr.Position = gfx.NewVector3(X, Y, Z)
 }

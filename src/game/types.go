@@ -282,11 +282,6 @@ type ScreenInGameState struct {
 	Cam    gfx.Camera
 	Player ThingRef
 
-	// Last player position and rotation sent by server.
-	// Used to calculate relative coordinates for entity position packets.
-	LastPlayerPosition             gfx.Vector3
-	LastPlayerYaw, LastPlayerPitch float32
-
 	LastPositionUpdate time.Time
 
 	// Player spawn position
@@ -388,8 +383,8 @@ type State struct {
 	ClientBound net.BufferedReader
 }
 
-func (s *State) InputPressed(i InputType) bool  { return s.InputsPrevFrame[i].Up && s.Inputs[i].Down }
-func (s *State) InputReleased(i InputType) bool { return s.InputsPrevFrame[i].Down && s.Inputs[i].Up }
+func (s *State) InputPressed(i InputType) bool  { return !s.InputsPrevFrame[i].Down && s.Inputs[i].Down }
+func (s *State) InputReleased(i InputType) bool { return s.InputsPrevFrame[i].Down && !s.Inputs[i].Down }
 func (s *State) InputHeld(i InputType) bool     { return s.Inputs[i].Down }
 
 // ProcessDpadUIInput updates the selected UI element.
@@ -400,9 +395,9 @@ func (s *State) ProcessDpadUIInput(nInteractables int, selected *int) {
 
 	delta := 0
 
-	if s.Inputs[InputDown].Down || s.Inputs[InputRight].Down {
+	if s.InputPressed(InputDown) || s.InputPressed(InputRight) {
 		delta = 1
-	} else if s.Inputs[InputUp].Down || s.Inputs[InputLeft].Down {
+	} else if s.InputPressed(InputUp) || s.InputPressed(InputLeft) {
 		delta = -1
 	}
 

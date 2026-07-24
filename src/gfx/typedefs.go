@@ -145,21 +145,33 @@ func (r *RectangleInt32) ToFloat32() Rectangle {
 	return rect
 }
 
-// Camera type, defines a camera position/orientation in 3d space
 type Camera struct {
 	// Camera position
 	Position Vector3
 	// Camera target it looks-at
 	Target Vector3
-	// Camera up vector (rotation over its axis)
-	Up Vector3
-	// Camera field-of-view aperture in Y (degrees) in perspective, used as near plane height in world units in orthographic
-	Fovy float32
+	FOV    float32
+
+	LookVector Vector3
+
+	Pitch, Yaw float32
+	Aspect     float32
+
+	FovyRad, FovxRad float32
 }
 
 // NewCamera3D - Returns new Camera3D
-func NewCamera3D(pos, target, up Vector3, fovy float32) Camera {
-	return Camera{pos, target, up, fovy}
+func NewCamera3D(pos, target Vector3, fov float32) Camera {
+
+	cam := Camera{
+		Position: pos,
+		Target:   pos.Add(Vector3{Z: -1}),
+		FOV:      fov,
+		Pitch:    1,
+		Yaw:      1,
+	}
+	cam.CalculateFOV(fov)
+	return cam
 }
 
 // Camera2D type, defines position/orientation in 2d space

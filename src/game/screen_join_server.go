@@ -43,7 +43,7 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 	}
 
 	// go back if close input
-	if s.InputPressed(InputDown) {
+	if s.InputPressed(InputClose) {
 		state.ShouldTransition = true
 		state.switchToScreen = SCREEN_MENU_SELECT_SERVER
 	}

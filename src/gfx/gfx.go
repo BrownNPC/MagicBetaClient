@@ -147,7 +147,7 @@ func BeginMode3D(cam Camera) {
 
 	aspect := float32(w) / float32(h)
 
-	top := CameraCullDistanceNear * math.Tan(float64(cam.Fovy*0.5*Deg2rad))
+	top := CameraCullDistanceNear * math.Tan(float64(cam.FovyRad*.5))
 	right := top * float64(aspect)
 
 	// perspective projection
@@ -156,7 +156,7 @@ func BeginMode3D(cam Camera) {
 	rlMatrixMode(rlMODELVIEW)
 	rlLoadIdentity()
 
-	matView := MatrixLookAt(cam.Position, cam.Target, cam.Up)
+	matView := MatrixLookAt(cam.Position, cam.Target, Vector3{Y: 1})
 	// modelview * projection
 	mv := matView.ToFloat()
 	rlMultMatrixf(&mv.V[0])
@@ -1284,7 +1284,7 @@ func DrawBillboardRec(camera Camera, texture Texture, source Rectangle, position
 // Draw a billboard with additional parameters
 func DrawBillboardPro(camera Camera, texture Texture, source Rectangle, position, up Vector3, size, origin Vector2, rotation float32, tint Color) {
 	// Compute the up vector and the right vector
-	matView := MatrixLookAt(camera.Position, camera.Target, camera.Up)
+	matView := MatrixLookAt(camera.Position, camera.Target, Vector3{Y: 1})
 	right := Vector3{matView.M0, matView.M4, matView.M8}
 	right = Vector3Scale(right, size.X)
 	up = Vector3Scale(up, size.Y)
