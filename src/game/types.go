@@ -280,7 +280,8 @@ func init() {
 
 type Chunk struct {
 	// sections to rebuild
-	NeedsRebuild [8]bool
+	NeedsRebuild    [8]bool
+	VisibleSections [8]bool
 
 	coord ChunkCoordinate
 	// break chunk down into 16x16x16 "render chunks" as done in 1.8.9
@@ -300,68 +301,11 @@ func NewChunk(a mem.Allocator, coord ChunkCoordinate) *Chunk {
 	chunk.coord = coord
 	return chunk
 }
-func (chunk *Chunk) ResetMeshes() {
-	for i := range 8 {
-		chunk.Layer0[i].Reset()
-		chunk.Layer1[i].Reset()
-	}
+
+type Ray struct {
+	Origin    gfx.Vector3
+	Direction gfx.Vector3
 }
-
-func (chunk *Chunk) UploadMeshes() {
-	for i := range 8 {
-		chunk.Layer0[i].Upload(false)
-		chunk.Layer1[i].Upload(false)
-
-	}
-}
-
-// GetPosition returns chunk position in world coordinates.
-func (chunk *Chunk) GetPosition() gfx.Vector3 {
-	return gfx.NewVector3(float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16))
-}
-
-// GetSectionPosition returns the chunk section position in world coordinates.
-func (chunk *Chunk) GetSectionPosition(section int) gfx.Vector3 {
-	return gfx.NewVector3(
-		float32(chunk.coord.X*16),
-		float32(section*16),
-		float32(chunk.coord.Z*16),
-	)
-}
-func (chunk *Chunk) GetSectionCenter(section int) gfx.Vector3 {
-	return gfx.NewVector3(
-		float32(chunk.coord.X*16+8),
-		float32(section*16+8),
-		float32(chunk.coord.Z*16+8),
-	)
-}
-
-// GetCenter returns chunk center in world coordinates.
-func (chunk *Chunk) GetCenter() gfx.Vector3 {
-	return gfx.NewVector3(
-		float32(chunk.coord.X*16+8),
-		64,
-		float32(chunk.coord.Z*16+8),
-	)
-}
-func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture) {
-	basePos := chunk.GetSectionPosition(section)
-
-	mat := gfx.MatrixTranslate(
-		basePos.X,
-		basePos.Y,
-		basePos.Z,
-	)
-
-	if mesh := chunk.Layer0[section]; mesh != nil {
-		mesh.Draw(terrain, gfx.White, mat)
-	}
-
-	if mesh := chunk.Layer1[section]; mesh != nil {
-		mesh.Draw(terrain, gfx.White, mat)
-	}
-}
-
 type ScreenInGameState struct {
 	s *State
 	// STATE BOOK KEEPING
@@ -398,12 +342,13 @@ type ScreenInGameState struct {
 	Decoder     mc.Decoder
 	scv         mc.ClientboundSetChunkVisibility
 
-	__PersistentMemory [2 * 1024 * 1024]byte
-	// PersistentArena lives for as long as the user is on this screen.
-	PersistentArena mem.Arena
-
 	Chunks        maps.Map[ChunkCoordinate, *Chunk]
 	ChunkFreeList []*Chunk
+
+	ViewDistance int
+	// Generated every time view distance is changed
+	CubicShellPositions           []gfx.Vector3i
+	CubicShellPositionsNormalized []gfx.Vector3
 }
 
 // Max number of sound effects that can be loaded at a time.

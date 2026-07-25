@@ -2,9 +2,98 @@ package gfx
 
 import (
 	"solod.dev/so/math"
+	"solod.dev/so/mem"
+	"solod.dev/so/slices"
 )
 
 //so:include "math_include.h"
+
+func GetVoxelOctagonPoints(a mem.Allocator, cX, cY int32, radius int32) []Vector2i {
+	if radius <= 0 {
+		r := []Vector2i{{X: cX, Y: cY}}
+		return slices.Clone(a, r)
+	}
+	cutoff := radius / 2 // makes it a voxel octagon
+
+	// Define the 8 corner vertices of the octagon.
+	vertices := []Vector2i{
+		{X: radius, Y: cutoff},
+		{X: radius, Y: -cutoff},
+		{X: cutoff, Y: -radius},
+		{X: -cutoff, Y: -radius},
+		{X: -radius, Y: -cutoff},
+		{X: -radius, Y: cutoff},
+		{X: -cutoff, Y: radius},
+		{X: cutoff, Y: radius},
+	}
+	uniquePoints := make(map[Vector2i]bool, len(vertices))
+
+	for i := range len(vertices) {
+		p1 := vertices[i]
+		p2 := vertices[i+1%len(vertices)]
+
+		linePoints := bresenhamLine(a, p1.X, p1.Y, p2.X, p2.Y)
+		for _, pt := range linePoints {
+			pt.X += cX
+			pt.Y += cY
+			uniquePoints[pt] = true
+		}
+		slices.Free(a, linePoints)
+	}
+	// convert unique map to slice.
+	points := slices.MakeCap[Vector2i](a, 0, len(uniquePoints))
+	for pt := range uniquePoints {
+		points = append(points, pt)
+	}
+	return points
+}
+
+// bresenhamLine returns all grid points on a 2D line from (x0, y0) to (x1, y1).
+func bresenhamLine(a mem.Allocator, x0, y0, x1, y1 int32) []Vector2i {
+	var pts []Vector2i
+
+	dx := abs(x1 - x0)
+	dy := abs(y1 - y0)
+
+	var sx, sy int32 = -1, -1
+	if x0 < x1 {
+		sx = 1
+	}
+	if y0 < y1 {
+		sy = 1
+	}
+
+	err := dx - dy
+
+	for {
+		pts = slices.Append(a, pts, Vector2i{X: x0, Y: y0})
+
+		if x0 == x1 && y0 == y1 {
+			break
+		}
+
+		e2 := 2 * err
+		if e2 > -dy {
+			err -= dy
+			x0 += sx
+		}
+		if e2 < dx {
+			err += dx
+			y0 += sy
+		}
+	}
+
+	return pts
+}
+
+//so:inline
+func abs[T int | int32](n T) T {
+	_r := n
+	if n < 0 {
+		_r = -n
+	}
+	return _r
+}
 
 // PointOnSphere converts angles (in Turns) to a unit vector.
 // yawTurns: rotation around the Y axis (0.0 to 1.0)
