@@ -156,6 +156,10 @@ const (
 	DIRECTION_East  Direction = 5
 )
 
+var TransparentBlocks = []BlockID{
+	BLOCK_Air, BLOCK_Leaves,
+}
+
 func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) AtlasUV {
 	switch b {
 	case BLOCK_Grass:

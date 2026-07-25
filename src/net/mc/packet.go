@@ -1379,19 +1379,17 @@ type DecompressedChunkData struct {
 	SkyLight   [CHUNK_SIZE]uint8
 }
 
-// IsTransparent checks if block above is Air or some other transparent block.
-func (c *DecompressedChunkData) IsTransparent(x, y, z int) bool {
+// IsBlockA checks if the block at this coordinate is one of the blocks.
+// if no blocks are provided. it checks if block is air.
+func (c *DecompressedChunkData) IsBlockA(x, y, z int, b ...BlockID) bool {
 	if y < 0 || y >= CHUNK_SIZE_Y {
 		return true
 	}
 	block := c.Blocks[ChunkIndex(x, y, z)]
-	switch block {
-	case BLOCK_Air:
-		return true
-	case BLOCK_Leaves:
-		return true
+	if len(b) == 0 {
+		return block == BLOCK_Air
 	}
-	return false
+	return slices.Contains(b, block)
 }
 
 // Local chunk coordinate to index.

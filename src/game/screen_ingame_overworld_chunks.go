@@ -18,48 +18,48 @@ func (state *ScreenInGameState) FaceAO(chunk *Chunk, x, y, z int, dir mc.Directi
 		} else {
 			y -= 1
 		}
-		top = !state.IsTransparent(chunk, x+0, y, z-1)
-		bottom = !state.IsTransparent(chunk, x+0, y, z+1)
-		left = !state.IsTransparent(chunk, x-1, y, z+0)
-		right = !state.IsTransparent(chunk, x+1, y, z+0)
+		top = !state.IsBlockA(chunk, x+0, y, z-1)
+		bottom = !state.IsBlockA(chunk, x+0, y, z+1)
+		left = !state.IsBlockA(chunk, x-1, y, z+0)
+		right = !state.IsBlockA(chunk, x+1, y, z+0)
 
-		topLeft = !state.IsTransparent(chunk, x-1, y, z-1)
-		topRight = !state.IsTransparent(chunk, x+1, y, z-1)
+		topLeft = !state.IsBlockA(chunk, x-1, y, z-1)
+		topRight = !state.IsBlockA(chunk, x+1, y, z-1)
 
-		bottomLeft = !state.IsTransparent(chunk, x-1, y, z+1)
-		bottomRight = !state.IsTransparent(chunk, x+1, y, z+1)
+		bottomLeft = !state.IsBlockA(chunk, x-1, y, z+1)
+		bottomRight = !state.IsBlockA(chunk, x+1, y, z+1)
 	case mc.DIRECTION_West, mc.DIRECTION_East:
 		if dir == mc.DIRECTION_West {
 			x -= 1
 		} else {
 			x += 1
 		}
-		top = !state.IsTransparent(chunk, x+0, y+1, z)
-		bottom = !state.IsTransparent(chunk, x+0, y-1, z)
-		left = !state.IsTransparent(chunk, x, y, z+1)
-		right = !state.IsTransparent(chunk, x, y, z-1)
+		top = !state.IsBlockA(chunk, x+0, y+1, z)
+		bottom = !state.IsBlockA(chunk, x+0, y-1, z)
+		left = !state.IsBlockA(chunk, x, y, z+1)
+		right = !state.IsBlockA(chunk, x, y, z-1)
 
-		topLeft = !state.IsTransparent(chunk, x, y+1, z+1)
-		topRight = !state.IsTransparent(chunk, x, y+1, z-1)
+		topLeft = !state.IsBlockA(chunk, x, y+1, z+1)
+		topRight = !state.IsBlockA(chunk, x, y+1, z-1)
 
-		bottomLeft = !state.IsTransparent(chunk, x, y-1, z+1)
-		bottomRight = !state.IsTransparent(chunk, x, y-1, z-1)
+		bottomLeft = !state.IsBlockA(chunk, x, y-1, z+1)
+		bottomRight = !state.IsBlockA(chunk, x, y-1, z-1)
 	case mc.DIRECTION_South, mc.DIRECTION_North:
 		if dir == mc.DIRECTION_South {
 			z += 1
 		} else {
 			z -= 1
 		}
-		top = !state.IsTransparent(chunk, x+0, y+1, z)
-		bottom = !state.IsTransparent(chunk, x+0, y-1, z)
-		left = !state.IsTransparent(chunk, x-1, y, z)
-		right = !state.IsTransparent(chunk, x+1, y, z)
+		top = !state.IsBlockA(chunk, x+0, y+1, z)
+		bottom = !state.IsBlockA(chunk, x+0, y-1, z)
+		left = !state.IsBlockA(chunk, x-1, y, z)
+		right = !state.IsBlockA(chunk, x+1, y, z)
 
-		topLeft = !state.IsTransparent(chunk, x-1, y+1, z)
-		topRight = !state.IsTransparent(chunk, x+1, y+1, z)
+		topLeft = !state.IsBlockA(chunk, x-1, y+1, z)
+		topRight = !state.IsBlockA(chunk, x+1, y+1, z)
 
-		bottomLeft = !state.IsTransparent(chunk, x-1, y-1, z)
-		bottomRight = !state.IsTransparent(chunk, x+1, y-1, z)
+		bottomLeft = !state.IsBlockA(chunk, x-1, y-1, z)
+		bottomRight = !state.IsBlockA(chunk, x+1, y-1, z)
 	}
 	tl := calcAO(left, top, topLeft)
 	tr := calcAO(top, right, topRight)
@@ -97,7 +97,7 @@ func btoi(b bool) int {
 }
 
 // Helper that also checks neighbour chunks if needed.
-func (state *ScreenInGameState) IsTransparent(c *Chunk, x, y, z int) bool {
+func (state *ScreenInGameState) IsBlockA(c *Chunk, x, y, z int, b ...mc.BlockID) bool {
 	if y < 0 || y >= mc.CHUNK_SIZE_Y {
 		return true
 	}
@@ -127,10 +127,10 @@ func (state *ScreenInGameState) IsTransparent(c *Chunk, x, y, z int) bool {
 		if neighbor == nil {
 			return true
 		}
-		return neighbor.data.IsTransparent(x, y, z)
+		return neighbor.data.IsBlockA(x, y, z, b...)
 	}
 
-	return c.data.IsTransparent(x, y, z)
+	return c.data.IsBlockA(x, y, z, b...)
 }
 
 func (chunk *Chunk) emitQuad(
@@ -221,7 +221,7 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 				const oakLeafColor = 0x63aa44
 				// select the correct sub-mesh based on block coordinats
 				var mesh *gfx.Mesh
-				if c.data.IsTransparent(x, y, z) {
+				if c.data.IsBlockA(x, y, z, mc.TransparentBlocks...) {
 					mesh = c.Layer1[section]
 				} else {
 					mesh = c.Layer0[section]
@@ -229,7 +229,7 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 
 				for _, face := range Faces {
 					// shade := faceShading[face.Direction]
-					if state.IsTransparent(c, x+face.Dx, y+face.Dy, z+face.Dz) {
+					if state.IsBlockA(c, x+face.Dx, y+face.Dy, z+face.Dz, mc.TransparentBlocks...) {
 						var color = gfx.White
 						AO := state.FaceAO(c, x, y, z, face.Direction)
 						uv := mc.GetUVFromBlockSideAndMetadata(block, face.Direction, int(metadata))

@@ -106,7 +106,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 				if e.Username != "" { // if it has a username then it's a player entity.
 					gfx.DrawCube(e.Position, 1, 2, 1, gfx.Yellow)
 				} else {
-					gfx.DrawCube(e.Position, 5, 10, 5, gfx.Blue)
+					gfx.DrawCube(e.Position, .5, 1, .5, gfx.Blue)
 				}
 			}
 		}
