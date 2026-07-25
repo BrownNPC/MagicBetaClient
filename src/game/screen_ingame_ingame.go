@@ -20,7 +20,6 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Player = state.Things.New(KindPlayer)
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
-	state.CutoutShader = gfx.LoadCutoutShader()
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
@@ -94,7 +93,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 			if !inFrustum {
 				continue
 			}
-			chunk.DrawSectionMesh(section, state.s.Pack.GetTexture(assets.Terrain), state.CutoutShader)
+			chunk.DrawSectionMesh(section, state.s.Pack.GetTexture(assets.Terrain))
 		}
 	}
 	{

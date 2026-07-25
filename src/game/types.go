@@ -344,7 +344,7 @@ func (chunk *Chunk) GetCenter() gfx.Vector3 {
 		float32(chunk.coord.Z*16+8),
 	)
 }
-func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture, cutoutShader gfx.Shader) {
+func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture) {
 	basePos := chunk.GetSectionPosition(section)
 
 	mat := gfx.MatrixTranslate(
@@ -358,7 +358,7 @@ func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture, cutoutShad
 	}
 
 	if mesh := chunk.Layer1[section]; mesh != nil {
-		mesh.DrawWithShader(terrain, gfx.White, mat, cutoutShader)
+		mesh.Draw(terrain, gfx.White, mat)
 	}
 }
 
@@ -386,9 +386,8 @@ type ScreenInGameState struct {
 	LastTimeUpdate time.Time
 
 	// RENDERING DATA
-	Stars        *gfx.Mesh // Initialized
-	SunMesh      *gfx.Mesh // Also used for moon
-	CutoutShader gfx.Shader
+	Stars   *gfx.Mesh // Initialized
+	SunMesh *gfx.Mesh // Also used for moon
 
 	// -----NETWORKING RELATED FIELDS ----
 	__PacketDecodeArenaMemory [100 * 1024]byte

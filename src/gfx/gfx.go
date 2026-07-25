@@ -1042,9 +1042,11 @@ func (m *Mesh) Reset() {
 }
 func DefaultTexture() Texture { return Texture{Width: 1, Height: 1, ID: rlGetTextureIdDefault()} }
 func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
-	version := rlGetVersion()
+	var version = rlGetVersion()
+	c.Raw(`
+	#if defined(GRAPHICS_API_OPENGL_11) || defined (GRAPHICS_API_OPENGL_SOFTWARE)`)
 	if version == RL_OPENGL_11 || version == RL_OPENGL_SOFTWARE {
-		const (
+		var (
 			GL_VERTEX_ARRAY        = 0x8074
 			GL_NORMAL_ARRAY        = 0x8075
 			GL_COLOR_ARRAY         = 0x8076
@@ -1061,6 +1063,9 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 		if len(m.colors) > 0 {
 			rlEnableStatePointer(GL_COLOR_ARRAY, &m.colors[0])
 		}
+		c.Raw(`
+		glEnable(GL_ALPHA_TEST);
+		glAlphaFunc(GL_GREATER, 0.5f);`)
 		rlPushMatrix()
 		{
 			rlColor4ub(tint.R, tint.G, tint.B, tint.A)
@@ -1069,6 +1074,8 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 			rlDrawVertexArray(0, len(m.vertices))
 		}
 		rlPopMatrix()
+		c.Raw(`
+		glDisable(GL_ALPHA_TEST);`)
 
 		rlDisableStatePointer(GL_VERTEX_ARRAY)
 		rlDisableStatePointer(GL_TEXTURE_COORD_ARRAY)
@@ -1076,11 +1083,8 @@ func (m *Mesh) Draw(albedo Texture, tint Color, transform Matrix) {
 		rlDisableStatePointer(GL_COLOR_ARRAY)
 		return
 	}
+	c.Raw(`#endif`)
 	m.drawInternal(albedo, tint, transform, rlGetShaderIdDefault(), rlgsldf())
-}
-
-func (m *Mesh) DrawWithShader(albedo Texture, tint Color, transform Matrix, sh Shader) {
-	m.drawInternal(albedo, tint, transform, sh.ID, &sh.Locs[0])
 }
 
 func getLoc(locs *c.Int, id int) int { return int(*c.PtrAt(locs, id)) }
@@ -1629,40 +1633,6 @@ func getShaderLocDefault(id int) int { return int(*c.PtrAt(rlgsldf(), id)) }
 type Shader struct {
 	ID   int
 	Locs [32]c.Int
-}
-
-func LoadCutoutShader() Shader {
-	fragSrc := "#version 330\n" +
-		"in vec2 fragTexCoord;\n" +
-		"in vec4 fragColor;\n" +
-		"out vec4 finalColor;\n" +
-		"uniform sampler2D texture0;\n" +
-		"uniform vec4 colDiffuse;\n" +
-		"void main() {\n" +
-		"    vec4 texelColor = texture(texture0, fragTexCoord);\n" +
-		"    if (texelColor.a < 0.5) discard;\n" +
-		"    finalColor = texelColor*colDiffuse*fragColor;\n" +
-		"}\n"
-
-	var sh Shader
-	sh.ID = rlLoadShaderProgram(nil, c.CString(fragSrc))
-
-	type locEntry struct {
-		name  string
-		index int
-	}
-	entries := [...]locEntry{
-		{"colDiffuse", RL_SHADER_LOC_COLOR_DIFFUSE},
-		{"matView", RL_SHADER_LOC_MATRIX_VIEW},
-		{"matProjection", RL_SHADER_LOC_MATRIX_PROJECTION},
-		{"matModel", RL_SHADER_LOC_MATRIX_MODEL},
-		{"mvp", RL_SHADER_LOC_MATRIX_MVP},
-		{"texture0", RL_SHADER_LOC_MAP_ALBEDO},
-	}
-	for _, e := range entries {
-		sh.Locs[e.index] = c.Int(rlGetLocationUniform(sh.ID, e.name))
-	}
-	return sh
 }
 
 //so:extern

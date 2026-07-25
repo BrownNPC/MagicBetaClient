@@ -5186,6 +5186,7 @@ static void rlLoadShaderDefault(void)
     "void main()                        \n"
     "{                                  \n"
     "    vec4 texelColor = texture2D(texture0, fragTexCoord); \n"
+    "    if (texelColor.a ==0) discard;                     \n"
     "    gl_FragColor = texelColor*colDiffuse*fragColor;      \n"
     "}                                  \n";
 #elif defined(GRAPHICS_API_OPENGL_33)
@@ -5198,6 +5199,7 @@ static void rlLoadShaderDefault(void)
     "void main()                        \n"
     "{                                  \n"
     "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
+    "    if (texelColor.a ==0) discard;                     \n"
     "    finalColor = texelColor*colDiffuse*fragColor;        \n"
     "}                                  \n";
 #endif
@@ -5213,6 +5215,7 @@ static void rlLoadShaderDefault(void)
     "void main()                        \n"
     "{                                  \n"
     "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
+    "    if (texelColor.a ==0) discard;                     \n"
     "    finalColor = texelColor*colDiffuse*fragColor;        \n"
     "}                                  \n";
 #elif defined(GRAPHICS_API_OPENGL_ES2)
@@ -5225,6 +5228,7 @@ static void rlLoadShaderDefault(void)
     "void main()                        \n"
     "{                                  \n"
     "    vec4 texelColor = texture2D(texture0, fragTexCoord); \n"
+    "    if (texelColor.a ==0) discard;                     \n"
     "    gl_FragColor = texelColor*colDiffuse*fragColor;      \n"
     "}                                  \n";
 #endif
