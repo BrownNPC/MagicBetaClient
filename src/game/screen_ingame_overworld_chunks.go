@@ -5,6 +5,108 @@ import (
 	"mbc/net/mc"
 )
 
+func (state *ScreenInGameState) faceToBitIndex(f1, f2 mc.Direction) int {
+	if f1 > f2 {
+		f1, f2 = f2, f1 // Ensure f1 is the smaller index
+	}
+	return int(f1*(11-f1)/2 + f2 - 1)
+}
+
+// Traverse each section and build a connectivity graph.
+func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, section int) {
+	// It’s rather straightforward to build the connectivity graph for a chunk when an opaque block changes, it follows a simple algorithm:
+	// for each block that’s not opaque,
+	// start a 3D flood fill, with an empty set of faces
+	// every time the flood fill tries to exit the boundaries of the chunk through a face, add the face to the set
+	// when the flood fill is done, connect together all the faces that were added to the set.
+
+	visited := make([]bool, 16*16*16)
+	queue := make([][3]int, 0, 16*16*16)
+
+	chunk.ConnectivityGraph[section] = 0 // reset graph
+	for x := range 16 {
+		for z := range 16 {
+			for y := range 16 {
+				// only start from blocks touching the 16x16x16 boundary
+				isBoundary := x == 0 || x == 15 || y == 0 || y == 15 || z == 0 || z == 15
+				if !isBoundary {
+					continue
+				}
+				localIdx := (y*16+z)*16 + x
+				if visited[localIdx] {
+					continue
+				}
+				// Convert local Y (0-15) to global chunk Y (0-127) for the data lookup
+				globalY := (section * 16) + y
+				// if is opaque, skip
+				if !chunk.data.IsBlockA(x, globalY, z, mc.NonOpaqueBlocks...) {
+					continue
+				}
+				queue = append(queue, [3]int{x, y, z})
+				visited[localIdx] = true
+
+				var touchedFaces uint8 // Bitmask to track which faces this air pocket hits
+				head := 0
+
+				for head < len(queue) {
+					curr := queue[head]
+					head++
+
+					// Flag if the current block touches any of the section's 6 boundaries
+					if curr[0] == 0 {
+						touchedFaces |= 1 << mc.DIRECTION_West
+					}
+					if curr[0] == 15 {
+						touchedFaces |= 1 << mc.DIRECTION_East
+					}
+					if curr[1] == 0 {
+						touchedFaces |= 1 << mc.DIRECTION_Down
+					}
+					if curr[1] == 15 {
+						touchedFaces |= 1 << mc.DIRECTION_Up
+					}
+					if curr[2] == 0 {
+						touchedFaces |= 1 << mc.DIRECTION_North
+					}
+					if curr[2] == 15 {
+						touchedFaces |= 1 << mc.DIRECTION_South
+					}
+					// Check all 6 adjacent neighbors
+					for _, off := range mc.FaceOffsets {
+						nx, ny, nz := curr[0]+off[0], curr[1]+off[1], curr[2]+off[2]
+
+						// Ensure neighbor is inside the current 16x16x16 section boundaries
+						if nx >= 0 && nx < 16 &&
+							ny >= 0 && ny < 16 &&
+							nz >= 0 && nz < 16 {
+							nIdx := (ny*16+nz)*16 + nx
+							if !visited[nIdx] {
+								nGlobalY := (section * 16) + ny
+								if chunk.data.IsBlockA(nx, nGlobalY, nz, mc.NonOpaqueBlocks...) {
+									visited[nIdx] = true
+									queue = append(queue, [3]int{nx, ny, nz})
+								}
+							}
+						}
+					}
+				}
+				// --- FLOOD FILL FINISHED ---
+				// Connect all combinations of faces touched by this continuous air pocket
+				for f1 := range 6 {
+					if (touchedFaces & (1 << f1)) != 0 {
+						for f2 := f1 + 1; f2 < 6; f2++ { // Start at f1+1 to avoid self-pairs and duplicates
+							if (touchedFaces & (1 << f2)) != 0 {
+								bitIndex := state.faceToBitIndex(mc.Direction(f1), mc.Direction(f2))
+								chunk.ConnectivityGraph[section] |= (1 << bitIndex)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 // AmbientOcclusion for each quad vertex
 type AmbientOcclusion struct{ AO [4]int }
 
@@ -221,7 +323,7 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 				const oakLeafColor = 0x63aa44
 				// select the correct sub-mesh based on block coordinats
 				var mesh *gfx.Mesh
-				if c.data.IsBlockA(x, y, z, mc.TransparentBlocks...) {
+				if c.data.IsBlockA(x, y, z, mc.NonOpaqueBlocks...) {
 					mesh = c.Layer1[section]
 				} else {
 					mesh = c.Layer0[section]
@@ -229,7 +331,7 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 
 				for _, face := range Faces {
 					// shade := faceShading[face.Direction]
-					if state.IsBlockA(c, x+face.Dx, y+face.Dy, z+face.Dz, mc.TransparentBlocks...) {
+					if state.IsBlockA(c, x+face.Dx, y+face.Dy, z+face.Dz, mc.NonOpaqueBlocks...) {
 						var color = gfx.White
 						AO := state.FaceAO(c, x, y, z, face.Direction)
 						uv := mc.GetUVFromBlockSideAndMetadata(block, face.Direction, int(metadata))

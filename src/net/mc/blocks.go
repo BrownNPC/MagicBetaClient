@@ -1,6 +1,9 @@
 package mc
 
-import "solod.dev/so/math/rand"
+import (
+	"solod.dev/so/math/rand"
+	"solod.dev/so/slices"
+)
 
 type BlockID = uint8
 
@@ -107,8 +110,6 @@ const (
 	BLOCK_Trapdoor            BlockID = 96
 )
 
-type Direction = uint8
-
 type AtlasUV struct {
 	Corners [4][2]float32 // UV for each quad corner
 }
@@ -147,6 +148,8 @@ func GetUV(id int, rotation ...int) AtlasUV {
 	return result
 }
 
+type Direction = uint8
+
 const (
 	DIRECTION_Down  Direction = 0
 	DIRECTION_Up    Direction = 1
@@ -156,9 +159,19 @@ const (
 	DIRECTION_East  Direction = 5
 )
 
-var TransparentBlocks = []BlockID{
+var FaceOffsets = [][3]int{
+	{0, -1, 0}, {0, 1, 0}, // down, up
+	{0, 0, 1}, {0, 0, -1}, // north, south
+	{-1, 0, 0}, {1, 0, 0}, // west, east
+}
+
+// Sorted in ascending order.
+var NonOpaqueBlocks = []BlockID{
 	BLOCK_Air, BLOCK_Leaves,
 }
+
+// sort the above array in ascending order.
+func init() { slices.Sort(NonOpaqueBlocks) }
 
 func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) AtlasUV {
 	switch b {

@@ -42,12 +42,10 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if time.Since(state.LastPositionUpdate) > time.Second/20 {
 		state.LastPositionUpdate = time.Now()
 		pkt := mc.PacketPlayerPosition{
-			X:       float64(plr.Position.X),
-			Y:       float64(plr.Position.Y),
-			CameraY: float64(plr.Position.Y) + 1.6,
-			Z:       float64(plr.Position.Z),
-			// Yaw:      state.Cam.GetYaw() * 360,
-			// Pitch:    state.Cam.GetPitch() * 360,
+			X:        float64(plr.Position.X),
+			Y:        float64(plr.Position.Y),
+			CameraY:  float64(plr.Position.Y) + 1.6,
+			Z:        float64(plr.Position.Z),
 			OnGround: false,
 		}
 		err := pkt.Write(&s.ServerBound)
@@ -75,9 +73,10 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 				break
 			}
 		}
-		chunk.DrawSectionMesh(4, state.s.Pack.GetTexture(assets.Terrain))
-		chunk.DrawSectionMesh(5, state.s.Pack.GetTexture(assets.Terrain))
-		chunk.DrawSectionMesh(6, state.s.Pack.GetTexture(assets.Terrain))
+		for i := range 3 {
+			i += 4
+			chunk.DrawSectionMesh(i, state.s.Pack.GetTexture(assets.Terrain))
+		}
 	}
 	{
 		it := state.Things.Iter()

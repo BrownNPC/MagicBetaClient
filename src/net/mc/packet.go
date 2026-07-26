@@ -1379,6 +1379,7 @@ type DecompressedChunkData struct {
 	SkyLight   [CHUNK_SIZE]uint8
 }
 
+// NOTE: passed in blocks must be sorted in ascending order.
 // IsBlockA checks if the block at this coordinate is one of the blocks.
 // if no blocks are provided. it checks if block is air.
 func (c *DecompressedChunkData) IsBlockA(x, y, z int, b ...BlockID) bool {
@@ -1389,7 +1390,20 @@ func (c *DecompressedChunkData) IsBlockA(x, y, z int, b ...BlockID) bool {
 	if len(b) == 0 {
 		return block == BLOCK_Air
 	}
-	return slices.Contains(b, block)
+	// binary search
+	low, high := 0, len(b)-1
+	for low <= high {
+		mid := low + (high-low)/2
+		if b[mid] == block {
+			return true
+		}
+		if b[mid] < block {
+			low = mid + 1
+		} else {
+			high = mid - 1
+		}
+	}
+	return false
 }
 
 // Local chunk coordinate to index.

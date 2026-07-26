@@ -279,14 +279,19 @@ func init() {
 }
 
 type Chunk struct {
-	// sections to rebuild
-	NeedsRebuild [8]bool
-
-	coord ChunkCoordinate
 	// break chunk down into 16x16x16 "render chunks" as done in 1.8.9
 	Layer0 [8]*gfx.Mesh
 	Layer1 [8]*gfx.Mesh
-	data   *mc.DecompressedChunkData
+
+	// sections to rebuild. used by BuildChunkMesh.
+	NeedsRebuild [8]bool
+	// Connectivity graph from Tommo's blog: https://tomcc.github.io/2014/08/31/visibility-1.html
+	ConnectivityGraph [8]uint16
+
+	// Chunk coordinate in Chunk space.
+	coord ChunkCoordinate
+	// 16*128*16 chunk data.
+	data *mc.DecompressedChunkData
 }
 
 func NewChunk(a mem.Allocator, coord ChunkCoordinate) *Chunk {
@@ -311,7 +316,6 @@ func (chunk *Chunk) UploadMeshes() {
 	for i := range 8 {
 		chunk.Layer0[i].Upload(false)
 		chunk.Layer1[i].Upload(false)
-
 	}
 }
 
@@ -361,6 +365,7 @@ func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture) {
 		mesh.Draw(terrain, gfx.White, mat)
 	}
 }
+
 type ScreenInGameState struct {
 	s *State
 	// STATE BOOK KEEPING
