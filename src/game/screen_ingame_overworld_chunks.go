@@ -3,48 +3,7 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/net/mc"
-
-	"solod.dev/so/mem"
-	"solod.dev/so/slices"
 )
-
-// port of Vintage Story culling code: https://github.com/tyronx/occlusionculling
-
-// must be called on view distance changed
-func (state *ScreenInGameState) GenerateShellVectors(viewDistance int) {
-
-	const chunkSectionSize = 16
-	radius := (viewDistance / chunkSectionSize) + 1
-	state.s.Scratch.Reset()
-	points := gfx.GetVoxelOctagonPoints(&state.s.Scratch, 0, 0, int32(radius))
-
-	shellPositions := make(map[gfx.Vector3i]bool, 1000)
-	for _, point := range points {
-		for cy := int32(-128); cy <= 128; cy++ { // 128 build limit
-			shellPositions[gfx.Vector3i{X: point.X, Y: cy, Z: point.Y}] = true
-		}
-	}
-	for r := 0; r < radius; r++ {
-		points = gfx.GetVoxelOctagonPoints(&state.s.Scratch, 0, 0, int32(r))
-		for _, point := range points {
-			// Overextend the shell positions on the vertical axis to prevent over-culling issues
-			shellPositions[gfx.Vector3i{X: point.X, Y: -128, Z: point.Y}] = true
-			shellPositions[gfx.Vector3i{X: point.X, Y: 128, Z: point.Y}] = true
-		}
-	}
-	state.CubicShellPositions = state.CubicShellPositions[:0]
-	state.CubicShellPositionsNormalized = state.CubicShellPositionsNormalized[:0]
-	for pos := range shellPositions {
-		state.CubicShellPositions = slices.Append(mem.System, state.CubicShellPositions, pos)
-		state.CubicShellPositionsNormalized = slices.Append(mem.System,
-			state.CubicShellPositionsNormalized,
-			gfx.NewVector3(float32(pos.X), float32(pos.Y), float32(pos.Z)).
-				Normalize())
-	}
-}
-func (state *ScreenInGameState) CullInvisibleChunks() {
-	
-}
 
 // AmbientOcclusion for each quad vertex
 type AmbientOcclusion struct{ AO [4]int }
@@ -292,67 +251,4 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 	}
 
 	c.UploadMeshes()
-}
-
-// Chunk struct methods.
-func (chunk *Chunk) ResetMeshes() {
-	for i := range 8 {
-		chunk.Layer0[i].Reset()
-		chunk.Layer1[i].Reset()
-	}
-}
-
-func (chunk *Chunk) UploadMeshes() {
-	for i := range 8 {
-		chunk.Layer0[i].Upload(false)
-		chunk.Layer1[i].Upload(false)
-
-	}
-}
-
-// GetPosition returns chunk position in world coordinates.
-func (chunk *Chunk) GetPosition() gfx.Vector3 {
-	return gfx.NewVector3(float32(chunk.coord.X*16), 0, float32(chunk.coord.Z*16))
-}
-
-// GetSectionPosition returns the chunk section position in world coordinates.
-func (chunk *Chunk) GetSectionPosition(section int) gfx.Vector3 {
-	return gfx.NewVector3(
-		float32(chunk.coord.X*16),
-		float32(section*16),
-		float32(chunk.coord.Z*16),
-	)
-}
-func (chunk *Chunk) GetSectionCenter(section int) gfx.Vector3 {
-	return gfx.NewVector3(
-		float32(chunk.coord.X*16+8),
-		float32(section*16+8),
-		float32(chunk.coord.Z*16+8),
-	)
-}
-
-// GetCenter returns chunk center in world coordinates.
-func (chunk *Chunk) GetCenter() gfx.Vector3 {
-	return gfx.NewVector3(
-		float32(chunk.coord.X*16+8),
-		64,
-		float32(chunk.coord.Z*16+8),
-	)
-}
-func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture) {
-	basePos := chunk.GetSectionPosition(section)
-
-	mat := gfx.MatrixTranslate(
-		basePos.X,
-		basePos.Y,
-		basePos.Z,
-	)
-
-	if mesh := chunk.Layer0[section]; mesh != nil {
-		mesh.Draw(terrain, gfx.White, mat)
-	}
-
-	if mesh := chunk.Layer1[section]; mesh != nil {
-		mesh.Draw(terrain, gfx.White, mat)
-	}
 }

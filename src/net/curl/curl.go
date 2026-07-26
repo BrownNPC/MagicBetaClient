@@ -76,7 +76,7 @@ func CreateSocket(hostname string) (*CURL, error) {
 	curl := curl_easy_init()
 	curl_easy_setopt(curl, CURLOPT_URL, c.CString(hostname))
 	curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, c.Long(1))
-	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1)
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, c.Long(1))
 
 	code := curl_easy_perform(curl)
 	if code != 0 {

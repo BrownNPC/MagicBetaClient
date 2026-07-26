@@ -21,15 +21,6 @@ type Vector3 struct {
 	Y float32
 	Z float32
 }
-type Vector3i struct {
-	X int32
-	Y int32
-	Z int32
-}
-type Vector2i struct {
-	X int32
-	Y int32
-}
 
 // NewVector3 - Returns new Vector3
 func NewVector3(x, y, z float32) Vector3 {

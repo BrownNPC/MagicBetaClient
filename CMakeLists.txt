@@ -25,6 +25,18 @@ set(SDLMIXER_VORBIS_VORBISFILE OFF)
 set(SDLMIXER_FLAC_LIBFLAC OFF)
 set(SDLMIXER_VENDORED ON)   # tell SDL_mixer to build its own dependencies
 
+# add sources
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ./transpiled/*.c src/*.c)
+# create target
+if(ANDROID)
+  add_library(${PROJECT_NAME} SHARED ${SOURCES}) # android needs shared library.
+  set_target_properties(MagicBetaClient PROPERTIES OUTPUT_NAME main)
+else()
+  add_executable(${PROJECT_NAME} ${SOURCES})
+endif()
+
+target_include_directories(${PROJECT_NAME} PUBLIC ./transpiled src/ vendored/)
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     # add_compile_options(
     #     -g -O0
@@ -35,17 +47,17 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     #     -fsanitize=address,undefined
     # )
 endif()
-
-# add sources
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ./transpiled/*.c src/*.c)
-if(ANDROID)
-  add_library(${PROJECT_NAME} SHARED ${SOURCES}) # android needs shared library.
-  set_target_properties(MagicBetaClient PROPERTIES OUTPUT_NAME main)
-else()
-  add_executable(${PROJECT_NAME} ${SOURCES})
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+   include(CheckIPOSupported)
+    check_ipo_supported(RESULT lto_supported)
+    
+    if(lto_supported)
+        set_property(TARGET ${PROJECT_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(WARNING "LTO is enabled but not supported by your current compiler/toolchain.")
+    endif()
 endif()
 
-target_include_directories(${PROJECT_NAME} PUBLIC ./transpiled src/ vendored/)
 
 #pretend to be OpenBSD for PSP
 if (PSP)

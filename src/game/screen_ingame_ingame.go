@@ -7,7 +7,6 @@ import (
 
 	"solod.dev/so/maps"
 	"solod.dev/so/mem"
-	"solod.dev/so/slices"
 	"solod.dev/so/time"
 )
 
@@ -57,44 +56,28 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 			return
 		}
 	}
-	// lerp ticks
-	state.GameTimeFloat = state.LerpTicks()
-	var sortedChunks = make([]*Chunk, 0, 1000*8)
-	it := state.Chunks.Iter()
-	for it.Next() {
-		chunk := it.Value()
-		if chunk != nil {
-			sortedChunks = append(sortedChunks, chunk)
-		}
-	}
-	// sort chunks far to near
-	slices.SortFunc(sortedChunks, ScreenInGameState_SortChunksFarToNear)
 
 	gfx.BeginMode3D(state.Cam)
 	// RENDER SKY
 	state.DrawSky3D(state.Cam)
-	for _, chunk := range sortedChunks {
 
-		// TODO: in the future check if chunk is in render distance.
-		var sectionInFrustum [8]bool
-		for i := range 8 {
-			center := chunk.GetSectionCenter(i)
-			sectionInFrustum[i] = state.Cam.IsSphereInFrustum(center, CHUNK_SECTION_SPHERE_RADIUS)
-		}
+	// lerp ticks
+	state.GameTimeFloat = state.LerpTicks()
+	it := state.Chunks.Iter()
+	for it.Next() {
+		chunk := it.Value()
 		for _, needed := range chunk.NeedsRebuild {
 			if needed {
 				chunk.ResetMeshes()
 				state.BuildChunkMesh(chunk)
 				chunk.NeedsRebuild = [8]bool{}
+				println("rebuilding chunk")
 				break
 			}
 		}
-		for section, inFrustum := range sectionInFrustum {
-			if !inFrustum {
-				continue
-			}
-			chunk.DrawSectionMesh(section, state.s.Pack.GetTexture(assets.Terrain))
-		}
+		chunk.DrawSectionMesh(4, state.s.Pack.GetTexture(assets.Terrain))
+		chunk.DrawSectionMesh(5, state.s.Pack.GetTexture(assets.Terrain))
+		chunk.DrawSectionMesh(6, state.s.Pack.GetTexture(assets.Terrain))
 	}
 	{
 		it := state.Things.Iter()
@@ -164,7 +147,7 @@ func (state *ScreenInGameState) UpdateCamera(pos gfx.Vector3) {
 		moveLocal.X -= 1
 	}
 
-	var speed = 50  * state.s.Dt
+	var speed = 50 * state.s.Dt
 	camPos := state.Cam.Position
 
 	if state.s.InputHeld(InputJump) {
