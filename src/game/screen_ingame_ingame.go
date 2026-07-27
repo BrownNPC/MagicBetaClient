@@ -62,17 +62,17 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
-	it := state.Chunks.Iter()
 	state.MarkVisibleChunks(state.Cam)
+	// for _, chunk := range state.ChunkCullState.visibleChunks {
+	// 	for section, visible := range chunk.VisibleSections {
+	// 		if !visible {
+	// 			continue
+	// 		}
+	// 		chunk.DrawSectionMesh(section, terrain)
+	// 	}
+	// }
 	terrain := state.s.Pack.GetTexture(assets.Terrain)
-	for _, chunk := range state.ChunkCullState.visibleChunks {
-		for section, visible := range chunk.VisibleSections {
-			if !visible {
-				continue
-			}
-			chunk.DrawSectionMesh(section, terrain)
-		}
-	}
+	it := state.Chunks.Iter()
 	for it.Next() {
 		chunk := it.Value()
 		for _, needed := range chunk.NeedsRebuild {
@@ -84,9 +84,8 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 				break
 			}
 		}
-		for i := range 3 {
-			i += 4
-			chunk.DrawSectionMesh(i, state.s.Pack.GetTexture(assets.Terrain))
+		for section := range 8 {
+			chunk.DrawSectionMesh(section, terrain)
 		}
 	}
 	{
