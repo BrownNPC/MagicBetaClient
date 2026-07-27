@@ -283,6 +283,8 @@ type Chunk struct {
 	Layer0 [8]*gfx.Mesh
 	Layer1 [8]*gfx.Mesh
 
+	VisibleSections [8]bool
+
 	// sections to rebuild. used by BuildChunkMesh.
 	NeedsRebuild [8]bool
 	// Connectivity graph from Tommo's blog: https://tomcc.github.io/2014/08/31/visibility-1.html
@@ -300,7 +302,6 @@ func NewChunk(a mem.Allocator, coord ChunkCoordinate) *Chunk {
 	for i := range 8 {
 		chunk.Layer0[i] = gfx.NewMesh(a) // opaque
 		chunk.Layer1[i] = gfx.NewMesh(a) // semi transparent (leaves, glass panes etc.)
-
 	}
 	chunk.coord = coord
 	return chunk
@@ -366,6 +367,15 @@ func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture) {
 	}
 }
 
+type ChunkBfsStep struct {
+	X, Y, Z   int          // Chunk space coordinates. Y is section (0-7)
+	EntryFace mc.Direction // The face we entered this chunk from
+}
+type ChunkCullState struct {
+	queue         []ChunkBfsStep
+	gridSize      int // render_distance*2 +1
+	visibleChunks []*Chunk
+}
 type ScreenInGameState struct {
 	s *State
 	// STATE BOOK KEEPING
@@ -406,8 +416,9 @@ type ScreenInGameState struct {
 	// PersistentArena lives for as long as the user is on this screen.
 	PersistentArena mem.Arena
 
-	Chunks        maps.Map[ChunkCoordinate, *Chunk]
-	ChunkFreeList []*Chunk
+	Chunks         maps.Map[ChunkCoordinate, *Chunk]
+	ChunkFreeList  []*Chunk
+	ChunkCullState ChunkCullState
 }
 
 // Max number of sound effects that can be loaded at a time.

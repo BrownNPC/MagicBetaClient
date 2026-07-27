@@ -3,15 +3,23 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/net/mc"
+
+	"solod.dev/so/math"
+	"solod.dev/so/mem"
+	"solod.dev/so/slices"
 )
 
 func (state *ScreenInGameState) faceToBitIndex(f1, f2 mc.Direction) int {
 	if f1 > f2 {
-		f1, f2 = f2, f1 // Ensure f1 is the smaller index
+		// Ensure f1 is the smaller index
+		tmp := f2
+		f2 = f1
+		f1 = tmp
 	}
 	return int(f1*(11-f1)/2 + f2 - 1)
 }
 
+// Must be called when an opaque block is changed in a section.
 // Traverse each section and build a connectivity graph.
 func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, section int) {
 	// It’s rather straightforward to build the connectivity graph for a chunk when an opaque block changes, it follows a simple algorithm:
@@ -20,10 +28,20 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 	// every time the flood fill tries to exit the boundaries of the chunk through a face, add the face to the set
 	// when the flood fill is done, connect together all the faces that were added to the set.
 
-	visited := make([]bool, 16*16*16)
-	queue := make([][3]int, 0, 16*16*16)
+	state.s.Scratch.Reset()
+
+	visited := slices.Make[bool](&state.s.Scratch, 16*16*16)
+	type Vec3i struct {
+		X, Y, Z int
+	}
+	queue := slices.MakeCap[Vec3i](&state.s.Scratch, 0, 16*16*16)
 
 	chunk.ConnectivityGraph[section] = 0 // reset graph
+	var FaceOffsets = []gfx.Vector3{
+		{X: 0, Y: -1, Z: 0}, {X: 0, Y: 1, Z: 0}, // down, up
+		{X: 0, Y: 0, Z: 1}, {X: 0, Y: 0, Z: -1}, // north, south
+		{X: -1, Y: 0, Z: 0}, {X: 1, Y: 0, Z: 0}, // west, east
+	}
 	for x := range 16 {
 		for z := range 16 {
 			for y := range 16 {
@@ -42,7 +60,7 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 				if !chunk.data.IsBlockA(x, globalY, z, mc.NonOpaqueBlocks...) {
 					continue
 				}
-				queue = append(queue, [3]int{x, y, z})
+				queue = append(queue, Vec3i{x, y, z})
 				visited[localIdx] = true
 
 				var touchedFaces uint8 // Bitmask to track which faces this air pocket hits
@@ -53,27 +71,27 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 					head++
 
 					// Flag if the current block touches any of the section's 6 boundaries
-					if curr[0] == 0 {
+					if curr.X == 0 {
 						touchedFaces |= 1 << mc.DIRECTION_West
 					}
-					if curr[0] == 15 {
+					if curr.X == 15 {
 						touchedFaces |= 1 << mc.DIRECTION_East
 					}
-					if curr[1] == 0 {
+					if curr.Y == 0 {
 						touchedFaces |= 1 << mc.DIRECTION_Down
 					}
-					if curr[1] == 15 {
+					if curr.Y == 15 {
 						touchedFaces |= 1 << mc.DIRECTION_Up
 					}
-					if curr[2] == 0 {
+					if curr.Z == 0 {
 						touchedFaces |= 1 << mc.DIRECTION_North
 					}
-					if curr[2] == 15 {
+					if curr.Z == 15 {
 						touchedFaces |= 1 << mc.DIRECTION_South
 					}
 					// Check all 6 adjacent neighbors
-					for _, off := range mc.FaceOffsets {
-						nx, ny, nz := curr[0]+off[0], curr[1]+off[1], curr[2]+off[2]
+					for _, off := range FaceOffsets {
+						nx, ny, nz := curr.X+int(off.X), curr.Y+int(off.Y), curr.Z+int(off.Z)
 
 						// Ensure neighbor is inside the current 16x16x16 section boundaries
 						if nx >= 0 && nx < 16 &&
@@ -84,7 +102,7 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 								nGlobalY := (section * 16) + ny
 								if chunk.data.IsBlockA(nx, nGlobalY, nz, mc.NonOpaqueBlocks...) {
 									visited[nIdx] = true
-									queue = append(queue, [3]int{nx, ny, nz})
+									queue = append(queue, Vec3i{nx, ny, nz})
 								}
 							}
 						}
@@ -103,6 +121,113 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 					}
 				}
 			}
+		}
+	}
+}
+
+func (state *ScreenInGameState) toVisibilityArrayIndex(camX, camY, camZ int, x, y, z int) int {
+	// Offset coordinates so the camera is at the center of the grid
+	gridSize := state.ChunkCullState.gridSize
+	relX := (x - camX) + (gridSize / 2)
+	relZ := (z - camZ) + (gridSize / 2)
+	if relX < 0 || relX >= gridSize || y < 0 || y > 7 || relZ < 0 || relZ >= gridSize {
+		return -1 // Out of bounds of our visited array
+	}
+	return (y*gridSize+relZ)*gridSize + relX
+}
+func (state *ScreenInGameState) SetRenderDistance(d int) {
+	c := &state.ChunkCullState
+	c.gridSize = d*2 + 1
+}
+
+func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
+	c := &state.ChunkCullState
+	// Reset state
+	c.queue = c.queue[:0]
+	c.visibleChunks = c.visibleChunks[:0]
+	state.s.Scratch.Reset()
+	visited := slices.Make[bool](&state.s.Scratch, 8*c.gridSize*c.gridSize)
+	camPos := cam.Position
+
+	camX := int(math.Floor(float64(camPos.X) / 16.0))
+	camY := int(math.Floor(float64(camPos.Y) / 16.0))
+	camZ := int(math.Floor(float64(camPos.Z) / 16.0))
+	camY = min(7, max(camY, 0))
+
+	c.queue = slices.Append(mem.System, c.queue, ChunkBfsStep{
+		X:         camX,
+		Y:         camY,
+		Z:         camZ,
+		EntryFace: 255,
+	})
+	if i := state.toVisibilityArrayIndex(camX, camY, camZ, camX, camY, camZ); i != -1 {
+		visited[i] = true
+	}
+	var FaceOffsets = []gfx.Vector3{
+		{X: 0, Y: -1, Z: 0}, {X: 0, Y: 1, Z: 0}, // down, up
+		{X: 0, Y: 0, Z: 1}, {X: 0, Y: 0, Z: -1}, // north, south
+		{X: -1, Y: 0, Z: 0}, {X: 1, Y: 0, Z: 0}, // west, east
+	}
+
+	head := 0
+	for head < len(c.queue) {
+		curr := c.queue[head]
+		head++
+
+		chunk := state.Chunks.Get(ChunkCoordinate{int32(curr.X), int32(curr.Z)})
+		if chunk == nil {
+			continue
+		}
+		chunk.VisibleSections[curr.Y] = true // mark visible.
+		c.visibleChunks =
+			slices.Append(mem.System, c.visibleChunks, chunk)
+		for exitFace := range mc.Direction(6) {
+			// Directional Culling (N dot V)
+			// We don't want the BFS walking backward behind the player.
+			// If the normal of the face we are trying to exit points away from our view vector, skip it.
+			// Added a slight negative margin (-0.3) to allow peripheral vision for high FOV.
+			normal := FaceOffsets[exitFace]
+			dot := gfx.NewVector3(normal.X, normal.Y, normal.Z).DotProduct(cam.LookVector)
+			if dot < -.3 && curr.EntryFace != 255 {
+				continue
+			}
+			if curr.EntryFace != 255 {
+				bitIndex := state.faceToBitIndex(curr.EntryFace, exitFace)
+				if chunk.ConnectivityGraph[curr.Y]&(1<<bitIndex) == 0 {
+					continue // path blopcked by solid blocks.
+				}
+			}
+			nx, ny, nz := curr.X, curr.Y, curr.Z
+			switch exitFace {
+			case mc.DIRECTION_West:
+				nx--
+			case mc.DIRECTION_East:
+				nx++
+			case mc.DIRECTION_Down:
+				ny--
+			case mc.DIRECTION_Up:
+				ny++
+			case mc.DIRECTION_North:
+				nz--
+			case mc.DIRECTION_South:
+				nz++
+			}
+
+			i := state.toVisibilityArrayIndex(camX, camY, camZ, nx, ny, nz)
+			if i == -1 || visited[i] {
+				continue
+			}
+
+			// frustum cull
+			if !cam.IsSphereInFrustum(chunk.GetSectionCenter(curr.Y), CHUNK_SECTION_SPHERE_RADIUS) {
+				continue
+			}
+			visited[i] = true
+			nextEntryFace := mc.DirectionOpposite[exitFace]
+			c.queue = slices.Append(mem.System, c.queue, ChunkBfsStep{
+				X: nx, Y: ny, Z: nz,
+				EntryFace: nextEntryFace,
+			})
 		}
 	}
 }

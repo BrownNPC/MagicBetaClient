@@ -140,6 +140,7 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 		}
 		for section := range chunk.NeedsRebuild {
 			chunk.NeedsRebuild[section] = true
+			state.BuildConnectivityGraphForSection(chunk,section)
 		}
 	}
 

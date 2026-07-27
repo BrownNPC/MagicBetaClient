@@ -20,6 +20,7 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
+	state.SetRenderDistance(8)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.InputPressed(InputClose) {
@@ -62,6 +63,16 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	it := state.Chunks.Iter()
+	state.MarkVisibleChunks(state.Cam)
+	terrain := state.s.Pack.GetTexture(assets.Terrain)
+	for _, chunk := range state.ChunkCullState.visibleChunks {
+		for section, visible := range chunk.VisibleSections {
+			if !visible {
+				continue
+			}
+			chunk.DrawSectionMesh(section, terrain)
+		}
+	}
 	for it.Next() {
 		chunk := it.Value()
 		for _, needed := range chunk.NeedsRebuild {

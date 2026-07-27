@@ -159,12 +159,14 @@ const (
 	DIRECTION_East  Direction = 5
 )
 
-var FaceOffsets = [][3]int{
-	{0, -1, 0}, {0, 1, 0}, // down, up
-	{0, 0, 1}, {0, 0, -1}, // north, south
-	{-1, 0, 0}, {1, 0, 0}, // west, east
+var DirectionOpposite = [...]Direction{
+	0: 1,
+	1: 0,
+	2: 3,
+	3: 2,
+	4: 5,
+	5: 4,
 }
-
 // Sorted in ascending order.
 var NonOpaqueBlocks = []BlockID{
 	BLOCK_Air, BLOCK_Leaves,
