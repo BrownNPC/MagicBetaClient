@@ -61,8 +61,12 @@ func (t *TextInputBuffer) Pop() {
 	t.Text[t.Len] = 0
 }
 
+var __TextInputBufferStringifyMemory [MAX_TEXT_INPUT * 4]byte
+
 func (t TextInputBuffer) String() string {
-	return string(t.Text[:t.Len])
+	s := string(t.Text[:t.Len])
+	n := copy(__TextInputBufferStringifyMemory[:], []byte(s))
+	return string(__TextInputBufferStringifyMemory[:n])
 }
 
 const (

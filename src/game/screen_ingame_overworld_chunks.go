@@ -235,8 +235,13 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 // AmbientOcclusion for each quad vertex
 type AmbientOcclusion struct{ AO [4]int }
 
+var ___FaceAOresult AmbientOcclusion
+
 func (state *ScreenInGameState) FaceAO(chunk *Chunk, x, y, z int, dir mc.Direction) AmbientOcclusion {
-	var result AmbientOcclusion
+	result := ___FaceAOresult
+	for i := range 4 {
+		result.AO[i] = 4
+	}
 	var top, bottom, left, right, topLeft, topRight, bottomLeft, bottomRight bool
 	switch dir {
 	case mc.DIRECTION_Down, mc.DIRECTION_Up:
@@ -295,17 +300,35 @@ func (state *ScreenInGameState) FaceAO(chunk *Chunk, x, y, z int, dir mc.Directi
 
 	switch dir {
 	case mc.DIRECTION_Up:
-		result.AO = [4]int{bl, br, tr, tl}
+		result.AO[0] = bl
+		result.AO[1] = br
+		result.AO[2] = tr
+		result.AO[3] = tl
 	case mc.DIRECTION_Down:
-		result.AO = [4]int{tl, tr, br, bl}
+		result.AO[0] = tl
+		result.AO[1] = tr
+		result.AO[2] = br
+		result.AO[3] = bl
 	case mc.DIRECTION_East:
-		result.AO = [4]int{bl, br, tr, tl}
+		result.AO[0] = bl
+		result.AO[1] = br
+		result.AO[2] = tr
+		result.AO[3] = tl
 	case mc.DIRECTION_West:
-		result.AO = [4]int{br, bl, tl, tr}
+		result.AO[0] = br
+		result.AO[1] = bl
+		result.AO[2] = tl
+		result.AO[3] = tr
 	case mc.DIRECTION_North:
-		result.AO = [4]int{br, bl, tl, tr}
+		result.AO[0] = br
+		result.AO[1] = bl
+		result.AO[2] = tl
+		result.AO[3] = tr
 	case mc.DIRECTION_South:
-		result.AO = [4]int{bl, br, tr, tl}
+		result.AO[0] = bl
+		result.AO[1] = br
+		result.AO[2] = tr
+		result.AO[3] = tl
 	}
 	return result
 }
