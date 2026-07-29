@@ -4,3 +4,4 @@ cmd/sobind
 ./lib/libGL.so.1
 transpiled/
 perf.data
+compile_commands.json

@@ -9,14 +9,29 @@ import (
 	"solod.dev/so/slices"
 )
 
-func (state *ScreenInGameState) faceToBitIndex(f1, f2 mc.Direction) int {
-	if f1 > f2 {
-		// Ensure f1 is the smaller index
-		tmp := f2
-		f2 = f1
-		f1 = tmp
+// We need to store face connections. eg. Up connects to Down.
+// since Up connects to Down, and Down connects to up is the same thing,
+// we can store them in 6*2 bits.
+func (state *ScreenInGameState) faceToBitIndex(a, b mc.Direction) int {
+	if a > b {
+		tmp := b
+		b = a
+		a = tmp
 	}
-	return int(f1*(11-f1)/2 + f2 - 1)
+	if a == b {
+		panic("faceToBitIndex: cannot exit same face we entered.")
+	}
+	var u uint8 = 255 // invalid
+	var facePairBitIndex = [...][6]uint8{
+		//           D  U  N  S  W  E
+		/* Down  */ {u, 0, 1, 2, 3, 4},
+		/* Up    */ {0, u, 5, 6, 7, 8},
+		/* North */ {1, 5, u, 9, 10, 11},
+		/* South */ {2, 6, 9, u, 12, 13},
+		/* West  */ {3, 7, 10, 12, u, 14},
+		/* East  */ {4, 8, 11, 13, 14, u},
+	}
+	return int(facePairBitIndex[a][b])
 }
 
 // Must be called when an opaque block is changed in a section.
@@ -29,96 +44,67 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 	// when the flood fill is done, connect together all the faces that were added to the set.
 
 	state.s.Scratch.Reset()
-
 	visited := slices.Make[bool](&state.s.Scratch, 16*16*16)
 	type Vec3i struct {
 		X, Y, Z int
 	}
-	queue := slices.MakeCap[Vec3i](&state.s.Scratch, 0, 16*16*16)
+	stack := slices.MakeCap[Vec3i](&state.s.Scratch, 0, 16*16*16/4)
 
 	chunk.ConnectivityGraph[section] = 0 // reset graph
-	var FaceOffsets = []gfx.Vector3{
+	var FaceOffsets = []Vec3i{
 		{X: 0, Y: -1, Z: 0}, {X: 0, Y: 1, Z: 0}, // down, up
 		{X: 0, Y: 0, Z: 1}, {X: 0, Y: 0, Z: -1}, // north, south
 		{X: -1, Y: 0, Z: 0}, {X: 1, Y: 0, Z: 0}, // west, east
 	}
 	for x := range 16 {
 		for z := range 16 {
-			for y := range 16 {
-				// only start from blocks touching the 16x16x16 boundary
-				isBoundary := x == 0 || x == 15 || y == 0 || y == 15 || z == 0 || z == 15
-				if !isBoundary {
+			for sectionY := range 16 {
+				// local section coordinates to parent chunk coordinates
+				y := sectionY + section*16
+				visitedIdx := y + (z * 16) + (x * 16 * 16)
+
+				// if opaque, or visited, skip.
+				if visited[visitedIdx] || !chunk.data.IsBlockA(x, y, z, mc.NonOpaqueBlocks...) {
 					continue
 				}
-				localIdx := (y*16+z)*16 + x
-				if visited[localIdx] {
-					continue
-				}
-				// Convert local Y (0-15) to global chunk Y (0-127) for the data lookup
-				globalY := (section * 16) + y
-				// if is opaque, skip
-				if !chunk.data.IsBlockA(x, globalY, z, mc.NonOpaqueBlocks...) {
-					continue
-				}
-				queue = append(queue, Vec3i{x, y, z})
-				visited[localIdx] = true
+				var faceSet [6]bool
+				// set state
+				stack = stack[:0]
+				stack = append(stack, Vec3i{x, y, z})
+				visited[visitedIdx] = true
 
-				var touchedFaces uint8 // Bitmask to track which faces this air pocket hits
-				head := 0
+				// for each opaque face, do a flood fill.
+				// every time the flood fill tries to exit the
+				// section boundaries though a face,
+				// add the face to the faceSet.
+				for len(stack) > 0 {
+					p := stack[len(stack)-1]
+					stack = stack[:len(stack)-1]
 
-				for head < len(queue) {
-					curr := queue[head]
-					head++
-
-					// Flag if the current block touches any of the section's 6 boundaries
-					if curr.X == 0 {
-						touchedFaces |= 1 << mc.DIRECTION_West
-					}
-					if curr.X == 15 {
-						touchedFaces |= 1 << mc.DIRECTION_East
-					}
-					if curr.Y == 0 {
-						touchedFaces |= 1 << mc.DIRECTION_Down
-					}
-					if curr.Y == 15 {
-						touchedFaces |= 1 << mc.DIRECTION_Up
-					}
-					if curr.Z == 0 {
-						touchedFaces |= 1 << mc.DIRECTION_North
-					}
-					if curr.Z == 15 {
-						touchedFaces |= 1 << mc.DIRECTION_South
-					}
-					// Check all 6 adjacent neighbors
-					for _, off := range FaceOffsets {
-						nx, ny, nz := curr.X+int(off.X), curr.Y+int(off.Y), curr.Z+int(off.Z)
-
-						// Ensure neighbor is inside the current 16x16x16 section boundaries
-						if nx >= 0 && nx < 16 &&
-							ny >= 0 && ny < 16 &&
-							nz >= 0 && nz < 16 {
-							nIdx := (ny*16+nz)*16 + nx
-							if !visited[nIdx] {
-								nGlobalY := (section * 16) + ny
-								if chunk.data.IsBlockA(nx, nGlobalY, nz, mc.NonOpaqueBlocks...) {
-									visited[nIdx] = true
-									queue = append(queue, Vec3i{nx, ny, nz})
-								}
-							}
+					for face := range mc.Direction(6) {
+						// neighbour coordinates.
+						nx := p.X + FaceOffsets[face].X
+						ny := p.Y + FaceOffsets[face].Y
+						nz := p.Z + FaceOffsets[face].Z
+						// check if flood fill is trying to escape to neighbour section.
+						if nx < 0 || nx >= 16 ||
+							ny < 0 || ny >= section*16 ||
+							nz < 0 || nz >= 16 {
+							// add to set
+							faceSet[face] = true
+							continue
 						}
-					}
-				}
-				// --- FLOOD FILL FINISHED ---
-				// Connect all combinations of faces touched by this continuous air pocket
-				for f1 := range 6 {
-					if (touchedFaces & (1 << f1)) != 0 {
-						for f2 := f1 + 1; f2 < 6; f2++ { // Start at f1+1 to avoid self-pairs and duplicates
-							if (touchedFaces & (1 << f2)) != 0 {
-								bitIndex := state.faceToBitIndex(mc.Direction(f1), mc.Direction(f2))
-								chunk.ConnectivityGraph[section] |= (1 << bitIndex)
-							}
+						neighbourVisitedIdx := nx + (nz * 16) + (nx * 16 * 16)
+						if visited[neighbourVisitedIdx] || chunk.data.IsBlockA(nx, ny, nz) {
+							continue
 						}
+						visited[neighbourVisitedIdx] = true
+						stack = append(stack, Vec3i{nx, ny, nz})
 					}
+				} // end of flood fill
+				// connect together all the faces that were added to the faceSet.
+				for face := range mc.Direction(6) {
+
 				}
 			}
 		}
@@ -178,9 +164,12 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 		if chunk == nil {
 			continue
 		}
-		chunk.VisibleSections[curr.Y] = true // mark visible.
-		c.visibleChunks =
-			slices.Append(mem.System, c.visibleChunks, chunk)
+		// frustum cull
+		if cam.IsSphereInFrustum(chunk.GetSectionCenter(curr.Y), CHUNK_SECTION_SPHERE_RADIUS) {
+			chunk.VisibleSections[curr.Y] = true // mark visible.
+			c.visibleChunks =
+				slices.Append(mem.System, c.visibleChunks, chunk)
+		}
 		for exitFace := range mc.Direction(6) {
 			// Directional Culling (N dot V)
 			// We don't want the BFS walking backward behind the player.
@@ -188,13 +177,14 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 			// Added a slight negative margin (-0.3) to allow peripheral vision for high FOV.
 			normal := FaceOffsets[exitFace]
 			dot := gfx.NewVector3(normal.X, normal.Y, normal.Z).DotProduct(cam.LookVector)
-			if dot < -.3 && curr.EntryFace != 255 {
+			if dot < -0.9 && curr.EntryFace != 255 {
 				continue
 			}
+
 			if curr.EntryFace != 255 {
 				bitIndex := state.faceToBitIndex(curr.EntryFace, exitFace)
 				if chunk.ConnectivityGraph[curr.Y]&(1<<bitIndex) == 0 {
-					continue // path blopcked by solid blocks.
+					continue // path blocked by solid blocks.
 				}
 			}
 			nx, ny, nz := curr.X, curr.Y, curr.Z
@@ -218,10 +208,6 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 				continue
 			}
 
-			// frustum cull
-			if !cam.IsSphereInFrustum(chunk.GetSectionCenter(curr.Y), CHUNK_SECTION_SPHERE_RADIUS) {
-				continue
-			}
 			visited[i] = true
 			nextEntryFace := mc.DirectionOpposite[exitFace]
 			c.queue = slices.Append(mem.System, c.queue, ChunkBfsStep{
