@@ -64,7 +64,6 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	state.GameTimeFloat = state.LerpTicks()
 	terrain := state.s.Pack.GetTexture(assets.Terrain)
 	state.BeginDrawingChunks(state.Cam)
-
 	state.EndDrawingChunks(terrain)
 	{
 		it := state.Things.Iter()

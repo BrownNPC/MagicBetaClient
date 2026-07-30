@@ -41,13 +41,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(
         -g -O0
     )
-    # add_compile_options(
-    #     -fno-omit-frame-pointer
-    #     -fsanitize=address,undefined
-    # )
-    # add_link_options(
-    #     -fsanitize=address,undefined
-  )
+    add_compile_options(
+        -fno-omit-frame-pointer
+        -fsanitize=address,undefined
+    )
+    add_link_options(
+        -fsanitize=address,undefined
+    )
 endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
    include(CheckIPOSupported)

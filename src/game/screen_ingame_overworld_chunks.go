@@ -60,7 +60,7 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 	type Vec3i struct {
 		X, Y, Z int
 	}
-	stack := slices.MakeCap[Vec3i](&state.s.Scratch, 0, 16*16*16/4)
+	stack := slices.MakeCap[Vec3i](&state.s.Scratch, 0, 16*16*16)
 
 	chunk.ConnectivityGraph[section] = 0 // reset graph
 	var FaceOffsets = []Vec3i{
@@ -68,13 +68,15 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 		{X: 0, Y: 0, Z: 1}, {X: 0, Y: 0, Z: -1}, // north, south
 		{X: -1, Y: 0, Z: 0}, {X: 1, Y: 0, Z: 0}, // west, east
 	}
+	sectionMinY := section * 16
+	sectionMaxY := sectionMinY + 16 // not inclusive
 	for x := range 16 {
 		for z := range 16 {
 			for sectionY := range 16 {
 				// local section coordinates to parent chunk coordinates
-				y := sectionY + section*16
-				visitedIdx := y + (z * 16) + (x * 16 * 16)
+				y := sectionY + sectionMinY
 
+				visitedIdx := sectionY + (z * 16) + (x * 16 * 16)
 				// if opaque, or visited, skip.
 				if visited[visitedIdx] || !chunk.data.IsBlockA(x, y, z, mc.NonOpaqueBlocks...) {
 					continue
@@ -100,14 +102,13 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 						nz := p.Z + FaceOffsets[face].Z
 						// check if flood fill is trying to escape to neighbour section.
 						if nx < 0 || nx >= 16 ||
-							ny < 0 || ny >= section*16 ||
+							ny < sectionMinY || ny >= sectionMaxY ||
 							nz < 0 || nz >= 16 {
-							// add to set
-							faceSet[face] = true
+							faceSet[face] = true // add to set.
 							continue
 						}
-						neighbourVisitedIdx := nx + (nz * 16) + (nx * 16 * 16)
-						if visited[neighbourVisitedIdx] || chunk.data.IsBlockA(nx, ny, nz) {
+						neighbourVisitedIdx := (ny - sectionMinY) + (nz * 16) + (nx * 16 * 16)
+						if visited[neighbourVisitedIdx] || !chunk.data.IsBlockA(nx, ny, nz, mc.NonOpaqueBlocks...) {
 							continue
 						}
 						visited[neighbourVisitedIdx] = true
@@ -120,7 +121,10 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 					if !added {
 						continue
 					}
-					for face2 := face + 1; face < 6; face2++ {
+					for face2 := face + 1; face2 < 6; face2++ {
+						if !faceSet[face2] {
+							continue
+						}
 						if face2 == face {
 							continue
 						}
@@ -273,20 +277,22 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 				continue
 			}
 
-			if !cam.IsSphereInFrustum(neighbour.GetSectionCenter(int(neighbourSection)), CHUNK_SECTION_SPHERE_RADIUS) {
-				continue
-			}
 			idx := c.GetVisitedArrayIndex(neighbourCoord.X, neighbourSection, neighbourCoord.Z)
 			if idx == -1 || visited[idx] {
 				continue
 			}
-			visited[idx] = true
+
+			if !cam.IsSphereInFrustum(neighbour.GetSectionCenter(int(neighbourSection)), CHUNK_SECTION_SPHERE_RADIUS) {
+				continue
+			}
+
 			c.queue = slices.Append(mem.System, c.queue, ChunkBfsStep{
 				X:         neighbourCoord.X,
 				Z:         neighbourCoord.Z,
 				Y:         neighbourSection,
 				EntryFace: mc.DirectionOpposite[faceB],
 			})
+			visited[idx] = true
 		}
 	}
 }
