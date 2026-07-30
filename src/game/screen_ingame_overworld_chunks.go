@@ -12,6 +12,7 @@ import (
 // We need to store face connections. eg. Up connects to Down.
 // since Up connects to Down, and Down connects to up is the same thing,
 // we can store them in 6*2 bits.
+// function will panic if both faces are the same.
 func (state *ScreenInGameState) faceToBitIndex(a, b mc.Direction) int {
 	if a > b {
 		tmp := b
@@ -21,15 +22,15 @@ func (state *ScreenInGameState) faceToBitIndex(a, b mc.Direction) int {
 	if a == b {
 		panic("faceToBitIndex: cannot exit same face we entered.")
 	}
-	var u uint8 = 255 // invalid
+	var i uint8 = 255 // invalid, never actually returned.
 	var facePairBitIndex = [...][6]uint8{
 		//           D  U  N  S  W  E
-		/* Down  */ {u, 0, 1, 2, 3, 4},
-		/* Up    */ {0, u, 5, 6, 7, 8},
-		/* North */ {1, 5, u, 9, 10, 11},
-		/* South */ {2, 6, 9, u, 12, 13},
-		/* West  */ {3, 7, 10, 12, u, 14},
-		/* East  */ {4, 8, 11, 13, 14, u},
+		/* Down  */ {i, 0, 1, 2, 3, 4},
+		/* Up    */ {0, i, 5, 6, 7, 8},
+		/* North */ {1, 5, i, 9, 10, 11},
+		/* South */ {2, 6, 9, i, 12, 13},
+		/* West  */ {3, 7, 10, 12, i, 14},
+		/* East  */ {4, 8, 11, 13, 14, i},
 	}
 	return int(facePairBitIndex[a][b])
 }
@@ -103,8 +104,18 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 					}
 				} // end of flood fill
 				// connect together all the faces that were added to the faceSet.
-				for face := range mc.Direction(6) {
-
+				for f, added := range faceSet {
+					face := mc.Direction(f)
+					if !added {
+						continue
+					}
+					for face2 := face + 1; face < 6; face2++ {
+						if face2 == face {
+							continue
+						}
+						i := state.faceToBitIndex(face, face2)
+						chunk.ConnectivityGraph[section] |= 1 << i // set bit to 1
+					}
 				}
 			}
 		}
