@@ -3,6 +3,7 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/net/mc"
+	"mbc/sdl"
 
 	"solod.dev/so/math"
 	"solod.dev/so/mem"
@@ -13,7 +14,7 @@ import (
 // since Up connects to Down, and Down connects to up is the same thing,
 // we can store them in 6*2 bits.
 // function will panic if both faces are the same.
-func (state *ScreenInGameState) faceToBitIndex(a, b mc.Direction) int {
+func (chunk *Chunk) FaceToBitIndex(a, b mc.Direction) int {
 	if a > b {
 		tmp := b
 		b = a
@@ -22,8 +23,8 @@ func (state *ScreenInGameState) faceToBitIndex(a, b mc.Direction) int {
 	if a == b {
 		panic("faceToBitIndex: cannot exit same face we entered.")
 	}
-	var i uint8 = 255 // invalid, never actually returned.
-	var facePairBitIndex = [...][6]uint8{
+	var i = mc.DIRECTION_Invalid // invalid, never actually returned.
+	var facePairBitIndex = [...][6]int8{
 		//           D  U  N  S  W  E
 		/* Down  */ {i, 0, 1, 2, 3, 4},
 		/* Up    */ {0, i, 5, 6, 7, 8},
@@ -33,6 +34,16 @@ func (state *ScreenInGameState) faceToBitIndex(a, b mc.Direction) int {
 		/* East  */ {4, 8, 11, 13, 14, i},
 	}
 	return int(facePairBitIndex[a][b])
+}
+func (chunk *Chunk) IsFaceConnected(section int, a, b mc.Direction) bool {
+	if a == mc.DIRECTION_Invalid {
+		return true
+	}
+	if a == b {
+		return true
+	}
+	graph := chunk.ConnectivityGraph[section]
+	return (graph & (1 << chunk.FaceToBitIndex(a, b))) != 0
 }
 
 // Must be called when an opaque block is changed in a section.
@@ -113,7 +124,7 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 						if face2 == face {
 							continue
 						}
-						i := state.faceToBitIndex(face, face2)
+						i := chunk.FaceToBitIndex(face, face2)
 						chunk.ConnectivityGraph[section] |= 1 << i // set bit to 1
 					}
 				}
@@ -122,19 +133,48 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 	}
 }
 
-func (state *ScreenInGameState) toVisibilityArrayIndex(camX, camY, camZ int, x, y, z int) int {
+// Returns -1 if out of bounds.
+func (c *ChunkCullState) GetVisitedArrayIndex(x, y, z int32) int32 {
 	// Offset coordinates so the camera is at the center of the grid
-	gridSize := state.ChunkCullState.gridSize
-	relX := (x - camX) + (gridSize / 2)
-	relZ := (z - camZ) + (gridSize / 2)
+	gridSize := c.gridSize
+	relX := (x - c.originX) + (gridSize / 2)
+	relZ := (z - c.originZ) + (gridSize / 2)
 	if relX < 0 || relX >= gridSize || y < 0 || y > 7 || relZ < 0 || relZ >= gridSize {
 		return -1 // Out of bounds of our visited array
 	}
-	return (y*gridSize+relZ)*gridSize + relX
+	return ((y*gridSize+relZ)*gridSize + relX)
 }
-func (state *ScreenInGameState) SetRenderDistance(d int) {
+func (state *ScreenInGameState) SetRenderDistance(d int32) {
 	c := &state.ChunkCullState
 	c.gridSize = d*2 + 1
+}
+
+// Calculates chunk culling.
+func (state *ScreenInGameState) BeginDrawingChunks(cam gfx.Camera) {
+	c := &state.ChunkCullState
+	for _, chunk := range c.visibleChunks {
+		chunk.VisibleSections = [8]bool{}
+		chunk.QueuedThisFrame = false
+	}
+	state.MarkVisibleChunks(cam)
+}
+
+// Rebuilds and draws visible chunk meshes.
+func (state *ScreenInGameState) EndDrawingChunks(terrain gfx.Texture) {
+	c := &state.ChunkCullState
+	for _, chunk := range c.visibleChunks {
+		if chunk.NeedsRebuild {
+			chunk.ResetMeshes()
+			state.BuildChunkMesh(chunk)
+			chunk.NeedsRebuild = false
+		}
+		for section, visible := range chunk.VisibleSections {
+			if !visible {
+				continue
+			}
+			chunk.DrawSectionMesh(section, terrain)
+		}
+	}
 }
 
 func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
@@ -143,24 +183,35 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 	c.queue = c.queue[:0]
 	c.visibleChunks = c.visibleChunks[:0]
 	state.s.Scratch.Reset()
-	visited := slices.Make[bool](&state.s.Scratch, 8*c.gridSize*c.gridSize)
+	visited := slices.Make[bool](&state.s.Scratch, 8*int(c.gridSize*c.gridSize))
 	camPos := cam.Position
 
-	camX := int(math.Floor(float64(camPos.X) / 16.0))
-	camY := int(math.Floor(float64(camPos.Y) / 16.0))
-	camZ := int(math.Floor(float64(camPos.Z) / 16.0))
+	camX := int32(math.Floor(float64(camPos.X) / 16.0))
+	camY := int32(math.Floor(float64(camPos.Y) / 16.0))
+	camZ := int32(math.Floor(float64(camPos.Z) / 16.0))
 	camY = min(7, max(camY, 0))
+	// for calculating visibility array index
+	c.originX = int32(camX) - c.gridSize/2
+	c.originZ = int32(camZ) - c.gridSize/2
 
+	// set up a queue of steps,
+	// where each step contains the chunk we
+	// want to visit next and the face we came from
+
+	// find chunk the camera is inside of and push it on the queue as the first step
 	c.queue = slices.Append(mem.System, c.queue, ChunkBfsStep{
 		X:         camX,
 		Y:         camY,
 		Z:         camZ,
-		EntryFace: 255,
+		EntryFace: mc.DIRECTION_Invalid,
 	})
-	if i := state.toVisibilityArrayIndex(camX, camY, camZ, camX, camY, camZ); i != -1 {
-		visited[i] = true
+	if idx := c.GetVisitedArrayIndex(camX, camY, camZ); idx != -1 {
+		visited[idx] = true
 	}
-	var FaceOffsets = []gfx.Vector3{
+	type Vector3i struct {
+		X, Y, Z int32
+	}
+	var FaceOffsets = []Vector3i{
 		{X: 0, Y: -1, Z: 0}, {X: 0, Y: 1, Z: 0}, // down, up
 		{X: 0, Y: 0, Z: 1}, {X: 0, Y: 0, Z: -1}, // north, south
 		{X: -1, Y: 0, Z: 0}, {X: 1, Y: 0, Z: 0}, // west, east
@@ -168,62 +219,73 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 
 	head := 0
 	for head < len(c.queue) {
+		// the front chunk in the queue is visited,
 		curr := c.queue[head]
+		currChunk := state.Chunks.Get(ChunkCoordinate{int32(curr.X), int32(curr.Z)})
+		if currChunk == nil {
+			sdl.Log("The chunk that the camera is inside of is nil.")
+			return
+		}
+		// queued for rendering
+		currChunk.VisibleSections[curr.Y] = true
+		if !currChunk.QueuedThisFrame {
+			currChunk.QueuedThisFrame = true
+			c.visibleChunks = slices.Append(mem.System, c.visibleChunks, currChunk)
+		}
+		// and popped;
 		head++
-
-		chunk := state.Chunks.Get(ChunkCoordinate{int32(curr.X), int32(curr.Z)})
-		if chunk == nil {
-			continue
-		}
-		// frustum cull
-		if cam.IsSphereInFrustum(chunk.GetSectionCenter(curr.Y), CHUNK_SECTION_SPHERE_RADIUS) {
-			chunk.VisibleSections[curr.Y] = true // mark visible.
-			c.visibleChunks =
-				slices.Append(mem.System, c.visibleChunks, chunk)
-		}
-		for exitFace := range mc.Direction(6) {
-			// Directional Culling (N dot V)
-			// We don't want the BFS walking backward behind the player.
-			// If the normal of the face we are trying to exit points away from our view vector, skip it.
-			// Added a slight negative margin (-0.3) to allow peripheral vision for high FOV.
-			normal := FaceOffsets[exitFace]
-			dot := gfx.NewVector3(normal.X, normal.Y, normal.Z).DotProduct(cam.LookVector)
-			if dot < -0.9 && curr.EntryFace != 255 {
+		// for each of its neighbors, we check if we need to walk there by applying some filters to them:
+		for faceB := range mc.Direction(6) {
+			neighbourCoord :=
+				ChunkCoordinate{curr.X + FaceOffsets[faceB].X, curr.Z + FaceOffsets[faceB].Z}
+			neighbour := state.Chunks.Get(neighbourCoord)
+			if neighbour == nil {
+				continue
+			}
+			neighbourSection := curr.Y + FaceOffsets[faceB].Y
+			if neighbourSection < 0 || neighbourSection > 7 {
+				continue
+			}
+			// first, check if we are going back.
+			dot := gfx.NewVector3(
+				float32(FaceOffsets[faceB].X),
+				float32(FaceOffsets[faceB].Y),
+				float32(FaceOffsets[faceB].Z),
+			).DotProduct(cam.LookVector)
+			// We never want to go back because if a
+			// chunk is only reachable going backwards,
+			// it’s not going to be visible.
+			// So, we only walk through faces
+			// opposite to the view vector, N·V < 0.
+			if dot < 0 {
+				continue
+			}
+			// Now we have 3 chunks going around:
+			// A, the one we came from;
+			faceA := curr.EntryFace
+			// B, the one we’re inside,
+			_ = faceB
+			// and C, the one we want to visit next.
+			// If we can reach C from A through B
+			// (reading into B’s visibility graph),
+			// C passes this visibility test!
+			if !currChunk.IsFaceConnected(int(curr.Y), faceA, faceB) {
 				continue
 			}
 
-			if curr.EntryFace != 255 {
-				bitIndex := state.faceToBitIndex(curr.EntryFace, exitFace)
-				if chunk.ConnectivityGraph[curr.Y]&(1<<bitIndex) == 0 {
-					continue // path blocked by solid blocks.
-				}
-			}
-			nx, ny, nz := curr.X, curr.Y, curr.Z
-			switch exitFace {
-			case mc.DIRECTION_West:
-				nx--
-			case mc.DIRECTION_East:
-				nx++
-			case mc.DIRECTION_Down:
-				ny--
-			case mc.DIRECTION_Up:
-				ny++
-			case mc.DIRECTION_North:
-				nz--
-			case mc.DIRECTION_South:
-				nz++
-			}
-
-			i := state.toVisibilityArrayIndex(camX, camY, camZ, nx, ny, nz)
-			if i == -1 || visited[i] {
+			if !cam.IsSphereInFrustum(neighbour.GetSectionCenter(int(neighbourSection)), CHUNK_SECTION_SPHERE_RADIUS) {
 				continue
 			}
-
-			visited[i] = true
-			nextEntryFace := mc.DirectionOpposite[exitFace]
+			idx := c.GetVisitedArrayIndex(neighbourCoord.X, neighbourSection, neighbourCoord.Z)
+			if idx == -1 || visited[idx] {
+				continue
+			}
+			visited[idx] = true
 			c.queue = slices.Append(mem.System, c.queue, ChunkBfsStep{
-				X: nx, Y: ny, Z: nz,
-				EntryFace: nextEntryFace,
+				X:         neighbourCoord.X,
+				Z:         neighbourCoord.Z,
+				Y:         neighbourSection,
+				EntryFace: mc.DirectionOpposite[faceB],
 			})
 		}
 	}

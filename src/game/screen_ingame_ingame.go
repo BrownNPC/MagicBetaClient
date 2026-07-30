@@ -63,24 +63,9 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	terrain := state.s.Pack.GetTexture(assets.Terrain)
-	vcam := state.Cam
-	state.MarkVisibleChunks(vcam)
-	for _, chunk := range state.ChunkCullState.visibleChunks {
-		for section := range 8 {
-			if chunk.NeedsRebuild[section] {
-				chunk.ResetMeshes()
-				state.BuildChunkMesh(chunk)
-				chunk.NeedsRebuild = [8]bool{}
-				break
-			}
-		}
-		for section, visible := range chunk.VisibleSections {
-			if !visible {
-				continue
-			}
-			chunk.DrawSectionMesh(section, terrain)
-		}
-	}
+	state.BeginDrawingChunks(state.Cam)
+
+	state.EndDrawingChunks(terrain)
 	{
 		it := state.Things.Iter()
 		for it.Next() {

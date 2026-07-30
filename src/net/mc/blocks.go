@@ -148,7 +148,7 @@ func GetUV(id int, rotation ...int) AtlasUV {
 	return result
 }
 
-type Direction = uint8
+type Direction = int8
 
 const (
 	DIRECTION_Down  Direction = 0
@@ -157,6 +157,8 @@ const (
 	DIRECTION_South Direction = 3
 	DIRECTION_West  Direction = 4
 	DIRECTION_East  Direction = 5
+
+	DIRECTION_Invalid Direction = -1
 )
 
 var DirectionOpposite = [...]Direction{
@@ -167,6 +169,7 @@ var DirectionOpposite = [...]Direction{
 	4: 5,
 	5: 4,
 }
+
 // Sorted in ascending order.
 var NonOpaqueBlocks = []BlockID{
 	BLOCK_Air, BLOCK_Leaves,

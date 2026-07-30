@@ -288,9 +288,10 @@ type Chunk struct {
 	Layer1 [8]*gfx.Mesh
 
 	VisibleSections [8]bool
+	QueuedThisFrame bool
 
 	// sections to rebuild. used by BuildChunkMesh.
-	NeedsRebuild [8]bool
+	NeedsRebuild bool
 	// Connectivity graph from Tommo's blog: https://tomcc.github.io/2014/08/31/visibility-1.html
 	ConnectivityGraph [8]uint16
 
@@ -372,13 +373,15 @@ func (chunk *Chunk) DrawSectionMesh(section int, terrain gfx.Texture) {
 }
 
 type ChunkBfsStep struct {
-	X, Y, Z   int          // Chunk space coordinates. Y is section (0-7)
+	// Next chunk we want to visit.
+	X, Y, Z   int32        // Chunk space coordinates. Y is section (0-7)
 	EntryFace mc.Direction // The face we entered this chunk from
 }
 type ChunkCullState struct {
-	queue         []ChunkBfsStep
-	gridSize      int // render_distance*2 +1
-	visibleChunks []*Chunk
+	queue            []ChunkBfsStep
+	gridSize         int32 // render_distance*2 +1
+	visibleChunks    []*Chunk
+	originX, originZ int32
 }
 type ScreenInGameState struct {
 	s *State
