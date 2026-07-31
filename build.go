@@ -13,12 +13,12 @@ var BuildDir = File("./_build/")
 
 var Target = flag.String("target", "none", " -target=<psp,psp-vendored,native,native-vendored>")
 var Release = flag.Bool("release", false, " --release # builds in release mode (max optimizations)")
-var TOOLCHAIN = flag.String("toolchain", "", "--toolchain=must-toolchain.cmake")
+var Ninja = flag.Bool("ninja", false, "use ninja build system for faster builds.")
 
 func RunCmakeForTarget(target string, buildType string) bool {
-	var toolchain string
-	if *TOOLCHAIN != "" {
-		toolchain = "--toolchain " + *TOOLCHAIN
+	var ninja string
+	if *Ninja {
+		ninja = "-G Ninja"
 	}
 	switch target {
 	case "psp":
@@ -26,29 +26,25 @@ func RunCmakeForTarget(target string, buildType string) bool {
 		return Command("psp-cmake",
 			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=ON",
 			"-DCMAKE_BUILD_TYPE="+buildType,
-			toolchain,
-			"-B", BuildDir, "-G", "Ninja")
+			"-B", BuildDir, ninja)
 	case "psp-vendored":
 		BuildDir = "./_build-psp-vendored"
 		return Command("psp-cmake",
 			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON",
 			"-DCMAKE_BUILD_TYPE="+buildType,
-			toolchain,
-			"-B", BuildDir, "-G", "Ninja")
+			"-B", BuildDir, ninja)
 	case "native":
 		BuildDir = "./_build-native"
 		return Command("cmake",
 			"-DUSE_VENDORED_SDL3=OFF", "-DUSE_VENDORED_MIXER=OFF",
 			"-DCMAKE_BUILD_TYPE="+buildType,
-			toolchain,
-			"-B", BuildDir, "-G", "Ninja")
+			"-B", BuildDir, ninja)
 	case "native-vendored":
 		BuildDir = "./_build-native-vendored"
 		return Command("cmake",
 			"-DUSE_VENDORED_SDL3=ON", "-DUSE_VENDORED_MIXER=ON",
 			"-DCMAKE_BUILD_TYPE="+buildType,
-			toolchain,
-			"-B", BuildDir, "-G", "Ninja")
+			"-B", BuildDir, ninja)
 	}
 	return false
 }
