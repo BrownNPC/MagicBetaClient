@@ -141,8 +141,8 @@ func (state *ScreenInGameState) BuildConnectivityGraphForSection(chunk *Chunk, s
 func (c *ChunkCullState) GetVisitedArrayIndex(x, y, z int32) int32 {
 	// Offset coordinates so the camera is at the center of the grid
 	gridSize := c.gridSize
-	relX := (x - c.originX) + (gridSize / 2)
-	relZ := (z - c.originZ) + (gridSize / 2)
+	relX := x - c.originX
+	relZ := z - c.originZ
 	if relX < 0 || relX >= gridSize || y < 0 || y > 7 || relZ < 0 || relZ >= gridSize {
 		return -1 // Out of bounds of our visited array
 	}
@@ -250,19 +250,24 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 			if neighbourSection < 0 || neighbourSection > 7 {
 				continue
 			}
+			idx := c.GetVisitedArrayIndex(neighbourCoord.X, neighbourSection, neighbourCoord.Z)
+			if idx == -1 || visited[idx] {
+				continue
+			}
 			// first, check if we are going back.
 			dot := gfx.NewVector3(
 				float32(FaceOffsets[faceB].X),
 				float32(FaceOffsets[faceB].Y),
 				float32(FaceOffsets[faceB].Z),
 			).DotProduct(cam.LookVector)
+
 			// We never want to go back because if a
 			// chunk is only reachable going backwards,
 			// it’s not going to be visible.
 			// So, we only walk through faces
 			// opposite to the view vector, N·V < 0.
 			if dot < 0 {
-				continue
+				// continue
 			}
 			// Now we have 3 chunks going around:
 			// A, the one we came from;
@@ -274,11 +279,6 @@ func (state *ScreenInGameState) MarkVisibleChunks(cam gfx.Camera) {
 			// (reading into B’s visibility graph),
 			// C passes this visibility test!
 			if !currChunk.IsFaceConnected(int(curr.Y), faceA, faceB) {
-				continue
-			}
-
-			idx := c.GetVisitedArrayIndex(neighbourCoord.X, neighbourSection, neighbourCoord.Z)
-			if idx == -1 || visited[idx] {
 				continue
 			}
 

@@ -276,10 +276,7 @@ func init() {
 	const sectionSize = 16.0
 	const halfSize = sectionSize / 2
 
-	CHUNK_SECTION_SPHERE_RADIUS = float32(math.Sqrt(
-		halfSize*halfSize +
-			halfSize*halfSize +
-			halfSize*halfSize))
+	CHUNK_SECTION_SPHERE_RADIUS = float32(math.Sqrt(halfSize * halfSize * 3))
 }
 
 type Chunk struct {
@@ -379,7 +376,7 @@ type ChunkBfsStep struct {
 }
 type ChunkCullState struct {
 	queue            []ChunkBfsStep
-	gridSize         int32 // render_distance*2 +1
+	gridSize         int32 // render_distance +1
 	visibleChunks    []*Chunk
 	originX, originZ int32
 }

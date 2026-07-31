@@ -32,3 +32,7 @@ The output binary will be at `_build-native-vendored/MagicBetaClient`
 - SDL3 (vendored)
 - SDL3_Mixer (vendored)
 - libcurl
+
+For run instructions, see the [release](https://github.com/BrownNPC/MagicBetaClient/releases/tag/0.0.1)
+You need to setup a minecraft java beta 1.7.3 server on localhost.
+This application is Linux only for now.

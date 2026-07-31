@@ -1684,3 +1684,17 @@ func Begin(mode int)             { rlBegin(mode) }
 func End()                       { rlEnd() }
 func Color4ub(r, g, b, a uint8)  { rlColor4ub(r, g, b, a) }
 func Vertex3f(x, y, z float32)   { rlVertex3f(x, y, z) }
+
+//so:extern
+func rlEnableWireMode()
+
+//so:extern
+func rlDisableWireMode()
+
+func SetWireframeMode(b bool) {
+	if b {
+		rlEnableWireMode()
+	} else {
+		rlDisableWireMode()
+	}
+}

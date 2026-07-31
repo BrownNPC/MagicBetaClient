@@ -17,9 +17,12 @@ var _ string
 type AppState struct {
 	lastTime time.Time
 	game     game.State
+
+	wireframeMode bool
 }
 
 var state AppState
+
 func AppInit(appState *any, argc c.Int, argv **c.Char) sdl.AppResult {
 	if !sdl.Init(sdl.INIT_VIDEO | sdl.INIT_GAMEPAD) {
 		sdl.Log("SDL init failed %s", sdl.GetError().Error())
@@ -127,7 +130,11 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 		typ := game.InputNone
 		switch key.Key {
 		case sdl.KeyF3:
-			fmt.Printf("CurrentScreen=%d", state.game.CurrentScreeen)
+			if key.Type == sdl.EVENT_KEY_UP {
+				state.wireframeMode = !state.wireframeMode
+				gfx.SetWireframeMode(state.wireframeMode)
+				fmt.Printf("CurrentScreen=%d", state.game.CurrentScreeen)
+			}
 		case sdl.KeyESCAPE:
 			typ = game.InputClose
 		case sdl.KeyBACKSPACE:
