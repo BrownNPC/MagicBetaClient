@@ -6,6 +6,7 @@ import (
 	"mbc/net/mc"
 
 	"solod.dev/so/maps"
+	"solod.dev/so/math"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
@@ -63,8 +64,32 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	terrain := state.s.Pack.GetTexture(assets.Terrain)
-	state.BeginDrawingChunks(state.Cam)
-	state.EndDrawingChunks(terrain)
+	// state.BeginDrawingChunks(state.Cam)
+	// state.EndDrawingChunks(terrain)
+	{
+		it := state.Chunks.Iter()
+		for it.Next() {
+			chunk := it.Value()
+			for i := range 8 {
+				pos := chunk.GetSectionCenter(i)
+				visible := state.Cam.IsSphereInFrustum(pos, CHUNK_SECTION_SPHERE_RADIUS)
+				if !visible {
+					continue
+				}
+				if math.Abs(float64(state.Cam.Position.Distance(pos))) > 7*7*3 {
+					continue
+				}
+				if chunk.NeedsRebuild {
+					chunk.ResetMeshes()
+					state.BuildChunkMesh(chunk)
+					chunk.NeedsRebuild = false
+				}
+
+				chunk.DrawSectionMesh(i, terrain)
+			}
+		}
+	}
+
 	{
 		it := state.Things.Iter()
 		for it.Next() {

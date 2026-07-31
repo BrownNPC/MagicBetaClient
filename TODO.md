@@ -1,9 +1,12 @@
 # TODOS
 - [x] Recreate Main Menu accurately
+- [x] Navigate menus with keyboard and controller.
 - [x] Join offline mode servers
 - [x] basic framework for handling+decoding packets
 - [x] handle packets required to render chunks.
-- [ ] get basic world rendering
+- [x] get basic world rendering
+- [x] smooth lighting
+- [ ] [Advanced cave culling algorithm](https://tomcc.github.io/2014/08/31/visibility-1.html)
 - [ ] implement decoder for all packets
 - [ ] handle all packets
 - [ ] Crafting system [inspired by old pocket edition](https://minecraft.wiki/wiki/Crafting/Before_Pocket_Edition_v0.9.0_alpha)

@@ -7,6 +7,10 @@
 
 <img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/8e6d5074-b01a-4c16-8b39-03ac63e8538a" />
 
+# Running
+For instructions, see the [release](https://github.com/BrownNPC/MagicBetaClient/releases/tag/0.0.1)
+This application is Linux only for now.
+
 # Roadmap
 see [Todo.md](./TODO.md) to get an idea of the roadmap.
 
@@ -33,6 +37,3 @@ The output binary will be at `_build-native-vendored/MagicBetaClient`
 - SDL3_Mixer (vendored)
 - libcurl
 
-For run instructions, see the [release](https://github.com/BrownNPC/MagicBetaClient/releases/tag/0.0.1)
-You need to setup a minecraft java beta 1.7.3 server on localhost.
-This application is Linux only for now.

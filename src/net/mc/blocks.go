@@ -172,7 +172,7 @@ var DirectionOpposite = [...]Direction{
 
 // Sorted in ascending order.
 var NonOpaqueBlocks = []BlockID{
-	BLOCK_Air, BLOCK_Leaves,
+	BLOCK_Air, BLOCK_Leaves, BLOCK_Ice,
 }
 
 // sort the above array in ascending order.
@@ -206,6 +206,10 @@ func GetUVFromBlockSideAndMetadata(b BlockID, side Direction, metadata int) Atla
 		return GetUV(52) // Oak leaves
 	case BLOCK_Glass:
 		return GetUV(49)
+	case BLOCK_SnowBlock, BLOCK_SnowLayer:
+		return GetUV(66)
+	case BLOCK_Ice:
+		return GetUV(67)
 	case BLOCK_Sponge:
 		return GetUV(48)
 	case BLOCK_Log:
