@@ -1,3 +1,6 @@
 [submodule "cmd/sobind"]
 	path = cmd/sobind
 	url = https://github.com/solod-dev/sobind.git
+[submodule "vendored/SDL"]
+	path = vendored/SDL
+	url = https://github.com/libsdl-org/SDL.git
