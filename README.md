@@ -22,7 +22,7 @@ a variant of Go that compiles to readable C code.
 
 
 ```
-go install solod.dev/cmd/so@main
+go install solod.dev/cmd/so@latest
 go run build.go --bootstrap=native-vendored
 
 ```

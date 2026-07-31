@@ -23,7 +23,13 @@ set(SDLMIXER_OPUS OFF)
 set(SDLMIXER_MP3_MPG123 OFF)
 set(SDLMIXER_VORBIS_VORBISFILE OFF)
 set(SDLMIXER_FLAC_LIBFLAC OFF)
-set(SDLMIXER_VENDORED ON)   # tell SDL_mixer to build its own dependencies
+set(SDLMIXER_VENDORED ON CACHE BOOL "" FORCE) # tell SDL_mixer to build its own dependencies
+
+if (USE_VENDORED_SDL3)
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "") 
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
+endif()
 
 # add sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ./transpiled/*.c src/*.c)
