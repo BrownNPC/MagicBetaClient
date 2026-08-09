@@ -20,11 +20,13 @@ see [Todo.md](./TODO.md) to get an idea of the roadmap.
 You must have Go installed. Why? Because the codebase is written in [Solod](https://solod.dev) which is
 a variant of Go that compiles to readable C code.
 
+```
+git submodule update --init --recursive vendored/SDL
+```
 
 ```
 go install solod.dev/cmd/so@latest
 go run build.go --bootstrap=native-vendored
-
 ```
 You will need `libcurl` findable by CMake. Just look up "how to install libcurl devel {distro name}"
 
