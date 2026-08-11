@@ -44,14 +44,14 @@ endif()
 target_include_directories(${PROJECT_NAME} PUBLIC ./transpiled src/ vendored/)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(
-        -g -O0
-    )
-    add_compile_options(
+   target_compile_options(${PROJECT_NAME} PRIVATE
+        -g
+        -O0
         -fno-omit-frame-pointer
         -fsanitize=address,undefined
     )
-    add_link_options(
+
+    target_link_options(${PROJECT_NAME} PRIVATE
         -fsanitize=address,undefined
     )
 endif()
