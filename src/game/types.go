@@ -439,13 +439,17 @@ type State struct {
 	//Dt as time.Duration
 	FrameTime time.Duration
 
+	IsMovingWithGamepad bool
+	GamepadMovement     gfx.Vector2
+
 	TargetFrameTime           time.Duration // set automatically
 	TargetFPS                 int
 	ScreenWidth, ScreenHeight float32
 	TextInputActive           bool // whether text input should be enabled.
 	Config                    cfg.Config
 
-	// Moving with dpad
+	// This must be set true whenever the player is inside a UI.
+	// to enable moving around with dpad
 	InteractingWithUI bool // is interacting with UI
 	MouseLock         bool // lock mouse (FPS mode)
 	UIDpadMode        bool

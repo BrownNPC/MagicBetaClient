@@ -224,7 +224,12 @@ func IsPlatformPSP() bool {
 	c.Raw(`
 	#ifdef SDL_PLATFORM_PSP
 	return true;
-	#endif
-		`)
+	#endif`)
 	return false
 }
+
+//so:extern SDL_GetGamepadAxis
+func GetGamepadAxis(gamepad *Gamepad, axis int) int16
+
+//so:extern SDL_GetGamepadFromPlayerIndex
+func GetGamepadFromPlayerIndex(idx int) *Gamepad

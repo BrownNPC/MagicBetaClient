@@ -19,6 +19,19 @@ type AppState struct {
 	game     game.State
 
 	wireframeMode bool
+
+	// The PSP does not have a right analog stick. or triggers.
+	// This boolean selects between two control schemes
+	//
+	// Modes should be toggled with left bumper.
+	//
+	// False:
+	//  Left Stick: Move
+	//  Right Bumper: Attack
+	// True:
+	//  Left Stick: Look
+	//  Right Bumper: Use
+	LeftStickFunctionToggled bool
 }
 
 var state AppState
@@ -57,9 +70,31 @@ func AppIterate(appState any) sdl.AppResult {
 	// Update/render
 	state.game.InteractingWithUI = false // reset before frame
 	gfx.SetMouseLock(state.game.MouseLock)
+
+	// use gamepad axis to set Move inputs.
+	if pad := sdl.GetGamepadFromPlayerIndex(0); pad != nil {
+		const deadzone = 8 / 100.0 // 8% deadzone
+		move := gfx.NewVector2(
+			float32(sdl.GetGamepadAxis(pad, sdl.GAMEPAD_AXIS_LEFTX))/32768,
+			float32(sdl.GetGamepadAxis(pad, sdl.GAMEPAD_AXIS_LEFTY))/32768,
+		)
+		if length := move.Length(); length < deadzone {
+			move = gfx.NewVector2(0, 0)
+		} else {
+			// scale it to 0-1
+			scale := (length - deadzone) / (1.0 - deadzone)
+			move = move.Normalize().Scale(scale)
+			// sdl uses negatives for up/left
+			// so we flip it before passing to game
+			state.game.GamepadMovement = move.Scale(-1)
+			state.game.IsMovingWithGamepad = true
+		}
+	}
 	if !state.game.Update() {
 		return sdl.APP_SUCCESS
 	}
+	state.game.GamepadMovement = gfx.NewVector2(0, 0)
+	state.game.IsMovingWithGamepad = false
 
 	// Delta time
 	frameTime := now.Sub(state.lastTime)
@@ -200,6 +235,13 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			if state.game.InteractingWithUI {
 				typ = game.InputClose
 			}
+		case sdl.GAMEPAD_BUTTON_LEFT_SHOULDER:
+			if sdl.IsPlatformPSP() && btn.Type == sdl.EVENT_GAMEPAD_BUTTON_UP {
+				// should toggle control scheme for bumpers.
+				state.LeftStickFunctionToggled = !state.LeftStickFunctionToggled
+				// play some sound or vibrate or something to indicate the
+				// mode switch
+			}
 		}
 		if typ != game.InputNone {
 			state.game.UIDpadMode = state.game.InteractingWithUI
@@ -207,7 +249,6 @@ func AppEvent(appState any, e *sdl.Event) sdl.AppResult {
 			state.game.Inputs[typ].Up = btn.Type == sdl.EVENT_GAMEPAD_BUTTON_UP
 		}
 	}
-
 	return sdl.APP_CONTINUE
 }
 
