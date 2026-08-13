@@ -22,6 +22,8 @@ set(SDLMIXER_MOD_XMP OFF)
 set(SDLMIXER_OPUS OFF)
 set(SDLMIXER_MP3_MPG123 OFF)
 set(SDLMIXER_VORBIS_VORBISFILE OFF)
+set(SDLMIXER_FLAC OFF)
+set(SDLMIXER_AIFF OFF)
 set(SDLMIXER_FLAC_LIBFLAC OFF)
 set(SDLMIXER_VENDORED ON CACHE BOOL "" FORCE) # tell SDL_mixer to build its own dependencies
 
@@ -69,7 +71,7 @@ endif()
 
 #pretend to be OpenBSD for PSP
 if (PSP)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd) 
+  target_compile_definitions(${PROJECT_NAME} PRIVATE so_build_openbsd SO_PANIC_MODE=SO_PANIC_ABORT) 
 endif()
 
 if (USE_VENDORED_SDL3)

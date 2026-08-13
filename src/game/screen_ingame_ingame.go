@@ -145,19 +145,23 @@ func (state *ScreenInGameState) UpdateCamera(pos gfx.Vector3) {
 	pitch += -delta.Y * sensitivity
 
 	var moveLocal gfx.Vector3
-	if state.s.InputHeld(InputMoveForward) {
-		moveLocal.Z += 1
+	if state.s.IsMovingWithGamepad {
+		moveLocal.X = state.s.GamepadMovement.X
+		moveLocal.Z = state.s.GamepadMovement.Y
+	} else {
+		if state.s.InputHeld(InputMoveForward) {
+			moveLocal.Z += 1
+		}
+		if state.s.InputHeld(InputMoveBackward) {
+			moveLocal.Z -= 1
+		}
+		if state.s.InputHeld(InputMoveLeft) {
+			moveLocal.X += 1
+		}
+		if state.s.InputHeld(InputMoveRight) {
+			moveLocal.X -= 1
+		}
 	}
-	if state.s.InputHeld(InputMoveBackward) {
-		moveLocal.Z -= 1
-	}
-	if state.s.InputHeld(InputMoveLeft) {
-		moveLocal.X += 1
-	}
-	if state.s.InputHeld(InputMoveRight) {
-		moveLocal.X -= 1
-	}
-
 	var speed = 50 * state.s.Dt
 	camPos := state.Cam.Position
 
