@@ -19,7 +19,6 @@ func (s *State) Screen_InGame(state *ScreenInGameState, screen gfx.Rectangle) {
 	}
 
 	s.MouseLock = true // mouse lock is explicitly disabled if needed.
-	s.ProcessDpadUIInput(2, &state.selected)
 	switch state.CurrentScreen {
 	case SCREEN_INGAME_DISCONNECTED_SCREEN:
 		state.ScreenDisconnected(s, screen)
@@ -89,12 +88,8 @@ var NoDecoderForPacketErr = errors.New("No decoder implemented for packet")
 // Show disconnected screen.
 func (state *ScreenInGameState) ScreenDisconnected(s *State, screen gfx.Rectangle) {
 	s.InteractingWithUI = true
-	state.selected = 0
 	s.MouseLock = false
-	clicked := s.InputReleased(InputTap)
-	if s.UIDpadMode {
-		clicked = s.InputReleased(InputReturn)
-	}
+	state.s.ProcessDpadUIInput(1, &state.selected)
 	// Draw dirt background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	gfx.DrawTextureTiled(bg,
@@ -124,8 +119,10 @@ func (state *ScreenInGameState) ScreenDisconnected(s *State, screen gfx.Rectangl
 	bbox.Y += bbox.H
 	bbox.Y += 4 * gui.Scale
 
+	clicked := s.InputReleased(InputTap)
 	hovered := bbox.Contains(s.Cursor)
 	if s.UIDpadMode {
+		clicked = s.InputPressed(InputReturn)
 		hovered = state.selected == 0
 	}
 	if clicked && hovered {
@@ -167,7 +164,7 @@ func (state *ScreenInGameState) ScreenPaused(s *State, screen gfx.Rectangle) {
 	resumeButton := gfx.Rectangle{W: buttons.W, H: buttons.H, X: buttons.X, Y: buttons.Y}
 	clicked := s.InputReleased(InputTap)
 	if s.UIDpadMode {
-		clicked = s.InputReleased(InputReturn)
+		clicked = s.InputPressed(InputReturn)
 	}
 	buttons.Y += buttons.H + 1
 	{ // resume button

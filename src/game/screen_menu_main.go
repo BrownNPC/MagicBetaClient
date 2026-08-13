@@ -58,7 +58,7 @@ func (s *State) Screen_MenuMain(state *ScreenMainMenuState, screen gfx.Rectangle
 		clicked := s.InputReleased(InputTap)
 		if s.UIDpadMode {
 			hovered = state.selected == i
-			clicked = s.InputReleased(InputReturn)
+			clicked = s.InputPressed(InputReturn)
 		}
 		// selected :=
 		if hovered && clicked {

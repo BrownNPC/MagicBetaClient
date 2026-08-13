@@ -14,6 +14,7 @@ import (
 )
 
 func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx.Rectangle) {
+	s.InteractingWithUI = true
 	// Draw dirt background
 	bg := s.Pack.GetTexture(assets.Gui_background)
 	gfx.DrawTextureTiled(bg,
@@ -50,10 +51,10 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 	bbox = bbox.Anchor(screen, .5, .5)
 	bbox.Y += bbox.H
 	bbox.Y += 4 * gui.Scale
-	clicked := s.InputReleased(InputTap)
+	clicked := s.InputPressed(InputTap)
 	hovered := bbox.Contains(s.Cursor)
 	if s.UIDpadMode {
-		clicked = s.InputReleased(InputReturn)
+		clicked = s.InputPressed(InputReturn)
 		hovered = state.selected == 0
 	}
 	if clicked && hovered {
@@ -75,7 +76,7 @@ func (s *State) Screen_ConnectServer(state *ScreenConnectServerState, screen gfx
 		// blocks
 		s.Conn, state.Err = net.Dial(srv.Host)
 		if state.Err != nil {
-			print("Failed to dial")
+			println("Failed to dial")
 			state.stage = -1
 			return
 		} else {

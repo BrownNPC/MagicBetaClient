@@ -56,7 +56,7 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		clicked := s.InputReleased(InputTap)
 		if s.UIDpadMode {
 			hovered = state.selected == i
-			clicked = s.InputReleased(InputReturn)
+			clicked = s.InputPressed(InputReturn)
 		}
 		if idx >= len(s.Config.Servers) {
 			panic("screen_join_server: how is this possible?")
@@ -108,7 +108,7 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		enabled := state.PageIndex != 0
 		if s.UIDpadMode {
 			hovered = state.selected == 5
-			clicked = s.InputReleased(InputReturn)
+			clicked = s.InputPressed(InputReturn)
 		}
 
 		if enabled && hovered && clicked {
@@ -122,7 +122,7 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 		clicked := s.InputReleased(InputTap)
 		if s.UIDpadMode {
 			hovered = state.selected == 6
-			clicked = s.InputReleased(InputReturn)
+			clicked = s.InputPressed(InputReturn)
 		}
 		enabled := state.PageIndex != maxPage
 		if enabled && hovered && clicked {
@@ -139,7 +139,7 @@ func (s *State) Screen_SelectServer(state *ScreenSelectServerState, screen gfx.R
 	hovered := backButton.Contains(s.Cursor)
 	clicked := s.InputReleased(InputTap)
 	if s.UIDpadMode {
-		clicked = s.InputReleased(InputReturn)
+		clicked = s.InputPressed(InputReturn)
 		hovered = state.selected == 7
 	}
 	if hovered && clicked {

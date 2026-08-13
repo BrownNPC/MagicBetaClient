@@ -82,7 +82,7 @@ func (s *State) Screen_JoinServer(state *ScreenJoinServerState, screen gfx.Recta
 
 	clicked := s.InputReleased(InputTap)
 	if s.UIDpadMode {
-		clicked = s.InputReleased(InputReturn)
+		clicked = s.InputPressed(InputReturn)
 	}
 
 	// Determine hover/visual selection states
