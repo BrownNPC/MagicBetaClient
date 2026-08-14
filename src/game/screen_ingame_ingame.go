@@ -85,13 +85,14 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 					continue
 				}
 				if chunk.NeedsRebuild {
-					state.RequestChunkData(chunk)
-					chunk.ResetMeshes()
-					state.BuildChunkMesh(chunk)
-					chunk.NeedsRebuild = false
+					// state.RequestChunkData(chunk)
+					// chunk.ResetMeshes()
+					// state.BuildChunkMesh(chunk)
+					// chunk.NeedsRebuild = false
+					// state.SaveChunkData(chunk)
 				}
 
-				chunk.DrawSectionMesh(i, terrain)
+				// chunk.DrawSectionMesh(i, terrain)
 			}
 		}
 	}

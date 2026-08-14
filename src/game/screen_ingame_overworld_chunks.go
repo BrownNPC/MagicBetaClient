@@ -35,6 +35,7 @@ func (state *ScreenInGameState) SetDecompressedChunkLimit(a mem.Allocator, l int
 //
 // It will load the chunk's compressed data if available.
 // (compressed data is always available unless this chunk is being initialized)
+// NOTE: DO NOT FORGET TO ALSO CALL SAVE CHUNK DATA.
 func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunkData {
 	if c.data != nil {
 		return c.data
@@ -47,6 +48,9 @@ func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunk
 		state.DecompressedChunkFreeList = state.DecompressedChunkFreeList[:len(state.DecompressedChunkFreeList)-1]
 	} else if len(state.ChunksThatOwnADecompressedChunk) > 0 {
 		data = state.ChunksThatOwnADecompressedChunk[0].data
+		if data == nil {
+			panic("chunk ownership queue is corrupted: owner has nil data")
+		}
 		state.ChunksThatOwnADecompressedChunk[0].data = nil
 		// zero out garbage data.
 		// *data = mc.DecompressedChunkData{}
@@ -70,6 +74,9 @@ func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunk
 		slices.Append(&state.SystemTracker, state.ChunksThatOwnADecompressedChunk,
 			c,
 		)
+	if data == nil {
+		panic("no decompressed chunk data slots available.")
+	}
 	return data
 }
 
@@ -87,14 +94,17 @@ func (state *ScreenInGameState) SaveChunkData(c *Chunk) {
 		state.RunLengthEncodeChunkData(&state.SystemTracker, c.data)
 
 	// delete this chunk from the "borrow checker"
-	for i, owner := range state.ChunksThatOwnADecompressedChunk {
+	state.s.Scratch.Reset()
+	clone := slices.MakeCap[*Chunk](&state.s.Scratch, 0, len(state.ChunksThatOwnADecompressedChunk)-1)
+	for _, owner := range state.ChunksThatOwnADecompressedChunk {
 		if owner == c {
-			copy(state.ChunksThatOwnADecompressedChunk[i:],
-				state.ChunksThatOwnADecompressedChunk[i+1:])
-			state.ChunksThatOwnADecompressedChunk =
-				state.ChunksThatOwnADecompressedChunk[:len(state.ChunksThatOwnADecompressedChunk)-1]
-			break
+			continue
 		}
+		clone = append(clone, owner)
+	}
+	state.ChunksThatOwnADecompressedChunk = state.ChunksThatOwnADecompressedChunk[:0]
+	for _, c := range clone {
+		state.ChunksThatOwnADecompressedChunk = append(state.ChunksThatOwnADecompressedChunk, c)
 	}
 	// return the chunk data.
 	state.DecompressedChunkFreeList = slices.Append(&state.SystemTracker,
@@ -109,8 +119,6 @@ func (c *RunLengthEncodedChunkData) Free(a mem.Allocator) {
 	mem.FreeSlice(a, c.BlockLight)
 	mem.FreeSlice(a, c.SkyLight)
 	mem.Free(a, c)
-	// set all to nil
-	*c = RunLengthEncodedChunkData{}
 }
 
 // RunlengthEncode uses the global Scratch buffer provided by [State] to RLE input byte buffer.
@@ -607,11 +615,14 @@ func (state *ScreenInGameState) IsBlockA(c *Chunk, x, y, z int, b ...mc.BlockID)
 		if neighbor == nil {
 			return true
 		}
-		state.RequestChunkData(neighbor)
+		if neighbor.data == nil {
+			state.RequestChunkData(neighbor)
+			v := neighbor.data.IsBlockA(x, y, z, b...)
+			state.SaveChunkData(neighbor)
+			return v
+		}
 		return neighbor.data.IsBlockA(x, y, z, b...)
 	}
-
-	state.RequestChunkData(c)
 	return c.data.IsBlockA(x, y, z, b...)
 }
 
@@ -688,6 +699,18 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 		0.8, 0.5, // north, south
 		0.5, 0.8, // right, left
 	}
+	neighbours := [4]*Chunk{
+		state.Chunks.Get(ChunkCoordinate{c.coord.X - 1, c.coord.Z}),
+		state.Chunks.Get(ChunkCoordinate{c.coord.X + 1, c.coord.Z}),
+		state.Chunks.Get(ChunkCoordinate{c.coord.X, c.coord.Z - 1}),
+		state.Chunks.Get(ChunkCoordinate{c.coord.X, c.coord.Z + 1}),
+	}
+	// load neighbours
+	for _, n := range neighbours {
+		if n != nil {
+			state.RequestChunkData(n)
+		}
+	}
 	for x := range 16 {
 		for z := range 16 {
 			for y := range 128 {
@@ -732,5 +755,10 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 		}
 	}
 
+	for _, n := range neighbours {
+		if n != nil {
+			state.SaveChunkData(n)
+		}
+	}
 	c.UploadMeshes()
 }

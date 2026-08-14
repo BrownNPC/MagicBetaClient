@@ -93,8 +93,17 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 		}
 		chunk := state.Chunks.Get(coord)
 		state.Chunks.Delete(coord)
-		*chunk.data = mc.DecompressedChunkData{}
+		state.SaveChunkData(chunk)
+		if chunk.compressedData != nil {
+			chunk.compressedData.Free(&state.SystemTracker)
+			chunk.compressedData = nil
+		}
+		chunk.data = nil
 		chunk.coord = ChunkCoordinate{}
+		chunk.NeedsRebuild = false
+		chunk.QueuedThisFrame = false
+		chunk.VisibleSections = [8]bool{}
+		chunk.ConnectivityGraph = [8]uint16{}
 		state.ChunkFreeList = slices.Append(mem.System, state.ChunkFreeList, chunk)
 		return
 	}
@@ -125,7 +134,7 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	}
 	state.SaveChunkData(chunk)
 
-	// chunk.NeedsRebuild = true
+	chunk.NeedsRebuild = true
 	// for section := range 8 {
 	// 	state.BuildConnectivityGraphForSection(chunk, section)
 	// }
@@ -136,17 +145,17 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 		{coord.X, coord.Z + 1},
 	}
 	_ = neighbours
-	// for _, coord := range neighbours {
-	// 	neighbour := state.Chunks.Get(coord)
-	// 	if neighbour == nil {
-	// 		continue
-	// 	}
-	// state.RequestChunkData(neighbour)
-	// neighbour.NeedsRebuild = true
-	// for section := range 8 {
-	// 	state.BuildConnectivityGraphForSection(neighbour, section)
-	// }
-	// }
+	for _, coord := range neighbours {
+		neighbour := state.Chunks.Get(coord)
+		if neighbour == nil {
+			continue
+		}
+		// state.RequestChunkData(neighbour)
+		neighbour.NeedsRebuild = true
+		// for section := range 8 {
+		// 	state.BuildConnectivityGraphForSection(neighbour, section)
+		// }
+	}
 
 	return nil
 }
