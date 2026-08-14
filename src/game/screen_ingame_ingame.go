@@ -115,7 +115,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	{
 		fnt := state.s.Pack.Font()
 		stats := state.SystemTracker.Stats()
-		text := fmt.Sprintf(fmt.NewBuffer(1024), "Alloc=%d KiB\nObjects=%d", stats.Alloc/1024, stats.Mallocs-stats.Frees)
+		text := fmt.Sprintf(fmt.NewBuffer(1024), "Alloc=%.1f KiB (%.1f MiB)\nObjects=%d", float32(stats.Alloc)/1024, float32(stats.Alloc)/1024/1024, stats.Mallocs-stats.Frees)
 		fnt.DrawRunes([]rune(text), gfx.NewVector2(15, 15), gui.Scale, 0, gfx.Green, false)
 	}
 }

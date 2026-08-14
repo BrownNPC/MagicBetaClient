@@ -1319,6 +1319,19 @@ type ClientboundChunk struct {
 	stage int
 }
 
+// Clone will create a copy of the ClientboundChunk
+func (c *ClientboundChunk) Clone(a mem.Allocator) ClientboundChunk {
+	var c2 ClientboundChunk = *c
+	data := mem.AllocSlice[byte](a, len(c2.CompressedData), len(c2.CompressedData))
+	n := copy(data, c.CompressedData)
+	if n != len(data) {
+		println("len=", len(data), "n=", n)
+		panic("did not copy all bytes.")
+	}
+	c2.CompressedData = data
+	return c2
+}
+
 func (p *ClientboundChunk) Step(a mem.Allocator, rd *net.BufferedReader) (bool, error) {
 	for {
 		switch p.stage {

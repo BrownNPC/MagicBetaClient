@@ -120,6 +120,10 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 		sdl.Log("WARNING: received chunk data for an unloaded chunk.")
 		return nil
 	}
+	// heap allocate the compressed data for now
+	// to see how much memory it takes
+	c := pkt.Clone(&state.SystemTracker)
+	println(len(c.CompressedData)) // just so it's not optimized away
 
 	// if err := chunk.data.ProcessChunkData(pkt); err != nil {
 	// 	return err
