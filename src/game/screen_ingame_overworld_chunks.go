@@ -5,10 +5,56 @@ import (
 	"mbc/net/mc"
 	"mbc/sdl"
 
+	"solod.dev/so/bytes"
+	"solod.dev/so/encoding/binary"
 	"solod.dev/so/math"
 	"solod.dev/so/mem"
 	"solod.dev/so/slices"
 )
+
+// RunlengthEncode uses the global Scratch buffer provided by [State] to RLE input byte buffer.
+// the last two bytes are a uint16 decompressed length (little endian)
+func (state *ScreenInGameState) RunlengthEncode(a mem.Allocator, input []byte) []byte {
+	if len(input) == 0 {
+		return nil
+	}
+
+	scratch := &state.s.Scratch
+	scratch.Reset()
+	var encoded = bytes.NewBuffer(scratch, []byte{})
+
+	var current byte = input[0]
+	var count byte = 1
+
+	for _, b := range input[1:] {
+		if b == current && count < 255 {
+			count++
+		} else {
+			encoded.WriteByte(count)
+			encoded.WriteByte(current)
+
+			current = b
+			count = 1
+		}
+	}
+	encoded.WriteByte(count)
+	encoded.WriteByte(current)
+
+	var length [2]byte
+	binary.LittleEndian.PutUint16(length[:], uint16(len(input)))
+	encoded.Write(length[:])
+
+	return bytes.Clone(a, encoded.Bytes())
+}
+
+func (state *ScreenInGameState) RunLengthEncodeChunkData(a mem.Allocator, d *mc.DecompressedChunkData) RunLengthEncodedChunkData {
+	return RunLengthEncodedChunkData{
+		Blocks:     state.RunlengthEncode(a, d.Blocks[:]),
+		Metadata:   state.RunlengthEncode(a, d.Metadata[:]),
+		BlockLight: state.RunlengthEncode(a, d.BlockLight[:]),
+		SkyLight:   state.RunlengthEncode(a, d.SkyLight[:]),
+	}
+}
 
 // We need to store face connections. eg. Up connects to Down.
 // since Up connects to Down, and Down connects to up is the same thing,

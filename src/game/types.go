@@ -380,6 +380,13 @@ type ChunkCullState struct {
 	visibleChunks    []*Chunk
 	originX, originZ int32
 }
+type RunLengthEncodedChunkData struct {
+	Blocks     []byte
+	Metadata   []byte
+	BlockLight []byte
+	SkyLight   []byte
+}
+
 type ScreenInGameState struct {
 	s *State
 	// STATE BOOK KEEPING
@@ -424,7 +431,7 @@ type ScreenInGameState struct {
 	ChunkFreeList  []*Chunk
 	ChunkCullState ChunkCullState
 
-	SystemTracker  mem.Tracker
+	SystemTracker mem.Tracker
 }
 
 // Max number of sound effects that can be loaded at a time.
