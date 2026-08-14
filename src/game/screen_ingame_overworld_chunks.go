@@ -6,14 +6,12 @@ import (
 	"mbc/sdl"
 
 	"solod.dev/so/bytes"
-	"solod.dev/so/encoding/binary"
 	"solod.dev/so/math"
 	"solod.dev/so/mem"
 	"solod.dev/so/slices"
 )
 
 // RunlengthEncode uses the global Scratch buffer provided by [State] to RLE input byte buffer.
-// the last two bytes are a uint16 decompressed length (little endian)
 func (state *ScreenInGameState) RunlengthEncode(a mem.Allocator, input []byte) []byte {
 	if len(input) == 0 {
 		return nil
@@ -40,20 +38,39 @@ func (state *ScreenInGameState) RunlengthEncode(a mem.Allocator, input []byte) [
 	encoded.WriteByte(count)
 	encoded.WriteByte(current)
 
-	var length [2]byte
-	binary.LittleEndian.PutUint16(length[:], uint16(len(input)))
-	encoded.Write(length[:])
-
 	return bytes.Clone(a, encoded.Bytes())
 }
 
-func (state *ScreenInGameState) RunLengthEncodeChunkData(a mem.Allocator, d *mc.DecompressedChunkData) RunLengthEncodedChunkData {
-	return RunLengthEncodedChunkData{
-		Blocks:     state.RunlengthEncode(a, d.Blocks[:]),
-		Metadata:   state.RunlengthEncode(a, d.Metadata[:]),
-		BlockLight: state.RunlengthEncode(a, d.BlockLight[:]),
-		SkyLight:   state.RunlengthEncode(a, d.SkyLight[:]),
+// RunlengthDecode decodes the input buffer into output.
+// output must be large enough to hold the uncompressed data.
+func (state *ScreenInGameState) RunlengthDecode(input []byte, output []byte) {
+	if len(input)%2 != 0 {
+		panic("Encoded data is corrupted: length should be an even number.")
 	}
+	pos := 0
+	for i := 0; i < len(input); i += 2 {
+		count := input[i]
+		value := input[i+1]
+		for range count {
+			output[pos] = value
+			pos++
+		}
+	}
+}
+
+func (state *ScreenInGameState) RunLengthEncodeChunkData(a mem.Allocator, d *mc.DecompressedChunkData) *RunLengthEncodedChunkData {
+	c := mem.Alloc[RunLengthEncodedChunkData](a)
+	c.Blocks = state.RunlengthEncode(a, d.Blocks[:])
+	c.Metadata = state.RunlengthEncode(a, d.Metadata[:])
+	c.BlockLight = state.RunlengthEncode(a, d.BlockLight[:])
+	c.SkyLight = state.RunlengthEncode(a, d.SkyLight[:])
+	return c
+}
+func (state *ScreenInGameState) RunlengthDecodeChunkData(src *RunLengthEncodedChunkData, dst *mc.DecompressedChunkData) {
+	state.RunlengthDecode(src.Blocks, dst.Blocks[:])
+	state.RunlengthDecode(src.Metadata, dst.Metadata[:])
+	state.RunlengthDecode(src.BlockLight, dst.BlockLight[:])
+	state.RunlengthDecode(src.SkyLight, dst.SkyLight[:])
 }
 
 // We need to store face connections. eg. Up connects to Down.
