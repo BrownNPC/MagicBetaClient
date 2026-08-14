@@ -3,6 +3,7 @@ package game
 import (
 	"mbc/gfx"
 	"mbc/gfx/assets"
+	"mbc/gui"
 	"mbc/net/mc"
 
 	"solod.dev/so/fmt"
@@ -115,7 +116,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		fnt := state.s.Pack.Font()
 		stats := state.SystemTracker.Stats()
 		text := fmt.Sprintf(fmt.NewBuffer(1024), "Alloc=%d KiB\nObjects=%d", stats.Alloc/1024, stats.Mallocs-stats.Frees)
-		fnt.DrawRunes([]rune(text), gfx.NewVector2(15, 15), 2, 0, gfx.Green, false)
+		fnt.DrawRunes([]rune(text), gfx.NewVector2(15, 15), gui.Scale, 0, gfx.Green, false)
 	}
 }
 func (state *ScreenInGameState) HandleError(err error) {

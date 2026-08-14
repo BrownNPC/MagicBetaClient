@@ -1187,7 +1187,7 @@ func (m *Mesh) drawInternal(albedo Texture, tint Color, transform Matrix, shader
 	rlDisableShader()
 }
 func NewMesh(a mem.Allocator) *Mesh {
-	var size = 1024
+	var size = 1
 	var m Mesh
 	m.a = a
 	m.vertices = slices.MakeCap[VertexCoord](a, 0, size)

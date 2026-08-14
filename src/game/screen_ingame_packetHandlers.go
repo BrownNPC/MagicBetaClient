@@ -121,30 +121,31 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 		return nil
 	}
 
-	if err := chunk.data.ProcessChunkData(pkt); err != nil {
-		return err
-	}
+	// if err := chunk.data.ProcessChunkData(pkt); err != nil {
+	// 	return err
+	// }
 
 	chunk.NeedsRebuild = true
-	for section := range 8 {
-		state.BuildConnectivityGraphForSection(chunk, section)
-	}
+	// for section := range 8 {
+	// state.BuildConnectivityGraphForSection(chunk, section)
+	// }
 	neighbours := [4]ChunkCoordinate{
 		{coord.X - 1, coord.Z},
 		{coord.X + 1, coord.Z},
 		{coord.X, coord.Z - 1},
 		{coord.X, coord.Z + 1},
 	}
-	for _, coord := range neighbours {
-		chunk := state.Chunks.Get(coord)
-		if chunk == nil {
-			continue
-		}
-		chunk.NeedsRebuild = true
-		for section := range 8 {
-			state.BuildConnectivityGraphForSection(chunk, section)
-		}
-	}
+	_ = neighbours
+	// for _, coord := range neighbours {
+	// 	chunk := state.Chunks.Get(coord)
+	// 	if chunk == nil {
+	// 		continue
+	// 	}
+	// 	chunk.NeedsRebuild = true
+	// 	for section := range 8 {
+	// 		state.BuildConnectivityGraphForSection(chunk, section)
+	// 	}
+	// }
 
 	return nil
 }

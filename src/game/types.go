@@ -300,7 +300,7 @@ type Chunk struct {
 
 func NewChunk(a mem.Allocator, coord ChunkCoordinate) *Chunk {
 	chunk := mem.Alloc[Chunk](a)
-	chunk.data = mem.Alloc[mc.DecompressedChunkData](a)
+	// chunk.data = mem.Alloc[mc.DecompressedChunkData](a)
 	for i := range 8 {
 		chunk.Layer0[i] = gfx.NewMesh(a) // opaque
 		chunk.Layer1[i] = gfx.NewMesh(a) // semi transparent (leaves, glass panes etc.)
