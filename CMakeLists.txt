@@ -61,7 +61,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
    include(CheckIPOSupported)
     check_ipo_supported(RESULT lto_supported)
     
-    if(lto_supported)
+    if(lto_supported AND NOT PSP)
         set_property(TARGET ${PROJECT_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
     else()
         message(WARNING "LTO is enabled but not supported by your current compiler/toolchain.")
@@ -106,6 +106,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${CURL_TARGET}
     ${GL_TARGET}
     m
+    atomic
 )
 
 # This is safe to set on all platforms. Otherwise your SDL app will
