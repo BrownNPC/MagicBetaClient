@@ -107,7 +107,6 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 		return
 	}
 	// allocate
-	// chunk := NewChunk(mem.System, coord)
 	chunk := NewChunk(&state.SystemTracker, coord)
 	state.Chunks.Set(coord, chunk)
 }
@@ -120,18 +119,15 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 		sdl.Log("WARNING: received chunk data for an unloaded chunk.")
 		return nil
 	}
-	// heap allocate the compressed data for now
-	// to see how much memory it takes
-	c := pkt.Clone(&state.SystemTracker)
-	println(len(c.CompressedData)) // just so it's not optimized away
-
-	// if err := chunk.data.ProcessChunkData(pkt); err != nil {
-	// 	return err
-	// }
+	state.RequestChunkData(chunk)
+	if err := chunk.data.ProcessChunkData(pkt); err != nil {
+		return err
+	}
+	state.SaveChunkData(chunk)
 
 	chunk.NeedsRebuild = true
 	// for section := range 8 {
-	// state.BuildConnectivityGraphForSection(chunk, section)
+		// state.BuildConnectivityGraphForSection(chunk, section)
 	// }
 	neighbours := [4]ChunkCoordinate{
 		{coord.X - 1, coord.Z},
@@ -140,16 +136,17 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 		{coord.X, coord.Z + 1},
 	}
 	_ = neighbours
-	// for _, coord := range neighbours {
-	// 	chunk := state.Chunks.Get(coord)
-	// 	if chunk == nil {
-	// 		continue
-	// 	}
-	// 	chunk.NeedsRebuild = true
-	// 	for section := range 8 {
-	// 		state.BuildConnectivityGraphForSection(chunk, section)
-	// 	}
-	// }
+	for _, coord := range neighbours {
+		chunk := state.Chunks.Get(coord)
+		if chunk == nil {
+			continue
+		}
+		// state.RequestChunkData(chunk)
+		chunk.NeedsRebuild = true
+		// for section := range 8 {
+		// 	state.BuildConnectivityGraphForSection(chunk, section)
+		// }
+	}
 
 	return nil
 }

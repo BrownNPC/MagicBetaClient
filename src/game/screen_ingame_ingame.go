@@ -8,7 +8,6 @@ import (
 
 	"solod.dev/so/fmt"
 	"solod.dev/so/maps"
-	"solod.dev/so/math"
 	"solod.dev/so/mem"
 	"solod.dev/so/time"
 )
@@ -23,10 +22,11 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
-	state.SetRenderDistance(5)
+	state.SetRenderDistance(2)
 	state.SystemTracker = mem.Tracker{
 		Allocator: mem.System,
 	}
+	state.SetDecompressedChunkLimit(&state.SystemTracker, 25)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.InputPressed(InputClose) {
@@ -75,24 +75,24 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	{
 		it := state.Chunks.Iter()
 		for it.Next() {
-			chunk := it.Value()
-			for i := range 8 {
-				pos := chunk.GetSectionCenter(i)
-				visible := state.Cam.IsSphereInFrustum(pos, CHUNK_SECTION_SPHERE_RADIUS)
-				if !visible {
-					continue
-				}
-				if math.Abs(float64(state.Cam.Position.Distance(pos))) > 7*7*3 {
-					continue
-				}
-				if chunk.NeedsRebuild {
-					// chunk.ResetMeshes()
-					// state.BuildChunkMesh(chunk)
-					chunk.NeedsRebuild = false
-				}
+			// chunk := it.Value()
+			// for i := range 8 {
+			// pos := chunk.GetSectionCenter(i)
+			// visible := state.Cam.IsSphereInFrustum(pos, CHUNK_SECTION_SPHERE_RADIUS)
+			// if !visible {
+			// 	continue
+			// }
+			// if math.Abs(float64(state.Cam.Position.Distance(pos))) > 7*7*3 {
+			// 	continue
+			// }
+			// if chunk.NeedsRebuild {
+			// chunk.ResetMeshes()
+			// state.BuildChunkMesh(chunk)
+			// chunk.NeedsRebuild = false
+			// }
 
-				// chunk.DrawSectionMesh(i, terrain)
-			}
+			// chunk.DrawSectionMesh(i, terrain)
+			// }
 		}
 	}
 

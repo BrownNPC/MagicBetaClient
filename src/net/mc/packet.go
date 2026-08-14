@@ -1383,6 +1383,7 @@ const CHUNK_SIZE_XZ = 16 // chunk width
 const CHUNK_SIZE_Y = 128 // chunk height
 const CHUNK_SIZE = CHUNK_SIZE_XZ * CHUNK_SIZE_XZ * CHUNK_SIZE_Y
 
+
 // A chunk containing blocks.
 // Different from the Chunk packet which contains compressed data.
 type DecompressedChunkData struct {
@@ -1459,7 +1460,6 @@ func (d *DecompressedChunkData) ProcessChunkData(c *ClientboundChunk) error {
 	metaData := uncompressed[blocks : blocks+nibbles]
 	blockLight := uncompressed[blocks+nibbles : blocks+2*nibbles]
 	skyLight := uncompressed[blocks+2*nibbles : blocks+3*nibbles]
-	println("Recieved", len(blockData), "blocks.")
 
 	// WIKI: https://pixelbrush.dev/beta-wiki/worlds/chunk#block-ordering
 	// Blocks are stored as vertical columns (Y-Axis).

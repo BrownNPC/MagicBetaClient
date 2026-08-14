@@ -296,11 +296,13 @@ type Chunk struct {
 	coord ChunkCoordinate
 	// 16*128*16 chunk data.
 	data *mc.DecompressedChunkData
+
+	// Should NEVER be nil.
+	compressedData *RunLengthEncodedChunkData
 }
 
 func NewChunk(a mem.Allocator, coord ChunkCoordinate) *Chunk {
 	chunk := mem.Alloc[Chunk](a)
-	// chunk.data = mem.Alloc[mc.DecompressedChunkData](a)
 	for i := range 8 {
 		chunk.Layer0[i] = gfx.NewMesh(a) // opaque
 		chunk.Layer1[i] = gfx.NewMesh(a) // semi transparent (leaves, glass panes etc.)
@@ -426,6 +428,15 @@ type ScreenInGameState struct {
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.
 	PersistentArena mem.Arena
+
+	// Maximum number of decompressed chunks that can be held in memory
+	MaxDecompressedChunksAllowed int
+	// Decompressed chunks currently not owned by any chunk.
+	// it is a stack: Last in, Last out
+	DecompressedChunkFreeList []*mc.DecompressedChunkData
+	// Chunks that are holding onto a decompressed chunk.
+	// We will steal it from the chunk if needed. First in, First out order.
+	ChunksThatOwnADecompressedChunk []*Chunk
 
 	Chunks         maps.Map[ChunkCoordinate, *Chunk]
 	ChunkFreeList  []*Chunk

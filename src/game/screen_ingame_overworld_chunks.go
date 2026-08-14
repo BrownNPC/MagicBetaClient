@@ -11,6 +11,97 @@ import (
 	"solod.dev/so/slices"
 )
 
+// SetDecompressedChunkLimit sets the maximum number of Decompressed chunks
+// that can be loaded in memory. It does not support shrinking the limit.
+func (state *ScreenInGameState) SetDecompressedChunkLimit(a mem.Allocator, l int) {
+	n := len(state.ChunksThatOwnADecompressedChunk)
+	n += len(state.DecompressedChunkFreeList)
+	required := l - n
+	if required < 0 { // we need to free some chunks. (shrink the limit)
+		return // dont support shrinking the limit.
+	}
+
+	for range required {
+		state.DecompressedChunkFreeList = slices.Append(a,
+			state.DecompressedChunkFreeList, mem.Alloc[mc.DecompressedChunkData](a))
+	}
+	state.MaxDecompressedChunksAllowed = l
+}
+
+// RequestChunkData will return early if chunk data is already decompressed.
+// otherwise, it will load a decompressed chunk data structure from the free list stack.
+// as a last resort, it will take a decompressed chunk structure from another chunk that owns it.
+// Oldest owners of the resource are evicted first: (first in, first out)
+//
+// It will load the chunk's compressed data if available.
+// (compressed data is always available unless this chunk is being initialized)
+func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunkData {
+	if c.data != nil {
+		return c.data
+	}
+
+	var data *mc.DecompressedChunkData
+	if len(state.DecompressedChunkFreeList) > 0 { // pop one from the free list stack.
+		data = state.DecompressedChunkFreeList[len(state.DecompressedChunkFreeList)-1]
+		state.DecompressedChunkFreeList = state.DecompressedChunkFreeList[:len(state.DecompressedChunkFreeList)-1]
+	}
+	// steal from a chunk that's holding onto the data.
+	if len(state.ChunksThatOwnADecompressedChunk) == 0 {
+		sdl.Log("Warning: not enough decompressed chunk data slots: increasing by 1.")
+		state.SetDecompressedChunkLimit(&state.SystemTracker, state.MaxDecompressedChunksAllowed+1)
+	}
+	if len(state.ChunksThatOwnADecompressedChunk) > 0 {
+		data = state.ChunksThatOwnADecompressedChunk[0].data
+		state.ChunksThatOwnADecompressedChunk[0].data = nil
+		// zero out garbage data.
+		// *data = mc.DecompressedChunkData{}
+		// we do not need this because decompression will override this anyways.
+
+		// pop the queue by sliding elements toward zero index
+		copy(state.ChunksThatOwnADecompressedChunk, state.ChunksThatOwnADecompressedChunk[1:])
+		state.ChunksThatOwnADecompressedChunk =
+			state.ChunksThatOwnADecompressedChunk[:len(state.ChunksThatOwnADecompressedChunk)-1]
+	}
+	c.data = data
+	// compressed data should never be nil.
+	// There is an exception when
+	// the chunk is being initialized with data from the server
+	// after this call.
+	if c.compressedData != nil {
+		state.RunlengthDecodeChunkData(c.compressedData, data)
+	}
+	// make sure to track ownership by adding this chunk to the queue.
+	state.ChunksThatOwnADecompressedChunk =
+		slices.Append(&state.SystemTracker, state.ChunksThatOwnADecompressedChunk,
+			c,
+		)
+	return data
+}
+
+// SaveChunkData compresses the decompressed chunk data and stores it inside the chunk.
+func (state *ScreenInGameState) SaveChunkData(c *Chunk) {
+	if c.data == nil {
+		sdl.Log("Warning: cannot save chunk data because chunk does not own decompressed chunk data.")
+	}
+
+	if c.compressedData != nil {
+		c.compressedData.Free(&state.SystemTracker)
+	}
+	c.compressedData =
+		state.RunLengthEncodeChunkData(&state.SystemTracker, c.data)
+}
+
+// Free will release RunLegnthEncodedChunkData and invalidate any pointers pointing to it.
+func (c *RunLengthEncodedChunkData) Free(a mem.Allocator) {
+	mem.FreeSlice(a, c.Blocks)
+	mem.FreeSlice(a, c.Metadata)
+	mem.FreeSlice(a, c.BlockLight)
+	mem.FreeSlice(a, c.SkyLight)
+	mem.Free(a, c)
+	// set all to nil
+	*c = RunLengthEncodedChunkData{}
+}
+
 // RunlengthEncode uses the global Scratch buffer provided by [State] to RLE input byte buffer.
 func (state *ScreenInGameState) RunlengthEncode(a mem.Allocator, input []byte) []byte {
 	if len(input) == 0 {
@@ -505,9 +596,11 @@ func (state *ScreenInGameState) IsBlockA(c *Chunk, x, y, z int, b ...mc.BlockID)
 		if neighbor == nil {
 			return true
 		}
+		state.RequestChunkData(neighbor)
 		return neighbor.data.IsBlockA(x, y, z, b...)
 	}
 
+	state.RequestChunkData(c)
 	return c.data.IsBlockA(x, y, z, b...)
 }
 
