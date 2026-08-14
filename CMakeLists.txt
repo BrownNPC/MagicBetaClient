@@ -128,7 +128,7 @@ if (PSP)
   create_pbp_file(
     TARGET ${PROJECT_NAME}
     TITLE change this in CMakeLists.txt
-    # ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.png"
+    ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.png"
     BUILD_PRX=1
     ENC_PRX=1
   )

@@ -5,6 +5,7 @@ import (
 	"mbc/gfx/assets"
 	"mbc/net/mc"
 
+	"solod.dev/so/fmt"
 	"solod.dev/so/maps"
 	"solod.dev/so/math"
 	"solod.dev/so/mem"
@@ -22,6 +23,9 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
 	state.SetRenderDistance(5)
+	state.SystemTracker = mem.Tracker{
+		Allocator: mem.System,
+	}
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.InputPressed(InputClose) {
@@ -64,6 +68,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	// lerp ticks
 	state.GameTimeFloat = state.LerpTicks()
 	terrain := state.s.Pack.GetTexture(assets.Terrain)
+	_ = terrain
 	// state.BeginDrawingChunks(state.Cam)
 	// state.EndDrawingChunks(terrain)
 	{
@@ -80,12 +85,12 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 					continue
 				}
 				if chunk.NeedsRebuild {
-					chunk.ResetMeshes()
-					state.BuildChunkMesh(chunk)
+					// chunk.ResetMeshes()
+					// state.BuildChunkMesh(chunk)
 					chunk.NeedsRebuild = false
 				}
 
-				chunk.DrawSectionMesh(i, terrain)
+				// chunk.DrawSectionMesh(i, terrain)
 			}
 		}
 	}
@@ -105,6 +110,13 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 		}
 	}
 	gfx.EndMode3D()
+
+	{
+		fnt := state.s.Pack.Font()
+		stats := state.SystemTracker.Stats()
+		text := fmt.Sprintf(fmt.NewBuffer(1024), "Alloc=%d KiB\nObjects=%d", stats.Alloc/1024, stats.Mallocs-stats.Frees)
+		fnt.DrawRunes([]rune(text), gfx.NewVector2(15, 15), 2, 0, gfx.Green, false)
+	}
 }
 func (state *ScreenInGameState) HandleError(err error) {
 	state.CurrentScreen = SCREEN_INGAME_DISCONNECTED_SCREEN

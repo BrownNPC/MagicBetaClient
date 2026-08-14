@@ -423,6 +423,8 @@ type ScreenInGameState struct {
 	Chunks         maps.Map[ChunkCoordinate, *Chunk]
 	ChunkFreeList  []*Chunk
 	ChunkCullState ChunkCullState
+
+	SystemTracker  mem.Tracker
 }
 
 // Max number of sound effects that can be loaded at a time.

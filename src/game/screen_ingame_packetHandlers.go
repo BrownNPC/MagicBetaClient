@@ -107,7 +107,8 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 		return
 	}
 	// allocate
-	chunk := NewChunk(mem.System, coord)
+	// chunk := NewChunk(mem.System, coord)
+	chunk := NewChunk(&state.SystemTracker, coord)
 	state.Chunks.Set(coord, chunk)
 }
 func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
