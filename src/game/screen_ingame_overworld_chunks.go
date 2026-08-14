@@ -41,16 +41,11 @@ func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunk
 	}
 
 	var data *mc.DecompressedChunkData
+	// steal from a chunk that's holding onto the data.
 	if len(state.DecompressedChunkFreeList) > 0 { // pop one from the free list stack.
 		data = state.DecompressedChunkFreeList[len(state.DecompressedChunkFreeList)-1]
 		state.DecompressedChunkFreeList = state.DecompressedChunkFreeList[:len(state.DecompressedChunkFreeList)-1]
-	}
-	// steal from a chunk that's holding onto the data.
-	if len(state.ChunksThatOwnADecompressedChunk) == 0 {
-		sdl.Log("Warning: not enough decompressed chunk data slots: increasing by 1.")
-		state.SetDecompressedChunkLimit(&state.SystemTracker, state.MaxDecompressedChunksAllowed+1)
-	}
-	if len(state.ChunksThatOwnADecompressedChunk) > 0 {
+	} else if len(state.ChunksThatOwnADecompressedChunk) > 0 {
 		data = state.ChunksThatOwnADecompressedChunk[0].data
 		state.ChunksThatOwnADecompressedChunk[0].data = nil
 		// zero out garbage data.
@@ -82,6 +77,7 @@ func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunk
 func (state *ScreenInGameState) SaveChunkData(c *Chunk) {
 	if c.data == nil {
 		sdl.Log("Warning: cannot save chunk data because chunk does not own decompressed chunk data.")
+		return
 	}
 
 	if c.compressedData != nil {
@@ -89,6 +85,21 @@ func (state *ScreenInGameState) SaveChunkData(c *Chunk) {
 	}
 	c.compressedData =
 		state.RunLengthEncodeChunkData(&state.SystemTracker, c.data)
+
+	// delete this chunk from the "borrow checker"
+	for i, owner := range state.ChunksThatOwnADecompressedChunk {
+		if owner == c {
+			copy(state.ChunksThatOwnADecompressedChunk[i:],
+				state.ChunksThatOwnADecompressedChunk[i+1:])
+			state.ChunksThatOwnADecompressedChunk =
+				state.ChunksThatOwnADecompressedChunk[:len(state.ChunksThatOwnADecompressedChunk)-1]
+			break
+		}
+	}
+	// return the chunk data.
+	state.DecompressedChunkFreeList = slices.Append(&state.SystemTracker,
+		state.DecompressedChunkFreeList, c.data)
+	c.data = nil
 }
 
 // Free will release RunLegnthEncodedChunkData and invalidate any pointers pointing to it.

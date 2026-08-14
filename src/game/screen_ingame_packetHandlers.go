@@ -125,9 +125,9 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	}
 	state.SaveChunkData(chunk)
 
-	chunk.NeedsRebuild = true
+	// chunk.NeedsRebuild = true
 	// for section := range 8 {
-		// state.BuildConnectivityGraphForSection(chunk, section)
+	// 	state.BuildConnectivityGraphForSection(chunk, section)
 	// }
 	neighbours := [4]ChunkCoordinate{
 		{coord.X - 1, coord.Z},
@@ -136,17 +136,17 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 		{coord.X, coord.Z + 1},
 	}
 	_ = neighbours
-	for _, coord := range neighbours {
-		chunk := state.Chunks.Get(coord)
-		if chunk == nil {
-			continue
-		}
-		// state.RequestChunkData(chunk)
-		chunk.NeedsRebuild = true
-		// for section := range 8 {
-		// 	state.BuildConnectivityGraphForSection(chunk, section)
-		// }
-	}
+	// for _, coord := range neighbours {
+	// 	neighbour := state.Chunks.Get(coord)
+	// 	if neighbour == nil {
+	// 		continue
+	// 	}
+	// state.RequestChunkData(neighbour)
+	// neighbour.NeedsRebuild = true
+	// for section := range 8 {
+	// 	state.BuildConnectivityGraphForSection(neighbour, section)
+	// }
+	// }
 
 	return nil
 }

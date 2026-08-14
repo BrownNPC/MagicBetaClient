@@ -56,12 +56,7 @@ func (state *ScreenInGameState) TickPacketDecoder(s *State) (bool, error) {
 		}
 		// Got a real packet.
 		state.PacketDecodeArena.Reset()
-		if state.PacketID == mc.PKT_SetChunkVisibility {
-			state.scv = mc.ClientboundSetChunkVisibility{}
-			state.Decoder = &state.scv
-		} else {
-			state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, state.PacketID)
-		}
+		state.Decoder = mc.NewDecoder(&state.PacketDecodeArena, state.PacketID)
 		if state.Decoder == nil {
 			state.SendQuittingPacket(s)
 			return false, NoDecoderForPacketErr

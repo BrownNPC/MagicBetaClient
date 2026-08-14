@@ -423,7 +423,6 @@ type ScreenInGameState struct {
 	PacketID    mc.PacketID
 	DecodeState int // used in DecodePackets()
 	Decoder     mc.Decoder
-	scv         mc.ClientboundSetChunkVisibility
 
 	__PersistentMemory [2 * 1024 * 1024]byte
 	// PersistentArena lives for as long as the user is on this screen.
