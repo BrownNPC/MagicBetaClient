@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(USE_VENDORED_SDL3 "Use vendored SDL3" ON)
 option(USE_VENDORED_MIXER "Use vendored SDL_Mixer" ON)
+option(SANITIZE "Use ASAN, UBSAN, LEAKSAN" OFF)
 
 
 # disable formats we don't use to make the build faster and smaller. Also some of these don't work on all platforms so you'll need to do some experimentation.
@@ -45,10 +46,8 @@ endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC ./transpiled src/ vendored/)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR SANITIZE)
    target_compile_options(${PROJECT_NAME} PRIVATE
-        -g
-        -fno-omit-frame-pointer
         -fsanitize=address,undefined
     )
 

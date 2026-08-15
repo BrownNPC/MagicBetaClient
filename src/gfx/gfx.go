@@ -1007,9 +1007,9 @@ func (m *Mesh) Upload(dynamic bool) {
 		rlDisableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_COLOR)
 	}
 	if m.vaoID > 0 {
-		sdl.Log("VAO: [ID %i] Mesh uploaded successfully to VRAM (GPU) %d triangles", m.vaoID, len(m.vertices)/3)
+		// sdl.Log("VAO: [ID %i] Mesh uploaded successfully to VRAM (GPU) %d triangles", m.vaoID, len(m.vertices)/3)
 	} else {
-		sdl.Log("VBO: Mesh uploaded successfully to VRAM (GPU)")
+		// sdl.Log("VBO: Mesh uploaded successfully to VRAM (GPU)")
 	}
 	rlDisableVertexArray()
 }
@@ -1017,16 +1017,33 @@ func (m *Mesh) Destroy() {
 	mem.FreeSlice(m.a, m.vertices)
 	mem.FreeSlice(m.a, m.texCoords)
 	mem.FreeSlice(m.a, m.colors)
-	m.Reset()
+	if m.vaoID > 0 {
+		rlUnloadVertexArray(m.vaoID)
+		m.vaoID = 0
+	}
+
+	for i := range m.vboID {
+		if m.vboID[i] > 0 {
+			rlUnloadVertexBuffer(m.vboID[i])
+			m.vboID[i] = 0
+		}
+	}
+	m.quadCount = 0
+	mem.Free(m.a, m)
 }
 
 // Reset de-allocates ONLY GPU memory.
 // CPU memory is not free'd.
 // Allows Mesh to be reused.
 func (m *Mesh) Reset() {
-	m.vertices = m.vertices[:0]
-	m.texCoords = m.texCoords[:0]
-	m.colors = m.colors[:0]
+	mem.FreeSlice(m.a, m.vertices)
+	mem.FreeSlice(m.a, m.texCoords)
+	mem.FreeSlice(m.a, m.colors)
+	const size = 1
+	m.vertices = slices.MakeCap[VertexCoord](m.a, 0, size)
+	m.texCoords = slices.MakeCap[VertexTexcoord](m.a, 0, size)
+	m.colors = slices.MakeCap[VertexColor](m.a, 0, size)
+
 	if m.vaoID > 0 {
 		rlUnloadVertexArray(m.vaoID)
 		m.vaoID = 0

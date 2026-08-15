@@ -23,11 +23,11 @@ func (state *ScreenInGameState) Init(s *State) {
 	state.Stars = state.GenMeshStars(mem.System)
 	state.SunMesh = gfx.GenMeshPlane(mem.System, 32, 32, 1, 1)
 	state.Chunks = maps.New[ChunkCoordinate, *Chunk](mem.System, 1000)
-	state.SetRenderDistance(5)
+	state.SetRenderDistance(2)
 	state.SystemTracker = mem.Tracker{
 		Allocator: mem.System,
 	}
-	state.SetDecompressedChunkLimit(&state.SystemTracker, 25)
+	state.SetDecompressedChunkLimit(&state.SystemTracker, 6)
 }
 func (state *ScreenInGameState) ScreenInGame(s *State) {
 	if s.InputPressed(InputClose) {
@@ -85,14 +85,12 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 					continue
 				}
 				if chunk.NeedsRebuild {
-					// state.RequestChunkData(chunk)
-					// chunk.ResetMeshes()
+					chunk.ResetMeshes()
 					// state.BuildChunkMesh(chunk)
-					// chunk.NeedsRebuild = false
-					// state.SaveChunkData(chunk)
+					chunk.NeedsRebuild = false
 				}
 
-				// chunk.DrawSectionMesh(i, terrain)
+				chunk.DrawSectionMesh(i, terrain)
 			}
 		}
 	}

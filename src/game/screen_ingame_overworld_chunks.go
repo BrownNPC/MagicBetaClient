@@ -35,31 +35,20 @@ func (state *ScreenInGameState) SetDecompressedChunkLimit(a mem.Allocator, l int
 //
 // It will load the chunk's compressed data if available.
 // (compressed data is always available unless this chunk is being initialized)
-// NOTE: DO NOT FORGET TO ALSO CALL SAVE CHUNK DATA.
 func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunkData {
 	if c.data != nil {
 		return c.data
 	}
 
 	var data *mc.DecompressedChunkData
-	// steal from a chunk that's holding onto the data.
+	if len(state.DecompressedChunkFreeList) == 0 {
+		state.SaveChunkData(state.ChunksThatOwnADecompressedChunk[0])
+	}
 	if len(state.DecompressedChunkFreeList) > 0 { // pop one from the free list stack.
 		data = state.DecompressedChunkFreeList[len(state.DecompressedChunkFreeList)-1]
 		state.DecompressedChunkFreeList = state.DecompressedChunkFreeList[:len(state.DecompressedChunkFreeList)-1]
-	} else if len(state.ChunksThatOwnADecompressedChunk) > 0 {
-		data = state.ChunksThatOwnADecompressedChunk[0].data
-		if data == nil {
-			panic("chunk ownership queue is corrupted: owner has nil data")
-		}
-		state.ChunksThatOwnADecompressedChunk[0].data = nil
-		// zero out garbage data.
-		// *data = mc.DecompressedChunkData{}
-		// we do not need this because decompression will override this anyways.
-
-		// pop the queue by sliding elements toward zero index
-		copy(state.ChunksThatOwnADecompressedChunk, state.ChunksThatOwnADecompressedChunk[1:])
-		state.ChunksThatOwnADecompressedChunk =
-			state.ChunksThatOwnADecompressedChunk[:len(state.ChunksThatOwnADecompressedChunk)-1]
+	} else {
+		panic("Out of decompressed chunk slots")
 	}
 	c.data = data
 	// compressed data should never be nil.
@@ -68,15 +57,14 @@ func (state *ScreenInGameState) RequestChunkData(c *Chunk) *mc.DecompressedChunk
 	// after this call.
 	if c.compressedData != nil {
 		state.RunlengthDecodeChunkData(c.compressedData, data)
+		c.compressedData.Free(&state.SystemTracker)
+		c.compressedData = nil
 	}
 	// make sure to track ownership by adding this chunk to the queue.
 	state.ChunksThatOwnADecompressedChunk =
 		slices.Append(&state.SystemTracker, state.ChunksThatOwnADecompressedChunk,
 			c,
 		)
-	if data == nil {
-		panic("no decompressed chunk data slots available.")
-	}
 	return data
 }
 
@@ -106,7 +94,7 @@ func (state *ScreenInGameState) SaveChunkData(c *Chunk) {
 	for _, c := range clone {
 		state.ChunksThatOwnADecompressedChunk = append(state.ChunksThatOwnADecompressedChunk, c)
 	}
-	// return the chunk data.
+	// return the chunk data back to the pool
 	state.DecompressedChunkFreeList = slices.Append(&state.SystemTracker,
 		state.DecompressedChunkFreeList, c.data)
 	c.data = nil
@@ -174,6 +162,10 @@ func (state *ScreenInGameState) RunLengthEncodeChunkData(a mem.Allocator, d *mc.
 	c.Metadata = state.RunlengthEncode(a, d.Metadata[:])
 	c.BlockLight = state.RunlengthEncode(a, d.BlockLight[:])
 	c.SkyLight = state.RunlengthEncode(a, d.SkyLight[:])
+	var compressedLength int = len(c.Blocks) + len(c.Metadata) + len(c.BlockLight) + len(c.SkyLight)
+	var decompressedLength int = len(d.Blocks) + len(d.Metadata) + len(d.BlockLight) + len(d.SkyLight)
+	sdl.Log("Compressed chunk by %.1f%%",
+		(1-float32(compressedLength)/float32(decompressedLength))*100)
 	return c
 }
 func (state *ScreenInGameState) RunlengthDecodeChunkData(src *RunLengthEncodedChunkData, dst *mc.DecompressedChunkData) {
@@ -615,14 +607,11 @@ func (state *ScreenInGameState) IsBlockA(c *Chunk, x, y, z int, b ...mc.BlockID)
 		if neighbor == nil {
 			return true
 		}
-		if neighbor.data == nil {
-			state.RequestChunkData(neighbor)
-			v := neighbor.data.IsBlockA(x, y, z, b...)
-			state.SaveChunkData(neighbor)
-			return v
-		}
-		return neighbor.data.IsBlockA(x, y, z, b...)
+		state.RequestChunkData(neighbor)
+		v := neighbor.data.IsBlockA(x, y, z, b...)
+		return v
 	}
+	state.RequestChunkData(c)
 	return c.data.IsBlockA(x, y, z, b...)
 }
 
@@ -699,22 +688,11 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 		0.8, 0.5, // north, south
 		0.5, 0.8, // right, left
 	}
-	neighbours := [4]*Chunk{
-		state.Chunks.Get(ChunkCoordinate{c.coord.X - 1, c.coord.Z}),
-		state.Chunks.Get(ChunkCoordinate{c.coord.X + 1, c.coord.Z}),
-		state.Chunks.Get(ChunkCoordinate{c.coord.X, c.coord.Z - 1}),
-		state.Chunks.Get(ChunkCoordinate{c.coord.X, c.coord.Z + 1}),
-	}
-	// load neighbours
-	for _, n := range neighbours {
-		if n != nil {
-			state.RequestChunkData(n)
-		}
-	}
 	for x := range 16 {
 		for z := range 16 {
 			for y := range 128 {
 				idx := mc.ChunkIndex(x, y, z)
+				state.RequestChunkData(c)
 				block := c.data.Blocks[idx]
 				if block == mc.BLOCK_Air {
 					continue
@@ -752,12 +730,6 @@ func (state *ScreenInGameState) BuildChunkMesh(c *Chunk) {
 					}
 				}
 			}
-		}
-	}
-
-	for _, n := range neighbours {
-		if n != nil {
-			state.SaveChunkData(n)
 		}
 	}
 	c.UploadMeshes()

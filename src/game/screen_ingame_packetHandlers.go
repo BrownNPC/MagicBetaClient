@@ -108,6 +108,10 @@ func (state *ScreenInGameState) OnSetChunkVisibility(data mc.Decoder) {
 		return
 	}
 	// load
+	if state.Chunks.Has(coord) {
+		sdl.Log("Warning: server told us to load a chunk that is already loaded.")
+		return
+	}
 	if len(state.ChunkFreeList) > 0 {
 		chunk := state.ChunkFreeList[len(state.ChunkFreeList)-1]
 		state.ChunkFreeList = state.ChunkFreeList[:len(state.ChunkFreeList)-1] // pop
@@ -132,8 +136,6 @@ func (state *ScreenInGameState) OnChunk(data mc.Decoder) error {
 	if err := chunk.data.ProcessChunkData(pkt); err != nil {
 		return err
 	}
-	state.SaveChunkData(chunk)
-
 	chunk.NeedsRebuild = true
 	// for section := range 8 {
 	// 	state.BuildConnectivityGraphForSection(chunk, section)
