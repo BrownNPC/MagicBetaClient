@@ -1014,9 +1014,15 @@ func (m *Mesh) Upload(dynamic bool) {
 	rlDisableVertexArray()
 }
 func (m *Mesh) Destroy() {
-	mem.FreeSlice(m.a, m.vertices)
-	mem.FreeSlice(m.a, m.texCoords)
-	mem.FreeSlice(m.a, m.colors)
+	if len(m.vertices) > 0 {
+		mem.FreeSlice(m.a, m.vertices)
+	}
+	if len(m.texCoords) > 0 {
+		mem.FreeSlice(m.a, m.texCoords)
+	}
+	if len(m.colors) > 0 {
+		mem.FreeSlice(m.a, m.colors)
+	}
 	if m.vaoID > 0 {
 		rlUnloadVertexArray(m.vaoID)
 		m.vaoID = 0
@@ -1036,14 +1042,9 @@ func (m *Mesh) Destroy() {
 // CPU memory is not free'd.
 // Allows Mesh to be reused.
 func (m *Mesh) Reset() {
-	mem.FreeSlice(m.a, m.vertices)
-	mem.FreeSlice(m.a, m.texCoords)
-	mem.FreeSlice(m.a, m.colors)
-	const size = 1
-	m.vertices = slices.MakeCap[VertexCoord](m.a, 0, size)
-	m.texCoords = slices.MakeCap[VertexTexcoord](m.a, 0, size)
-	m.colors = slices.MakeCap[VertexColor](m.a, 0, size)
-
+	m.colors = m.colors[:0]
+	m.texCoords = m.texCoords[:0]
+	m.vertices = m.vertices[:0]
 	if m.vaoID > 0 {
 		rlUnloadVertexArray(m.vaoID)
 		m.vaoID = 0

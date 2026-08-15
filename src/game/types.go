@@ -379,6 +379,7 @@ type ChunkBfsStep struct {
 type ChunkCullState struct {
 	queue            []ChunkBfsStep
 	gridSize         int32 // render_distance +1
+	renderRadius     int32
 	visibleChunks    []*Chunk
 	originX, originZ int32
 }

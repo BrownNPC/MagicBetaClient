@@ -71,6 +71,7 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 	state.GameTimeFloat = state.LerpTicks()
 	terrain := state.s.Pack.GetTexture(assets.Terrain)
 	_ = terrain
+	var sectionsVisible int
 	{
 		it := state.Chunks.Iter()
 		for it.Next() {
@@ -78,22 +79,20 @@ func (state *ScreenInGameState) ScreenInGame(s *State) {
 			for i := range 8 {
 				pos := chunk.GetSectionCenter(i)
 				visible := state.Cam.IsSphereInFrustum(pos, CHUNK_SECTION_SPHERE_RADIUS)
-				if !visible {
+				if !visible || math.Abs(float64(state.Cam.Position.Distance(pos))) > float64(state.ChunkCullState.renderRadius) {
 					continue
 				}
-				if math.Abs(float64(state.Cam.Position.Distance(pos))) > 7*7*3 {
-					continue
-				}
+				sectionsVisible++
 				if chunk.NeedsRebuild {
 					chunk.ResetMeshes()
-					// state.BuildChunkMesh(chunk)
+					state.BuildChunkMesh(chunk)
 					chunk.NeedsRebuild = false
 				}
-
 				chunk.DrawSectionMesh(i, terrain)
 			}
 		}
 	}
+	println("Visible Sections =", sectionsVisible)
 
 	{
 		it := state.Things.Iter()

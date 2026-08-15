@@ -316,6 +316,7 @@ func (c *ChunkCullState) GetVisitedArrayIndex(x, y, z int32) int32 {
 func (state *ScreenInGameState) SetRenderDistance(d int32) {
 	c := &state.ChunkCullState
 	c.gridSize = d*2 + 1
+	c.renderRadius = d*16
 }
 
 // Calculates chunk culling.
