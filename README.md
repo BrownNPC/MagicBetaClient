@@ -9,6 +9,8 @@
   <img width="32%" src="https://github.com/user-attachments/assets/addfb319-247d-43be-8973-92ffd20f3ff2" />
   <img width="32%" src="https://github.com/user-attachments/assets/079f2c95-6dfe-48c6-870c-d3cf8a04132c" />
 </p>
+
+
 # Running
 For instructions, see the [release](https://github.com/BrownNPC/MagicBetaClient/releases/tag/0.0.1)
 This application is Linux only for now.
